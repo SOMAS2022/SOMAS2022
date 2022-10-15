@@ -1,0 +1,6 @@
+= Self Organising Multi Agent Systems 2022
+
+[source, elixir]
+----
+def somas, do: :agent.organise self()
+----
