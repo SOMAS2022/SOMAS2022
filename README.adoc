@@ -1,6 +1,46 @@
 = Self Organising Multi Agent Systems 2022
+:toc:
 
-[source, elixir]
-----
-def somas, do: :agent.organise self()
-----
+== Spec
+The spec is available link:spec.pdf[here].
+
+We start with `N` peasants, all on the bottom level.
+
+There is initial equipment in the cells.
+
+== Implementation
+Each peasant will have its own node, and can interact with the main game server as well as with other agents.
+
+The main game server will, at the start of the game, set up communication between each agent. The agents will then be expected to make all non-game communication amongst themselves. Of course we will need to agree an appropriate message format, however the game server will only deal with the following messages:
+
+* (agent => server) Equipment and de-equipment of armour and weapons
+* (agent => server) Decision on action during round
+* (server => agent) Death messages
+* (server => agent) Information on new loot
+* (server => agent) Level information at the start of a round
+* (server => agent) Wear of weapons decreasing (& therefore effectiveness decreasing)
+
+(others???)
+
+These will be of the form:
+
+* `{:equip, self(), name}`
+* `{:drop, self(), name}`
+* `{:action, self(), {attack_points, shield_points}}` or `{:action, self(), :cower}`
+* `{:death, pid}`
+* `{:loot, {:dropped, dropped_by}, {name, ap_boost, at_boost, sh_boost, hp_boost, durability}}` or `{:loot, :stash, {name, ap_boost, at_boost, sh_boost, hp_boost, durability}}`
+* `{:level, {hp_value, hp_max} ap_value, ...}` (this is todo...)
+
+== Equipment
+Each peasant can carry:
+
+* 1 helmet
+* 1 chest armour
+* 1 leg armour
+* 1 set of gloves
+* 1 set of footwear
+* 2 1-handed weapons OR 1 2-handed weapon
+
+In order to pick up equipment which is not currently used, they must take off equipment which is currently taking up the relevant slots.
+
+We could potentially implement equipment swaps, where 2 peasants could swap equipment between themselves in a single interaction without needing to disarm it, and/or where 1 peasant can swap equipment they are carrying for equipment on the floor, however this is just a nice to have.
