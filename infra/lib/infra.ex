@@ -16,6 +16,7 @@ defmodule Infra do
         :io.fwrite("Node: ~p (atomic? ~p), Process; ~p~n", [node, is_atom(node), process])
         # TODO: Put initial state in here
         #send(process, {:welcome, :agent})
+        send(process, self())
         pid = :rpc.call(node, SomasAgent, :init, [])
         :io.fwrite("Pid is: ~p~n", [pid])
       msg ->

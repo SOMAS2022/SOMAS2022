@@ -1,5 +1,6 @@
 import infra._
 
-class SomasAgent(nd: otp.Node) extends ISomasAgent(nd):
+class SomasAgent(ip: String, cookie: String, serverName: String = "infra_server") extends ISomasAgent(ip, cookie, serverName):
   // TODO: Implement this :)
-  def run(): Unit = {}
+  def run(): Unit = ???
+  def receive(message: SomasMessage): Unit = ???
