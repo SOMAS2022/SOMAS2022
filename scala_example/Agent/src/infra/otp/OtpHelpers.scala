@@ -1,4 +1,4 @@
-package somas.otp
+package infra.otp
 import com.ericsson.otp.erlang._
 import reflect.ClassTag
 
