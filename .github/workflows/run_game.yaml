@@ -1,0 +1,37 @@
+# Name of workflow
+name: agent_performance
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the "main" branch
+  push:
+    branches: [ "main" , "devops" ]
+
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+    branches:
+      - 'main'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Names of agents which the main script should be run with
+        agents: ['agent_1', 'agent_2']
+    name: Testing performance of ${{ matrix.agents }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: './pkg/infra/go.mod'
+      - name: Test performance of agent
+        run: go run main.go ${{ matrix.agents }}
+        working-directory: pkg/infra
+        continue-on-error: false
