@@ -41,7 +41,7 @@ func main() {
 				},
 				Id: i,
 			},
-			Strategy: nil,
+			Strategy: agent.RandomAgent{},
 		}
 	}
 
@@ -54,7 +54,7 @@ func handleFight(state *state.State, agents map[uint]agent.Agent, decisionChanne
 	for _, a := range agents {
 		go a.Strategy.HandleFight(*state, a.BaseAgent)
 	}
-	decisions := make(map[uint]decision.FightChoice)
+	decisions := make(map[uint]decision.FightAction)
 
 	for u, decisionC := range decisionChannels {
 		handleFightDecision(decisionC, decisions, u)
@@ -64,12 +64,12 @@ func handleFight(state *state.State, agents map[uint]agent.Agent, decisionChanne
 
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightChoice, u uint) {
+func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, u uint) {
 	for {
 		received := <-decisionC
 		switch d := received.(type) {
 		case decision.FightDecision:
-			decisions[u] = d.Choice
+			decisions[u] = d.Action
 			return
 		default:
 			continue

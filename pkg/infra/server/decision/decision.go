@@ -5,7 +5,7 @@ type Decision interface {
 }
 
 type FightDecision struct {
-	Choice FightChoice
+	Action FightAction
 }
 
 func (FightDecision) decisionSealed() {}
@@ -18,18 +18,10 @@ type HPPoolDecision struct{}
 
 func (HPPoolDecision) decisionSealed() {}
 
-type FightChoice interface {
-	fightChoiceSealed()
-}
+type FightAction int64
 
-type Attack struct{}
-
-func (Attack) fightChoiceSealed() {}
-
-type Defend struct{}
-
-func (Defend) fightChoiceSealed() {}
-
-type Cower struct{}
-
-func (Cower) fightChoiceSealed() {}
+const (
+	Attack FightAction = iota
+	Defend
+	Cower
+)
