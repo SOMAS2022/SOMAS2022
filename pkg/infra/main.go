@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"infra/server/agent"
 	"infra/server/commons"
 	"infra/server/decision"
@@ -17,8 +18,15 @@ const numLevels = 60
 
 const numAgents = 10
 
+const numAgentsRequired = 6
+
+const monsterHealth = 10
+const monsterAttack = 20
+
 func main() {
 	agentMap := make(map[uint]agent.Agent)
+
+	agentStateMap := make(map[uint]state.AgentState)
 
 	stateChannels := make(map[uint]chan<- state.State)
 	decisionChannels := make(map[uint]<-chan decision.Decision)
@@ -43,33 +51,114 @@ func main() {
 			},
 			Strategy: agent.RandomAgent{},
 		}
+		agentStateMap[i] = state.AgentState{
+			Hp:            5,
+			Attack:        5,
+			Defense:       5,
+			AbilityPoints: 5,
+			BonusAttack:   0,
+			BonusDefense:  0,
+		}
 	}
 
-	for level := 0; level < numLevels; level++ {
+	globalState := state.State{
+		MonsterHealth: monsterHealth,
+		MonsterAttack: monsterAttack,
+		AgentState:    agentStateMap,
+	}
 
+	for globalState.CurrentLevel = 0; globalState.CurrentLevel < numLevels; globalState.CurrentLevel++ {
+		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
+		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
+			coweringAgents, attackSum, shieldSum := handleFightRound(&globalState, agentMap, decisionChannels)
+			if coweringAgents == uint(len(agentMap)) {
+				attack := globalState.MonsterAttack
+				dealDamage(attack, agentMap, globalState, stateChannels, decisionChannels)
+			} else {
+				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
+				if globalState.MonsterHealth > 0 {
+					damageTaken := globalState.MonsterAttack - shieldSum
+					dealDamage(damageTaken, agentMap, globalState, stateChannels, decisionChannels)
+					// TODO: Monster disruptive ability
+				}
+			}
+			if len(agentMap) < numAgentsRequired {
+				panic(fmt.Sprintf("Lost in %d rounds", len(agentMap)))
+			}
+		}
+		// TODO: End of Level looting and trading
 	}
 }
 
-func handleFight(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) {
+func dealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, stateChannels map[uint]chan<- state.State, decisionChannels map[uint]<-chan decision.Decision) {
+	splitDamage := attack / uint(len(agentMap))
+	for id, agentState := range globalState.AgentState {
+		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
+		if newHp == 0 {
+			// kill agent
+			delete(globalState.AgentState, id)
+			delete(agentMap, id)
+			delete(stateChannels, id)
+			delete(decisionChannels, id)
+		} else {
+			globalState.AgentState[id] = state.AgentState{
+				Hp:            newHp,
+				Attack:        agentState.Attack,
+				Defense:       agentState.Defense,
+				AbilityPoints: agentState.AbilityPoints,
+				BonusAttack:   agentState.BonusAttack,
+				BonusDefense:  agentState.BonusDefense,
+			}
+		}
+	}
+}
+
+func handleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) (uint, uint, uint) {
 	for _, a := range agents {
 		go a.Strategy.HandleFight(*state, a.BaseAgent)
 	}
 	decisions := make(map[uint]decision.FightAction)
 
-	for u, decisionC := range decisionChannels {
-		handleFightDecision(decisionC, decisions, u)
+	for agentID, decisionC := range decisionChannels {
+		handleFightDecision(decisionC, decisions, agentID, state.AgentState[agentID])
 	}
 
-	//todo: process updates and modify state here
+	var coweringAgents uint
+	var attackSum uint
+	var shieldSum uint
 
+	for agentID, d := range decisions {
+		switch v := d.(type) {
+		case decision.Fight:
+			attackSum += v.Attack
+			shieldSum += v.Defend
+		case decision.Cower:
+			coweringAgents++
+			if entry, ok := state.AgentState[agentID]; ok {
+				entry.Hp += 1
+				state.AgentState[agentID] = entry
+			}
+		}
+	}
+
+	return coweringAgents, attackSum, shieldSum
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, u uint) {
+func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, agentID uint, s state.AgentState) {
 	for {
 		received := <-decisionC
 		switch d := received.(type) {
 		case decision.FightDecision:
-			decisions[u] = d.Action
+			switch f := d.Action.(type) {
+			case decision.Fight:
+				if f.Attack <= s.TotalAttack() && f.Defend <= s.TotalDefense() && f.Attack+f.Defend <= s.AbilityPoints {
+					decisions[agentID] = f
+				} else {
+					decisions[agentID] = decision.Cower{}
+				}
+			case decision.Cower:
+				decisions[agentID] = f
+			}
 			return
 		default:
 			continue

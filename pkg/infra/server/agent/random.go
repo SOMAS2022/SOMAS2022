@@ -10,5 +10,5 @@ type RandomAgent struct {
 
 func (r RandomAgent) HandleFight(_ state.State, baseAgent BaseAgent) {
 	//todo: make random action based on state instead of always cower
-	baseAgent.Communication.Sender <- decision.FightDecision{Action: decision.Cower}
+	baseAgent.Communication.Sender <- decision.FightDecision{Action: decision.Cower{}}
 }

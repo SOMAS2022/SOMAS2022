@@ -18,10 +18,17 @@ type HPPoolDecision struct{}
 
 func (HPPoolDecision) decisionSealed() {}
 
-type FightAction int64
+type FightAction interface {
+	actionSealed()
+}
 
-const (
-	Attack FightAction = iota
-	Defend
-	Cower
-)
+type Cower struct{}
+
+func (Cower) actionSealed() {}
+
+type Fight struct {
+	Attack uint
+	Defend uint
+}
+
+func (Fight) actionSealed() {}
