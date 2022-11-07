@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"infra/server/agent"
-	"infra/server/commons"
-	"infra/server/decision"
-	"infra/server/state"
+	"infra/game/agent"
+	"infra/game/commons"
+	"infra/game/decision"
+	"infra/game/state"
 )
 
 /*

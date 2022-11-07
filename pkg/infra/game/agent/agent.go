@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"infra/server/commons"
-	"infra/server/state"
+	"infra/game/commons"
+	"infra/game/state"
 )
 
 type Strategy interface {

@@ -1,9 +1,9 @@
 package commons
 
 import (
-	"infra/server/decision"
-	"infra/server/message"
-	"infra/server/state"
+	"infra/game/decision"
+	"infra/game/message"
+	"infra/game/state"
 )
 
 type Communication struct {
