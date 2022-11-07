@@ -5,12 +5,16 @@ import (
 	"infra/server/state"
 )
 
-type Logic interface {
+type Strategy interface {
 	HandleFight(state state.State, baseAgent BaseAgent)
+}
+
+type Agent struct {
+	BaseAgent BaseAgent
+	Strategy  Strategy
 }
 
 type BaseAgent struct {
 	Communication commons.Communication
 	Id            uint
-	Logic         Logic
 }

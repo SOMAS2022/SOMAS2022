@@ -1,17 +1,35 @@
 package decision
 
 type Decision interface {
-	sealed()
+	decisionSealed()
 }
 
-type FightDecision struct{}
+type FightDecision struct {
+	Choice FightChoice
+}
 
-func (FightDecision) sealed() {}
+func (FightDecision) decisionSealed() {}
 
 type LootDecision struct{}
 
-func (LootDecision) sealed() {}
+func (LootDecision) decisionSealed() {}
 
 type HPPoolDecision struct{}
 
-func (HPPoolDecision) sealed() {}
+func (HPPoolDecision) decisionSealed() {}
+
+type FightChoice interface {
+	fightChoiceSealed()
+}
+
+type Attack struct{}
+
+func (Attack) fightChoiceSealed() {}
+
+type Defend struct{}
+
+func (Defend) fightChoiceSealed() {}
+
+type Cower struct{}
+
+func (Cower) fightChoiceSealed() {}

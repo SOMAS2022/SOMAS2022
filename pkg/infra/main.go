@@ -18,7 +18,7 @@ const numLevels = 60
 const numAgents = 10
 
 func main() {
-	agentMap := make(map[uint]agent.BaseAgent)
+	agentMap := make(map[uint]agent.Agent)
 
 	stateChannels := make(map[uint]chan<- state.State)
 	decisionChannels := make(map[uint]<-chan decision.Decision)
@@ -32,12 +32,17 @@ func main() {
 		stateChannels[i] = stateChan
 		decisionChannels[i] = decisionChan
 
-		agentMap[i] = agent.BaseAgent{Communication: commons.Communication{
-			Peer:     nil,
-			Receiver: stateChan,
-			Sender:   decisionChan,
-		},
-			Id: i}
+		agentMap[i] = agent.Agent{
+			BaseAgent: agent.BaseAgent{
+				Communication: commons.Communication{
+					Peer:     nil,
+					Receiver: stateChan,
+					Sender:   decisionChan,
+				},
+				Id: i,
+			},
+			Strategy: nil,
+		}
 	}
 
 	for level := 0; level < numLevels; level++ {
@@ -45,11 +50,11 @@ func main() {
 	}
 }
 
-func handleFight(state *state.State, agents map[uint]agent.BaseAgent, decisionChannels map[uint]<-chan decision.Decision) {
-	for _, baseAgent := range agents {
-		go baseAgent.Logic.HandleFight(*state, baseAgent)
+func handleFight(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) {
+	for _, a := range agents {
+		go a.Strategy.HandleFight(*state, a.BaseAgent)
 	}
-	decisions := make(map[uint]decision.FightDecision)
+	decisions := make(map[uint]decision.FightChoice)
 
 	for u, decisionC := range decisionChannels {
 		handleFightDecision(decisionC, decisions, u)
@@ -59,12 +64,12 @@ func handleFight(state *state.State, agents map[uint]agent.BaseAgent, decisionCh
 
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightDecision, u uint) {
+func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightChoice, u uint) {
 	for {
 		received := <-decisionC
 		switch d := received.(type) {
 		case decision.FightDecision:
-			decisions[u] = d
+			decisions[u] = d.Choice
 			return
 		default:
 			continue
