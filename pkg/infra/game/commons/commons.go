@@ -21,3 +21,8 @@ func SaturatingSub(x uint, y uint) uint {
 	res &= -val
 	return res
 }
+
+func DeleteElFromSlice(s []uint, i int) []uint {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}

@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+	"math/rand"
 )
 
 /*
@@ -89,6 +90,25 @@ func main() {
 			}
 		}
 		// TODO: End of Level looting and trading
+		// FIXME: This loot allocation should not stay for long!
+		var weaponLoot = make([]uint, len(agentMap))
+		var shieldLoot = make([]uint, len(agentMap))
+
+		for i := range weaponLoot {
+			weaponLoot[i] = uint(globalState.CurrentLevel * uint(rand.Intn(3)))
+			shieldLoot[i] = uint(globalState.CurrentLevel * uint(rand.Intn(3)))
+		}
+
+		for _, agentState := range globalState.AgentState {
+			allocatedWeapon := rand.Intn(len(weaponLoot))
+			allocatedShield := rand.Intn(len(shieldLoot))
+
+			agentState.BonusAttack = weaponLoot[allocatedWeapon]
+			agentState.BonusDefense = shieldLoot[allocatedShield]
+
+			weaponLoot = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
+			shieldLoot = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
+		}
 	}
 }
 
