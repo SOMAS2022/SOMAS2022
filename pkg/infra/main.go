@@ -16,12 +16,12 @@ Enables peers to send and receive messages with broadcasting possible via non-bl
 
 const numLevels = 60
 
-const numAgents = 10
+const numAgents = 100
 
-const numAgentsRequired = 6
+const numAgentsRequired = numAgents * 2 / 5
 
-const monsterHealth = 10
-const monsterAttack = 20
+const monsterHealth = 100
+const monsterAttack = 240
 
 func main() {
 	agentMap := make(map[uint]agent.Agent)
@@ -54,8 +54,8 @@ func main() {
 		agentStateMap[i] = state.AgentState{
 			Hp:            5,
 			Attack:        5,
-			Defense:       5,
-			AbilityPoints: 5,
+			Defense:       3,
+			AbilityPoints: 10,
 			BonusAttack:   0,
 			BonusDefense:  0,
 		}
@@ -71,6 +71,7 @@ func main() {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
 			coweringAgents, attackSum, shieldSum := handleFightRound(&globalState, agentMap, decisionChannels)
+			fmt.Printf("%d cowards, %d att, %d def, %d agents\n", coweringAgents, attackSum, shieldSum, len(agentMap))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				dealDamage(attack, agentMap, globalState, stateChannels, decisionChannels)
@@ -83,7 +84,7 @@ func main() {
 				}
 			}
 			if len(agentMap) < numAgentsRequired {
-				panic(fmt.Sprintf("Lost in %d rounds", len(agentMap)))
+				panic(fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 			}
 		}
 		// TODO: End of Level looting and trading
@@ -96,6 +97,7 @@ func dealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
 		if newHp == 0 {
 			// kill agent
+			// todo: prune peer channels somehow...
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
 			delete(stateChannels, id)
