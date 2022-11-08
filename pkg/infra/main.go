@@ -84,7 +84,8 @@ func main() {
 				}
 			}
 			if len(agentMap) < numAgentsRequired {
-				panic(fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
+				fmt.Printf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
+				return
 			}
 		}
 		// TODO: End of Level looting and trading
