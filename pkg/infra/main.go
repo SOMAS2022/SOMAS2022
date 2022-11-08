@@ -95,8 +95,8 @@ func main() {
 		var shieldLoot = make([]uint, len(agentMap))
 
 		for i := range weaponLoot {
-			weaponLoot[i] = uint(globalState.CurrentLevel * uint(rand.Intn(3)))
-			shieldLoot[i] = uint(globalState.CurrentLevel * uint(rand.Intn(3)))
+			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
 		for _, agentState := range globalState.AgentState {
@@ -105,9 +105,9 @@ func main() {
 
 			agentState.BonusAttack = weaponLoot[allocatedWeapon]
 			agentState.BonusDefense = shieldLoot[allocatedShield]
+			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
+			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
 
-			weaponLoot = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-			shieldLoot = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
 		}
 	}
 }
