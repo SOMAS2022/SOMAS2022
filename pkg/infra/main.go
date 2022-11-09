@@ -63,8 +63,8 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 		}
 		// TODO: End of Level looting and trading
 		// FIXME: This loot allocation should not stay for long!
-		var weaponLoot = make([]uint, len(agentMap))
-		var shieldLoot = make([]uint, len(agentMap))
+		weaponLoot := make([]uint, len(agentMap))
+		shieldLoot := make([]uint, len(agentMap))
 
 		for i := range weaponLoot {
 			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
@@ -128,16 +128,16 @@ func initialise() (map[uint]agent.Agent, map[uint]chan<- state.State, map[uint]<
 		}
 	}
 
-	var delta = float64(0.8)
-	var M = math.Ceil(float64(config.Config.StartingNumAgents) * float64(config.Config.ThresholdPercentage))
-	var N = float64(config.Config.StartingNumAgents)
-	var AT = float64(config.Config.StartingAttackStrength)
-	var SH = float64(config.Config.StartingShieldStrength)
-	var HP = float64(config.Config.StartingHealthPoints)
-	var L = float64(config.Config.NumLevels)
+	delta := 0.8
+	M := math.Ceil(float64(config.Config.StartingNumAgents) * float64(config.Config.ThresholdPercentage))
+	N := float64(config.Config.StartingNumAgents)
+	AT := float64(config.Config.StartingAttackStrength)
+	SH := float64(config.Config.StartingShieldStrength)
+	HP := float64(config.Config.StartingHealthPoints)
+	L := float64(config.Config.NumLevels)
 
-	var monsterResilienceStart = math.Ceil(N * AT * delta / L)
-	var monsterDamageStart = math.Ceil(((N*HP + N*SH) / (5 * L)) * delta * (1 - (M / N)))
+	monsterResilienceStart := math.Ceil(N * AT * delta / L)
+	monsterDamageStart := math.Ceil(((N*HP + N*SH) / (5 * L)) * delta * (1 - (M / N)))
 
 	globalState := state.State{
 		MonsterHealth: uint(monsterResilienceStart),
