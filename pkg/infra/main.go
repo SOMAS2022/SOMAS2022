@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/stage/fight"
 	"infra/game/state"
 	"infra/logging"
+	"math"
 	"math/rand"
 )
 
@@ -17,15 +19,6 @@ Each agent is initialised with these modes of communication
 Whereby the peer channels enable bidirectional p2p communication
 Enables peers to send and receive messages with broadcasting possible via non-blocking sends
 */
-
-const numLevels = 60
-
-const numAgents = 100
-
-const numAgentsRequired = numAgents * 2 / 5
-
-const monsterHealth = 100
-const monsterAttack = 240
 
 func main() {
 	// define flags
@@ -39,9 +32,9 @@ func main() {
 }
 
 func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, stateChannels map[uint]chan<- state.State) {
-	for globalState.CurrentLevel = 0; globalState.CurrentLevel < numLevels; globalState.CurrentLevel++ {
+	for globalState.CurrentLevel = 0; globalState.CurrentLevel < config.Config.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
-		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
+		for globalState.MonsterHealth != 0 {
 			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, decisionChannels)
 			logging.Log.WithFields(logging.LogField{
 				"currLevel": globalState.CurrentLevel,
@@ -61,7 +54,9 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 					// TODO: Monster disruptive ability
 				}
 			}
-			if len(agentMap) < numAgentsRequired {
+			if float64(len(agentMap)) < math.Ceil(float64(config.Config.ThresholdPercentage)*float64(config.Config.StartingNumAgents)) {
+				// FIXME: This comparison is wrong. Presumably, we need to compare to number of agents that have started this
+				// particular round as opposed to the game, but we don't have a way to store this afaik
 				fmt.Printf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
 				return
 			}
@@ -84,7 +79,6 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			agentState.BonusDefense = shieldLoot[allocatedShield]
 			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
 			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
-
 		}
 	}
 }
@@ -97,39 +91,57 @@ func initialise() (map[uint]agent.Agent, map[uint]chan<- state.State, map[uint]<
 	stateChannels := make(map[uint]chan<- state.State)
 	decisionChannels := make(map[uint]<-chan decision.Decision)
 
-	for i := uint(0); i < numAgents; i++ {
-		//todo: add peer channels
+	for a := range config.Config.AgentConfig {
+		for i := uint(0); i < config.Config.AgentConfig[a].Quantity; i++ {
+			// TODO: add peer channels
 
-		stateChan := make(chan state.State)
-		decisionChan := make(chan decision.Decision)
+			stateChan := make(chan state.State)
+			decisionChan := make(chan decision.Decision)
 
-		stateChannels[i] = stateChan
-		decisionChannels[i] = decisionChan
+			stateChannels[i] = stateChan
+			decisionChannels[i] = decisionChan
 
-		agentMap[i] = agent.Agent{
-			BaseAgent: agent.BaseAgent{
-				Communication: commons.Communication{
-					Peer:     nil,
-					Receiver: stateChan,
-					Sender:   decisionChan,
+			// TODO: dynamically assign agent strategies when more are implemented
+			var strategy agent.Strategy
+			if config.Config.AgentConfig[a].Strategy == "random" {
+				strategy = agent.RandomAgent{}
+			}
+
+			agentMap[i] = agent.Agent{
+				BaseAgent: agent.BaseAgent{
+					Communication: commons.Communication{
+						Peer:     nil,
+						Receiver: stateChan,
+						Sender:   decisionChan,
+					},
+					Id: i,
 				},
-				Id: i,
-			},
-			Strategy: agent.RandomAgent{},
-		}
-		agentStateMap[i] = state.AgentState{
-			Hp:            5,
-			Attack:        5,
-			Defense:       3,
-			AbilityPoints: 10,
-			BonusAttack:   0,
-			BonusDefense:  0,
+				Strategy: strategy,
+			}
+			agentStateMap[i] = state.AgentState{
+				Hp:           config.Config.StartingHealthPoints,
+				Attack:       config.Config.StartingAttackStrength,
+				Defense:      config.Config.StartingShieldStrength,
+				BonusAttack:  0,
+				BonusDefense: 0,
+			}
 		}
 	}
 
+	var delta = float64(0.8)
+	var M = math.Ceil(float64(config.Config.StartingNumAgents) * float64(config.Config.ThresholdPercentage))
+	var N = float64(config.Config.StartingNumAgents)
+	var AT = float64(config.Config.StartingAttackStrength)
+	var SH = float64(config.Config.StartingShieldStrength)
+	var HP = float64(config.Config.StartingHealthPoints)
+	var L = float64(config.Config.NumLevels)
+
+	var monsterResilienceStart = math.Ceil(N * AT * delta / L)
+	var monsterDamageStart = math.Ceil(((N*HP + N*SH) / (5 * L)) * delta * (1 - (M / N)))
+
 	globalState := state.State{
-		MonsterHealth: monsterHealth,
-		MonsterAttack: monsterAttack,
+		MonsterHealth: uint(monsterResilienceStart),
+		MonsterAttack: uint(monsterDamageStart),
 		AgentState:    agentStateMap,
 	}
 	return agentMap, stateChannels, decisionChannels, globalState

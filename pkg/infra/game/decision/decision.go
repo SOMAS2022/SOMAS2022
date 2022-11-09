@@ -36,7 +36,7 @@ type Fight struct {
 }
 
 func (f Fight) HandleAction(s state.AgentState) FightAction {
-	if f.Attack <= s.TotalAttack() && f.Defend <= s.TotalDefense() && f.Attack+f.Defend <= s.AbilityPoints {
+	if f.Attack <= s.TotalAttack() && f.Defend <= s.TotalDefense() {
 		return f
 	} else {
 		return Cower{}
