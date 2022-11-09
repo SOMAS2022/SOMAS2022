@@ -67,16 +67,7 @@ func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]
 		received := <-decisionC
 		switch d := received.(type) {
 		case decision.FightDecision:
-			switch f := d.Action.(type) {
-			case decision.Fight:
-				if f.Attack <= s.TotalAttack() && f.Defend <= s.TotalDefense() && f.Attack+f.Defend <= s.AbilityPoints {
-					decisions[agentID] = f
-				} else {
-					decisions[agentID] = decision.Cower{}
-				}
-			case decision.Cower:
-				decisions[agentID] = f
-			}
+			decisions[agentID] = d.Action.HandleAction(s)
 			return
 		default:
 			continue
