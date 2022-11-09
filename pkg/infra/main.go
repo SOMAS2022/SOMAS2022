@@ -1,13 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/stage/fight"
 	"infra/game/state"
 	"math/rand"
+	"os"
 )
 
 /*
@@ -26,8 +29,30 @@ const monsterHealth = 100
 const monsterAttack = 240
 
 func main() {
+	// define flags
+	configFile := flag.String("c", "config.json", "configuration file")
+	useJSONFormatter := flag.Bool("j", false, "whether to use JSONFormatter for logging")
+	flag.Parse()
+
+	initLogger(*useJSONFormatter)
+
+	log.Debug("read configuration from file: ", *configFile)
+
 	agentMap, stateChannels, decisionChannels, globalState := initialise()
 	gameLoop(globalState, agentMap, decisionChannels, stateChannels)
+}
+
+func initLogger(useJSONFormatter bool) {
+	if useJSONFormatter {
+		// Log as JSON instead of the default ASCII formatter.
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{})
+	}
+	// Output to stdout instead of the default stderr
+	log.SetOutput(os.Stdout)
+	// Only log the warning severity or above.
+	log.SetLevel(log.DebugLevel)
 }
 
 func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, stateChannels map[uint]chan<- state.State) {
