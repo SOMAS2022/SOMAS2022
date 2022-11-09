@@ -1,7 +1,6 @@
 package fight
 
 import (
-	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -32,7 +31,7 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) (uint, uint, uint) {
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, baseHealth uint) (uint, uint, uint) {
 	for _, a := range agents {
 		go a.Strategy.HandleFight(*state, a.BaseAgent)
 	}
@@ -54,7 +53,7 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionC
 		case decision.Cower:
 			coweringAgents++
 			if entry, ok := state.AgentState[agentID]; ok {
-				entry.Hp += uint(math.Ceil(0.05 * float64(config.Config.StartingHealthPoints)))
+				entry.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				state.AgentState[agentID] = entry
 			}
 		}
