@@ -33,5 +33,5 @@ jobs:
           go-version-file: './pkg/infra/go.mod'
       - name: Test performance of agent
         run: go run main.go ${{ matrix.agents }}
-        working-directory: pkg/infra
+        working-directory: .
         continue-on-error: false
