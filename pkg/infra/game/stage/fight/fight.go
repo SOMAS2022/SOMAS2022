@@ -39,21 +39,33 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 	var shieldSum uint
 
 	for agentID, d := range decisionMap {
-		switch v := d.(type) {
-		case decision.Fight:
-			attackSum += v.Attack
-			shieldSum += v.Defend
-			//if entry, ok := state.AgentState[agentID]; ok {
-			//	//entry.Stamina -=
-			//}
+		agentState := state.AgentState[agentID]
+
+		switch d {
+		case decision.Attack:
+			if agentState.Stamina > agentState.BonusAttack {
+				attackSum += agentState.TotalAttack()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
+			} else {
+				coweringAgents++
+				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+				agentState.Stamina += 1
+			}
+		case decision.Defend:
+			if agentState.Stamina > agentState.BonusDefense {
+				shieldSum += agentState.TotalDefense()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
+			} else {
+				coweringAgents++
+				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+				agentState.Stamina += 1
+			}
 		case decision.Cower:
 			coweringAgents++
-			if entry, ok := state.AgentState[agentID]; ok {
-				entry.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
-				entry.Stamina += 1
-				state.AgentState[agentID] = entry
-			}
+			agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+			agentState.Stamina += 1
 		}
+		state.AgentState[agentID] = agentState
 	}
 
 	return coweringAgents, attackSum, shieldSum
@@ -63,5 +75,5 @@ func processAgentDecision(state state.State, a agent.Agent, decisionMap map[uint
 	decisionChan := make(chan decision.FightAction)
 	defer close(decisionChan)
 	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan)
-	decisionMap[i] = (<-decisionChan).HandleAction(state.AgentState[i])
+	decisionMap[i] = <-decisionChan
 }

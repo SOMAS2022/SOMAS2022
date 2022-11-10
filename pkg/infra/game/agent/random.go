@@ -10,12 +10,13 @@ type RandomAgent struct {
 }
 
 func (RandomAgent) HandleFight(state state.State, baseAgent BaseAgent, decisionC chan<- decision.FightAction) {
-	fight := rand.Intn(2) == 0
-	if fight {
-		attackVal := rand.Intn(int(state.AgentState[baseAgent.Id].TotalAttack()))
-		defendVal := rand.Intn(int(state.AgentState[baseAgent.Id].TotalDefense()))
-		decisionC <- decision.Fight{Attack: uint(attackVal), Defend: uint(defendVal)}
-	} else {
-		decisionC <- decision.Cower{}
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		decisionC <- decision.Cower
+	case 1:
+		decisionC <- decision.Attack
+	case 2:
+		decisionC <- decision.Defend
 	}
 }
