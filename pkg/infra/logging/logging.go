@@ -7,6 +7,8 @@ import (
 
 var Log = logrus.New()
 
+type LogField = logrus.Fields
+
 func InitLogger(useJSONFormatter bool) {
 	if useJSONFormatter {
 		// Log as JSON instead of the default ASCII formatter.

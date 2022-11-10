@@ -43,7 +43,13 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
 			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, decisionChannels)
-			logging.Log.Info(fmt.Sprintf("%4d cowards, %4d att, %4d def, %4d agents\n", coweringAgents, attackSum, shieldSum, len(agentMap)))
+			logging.Log.WithFields(logging.LogField{
+				"currLevel": globalState.CurrentLevel,
+				"numCoward": coweringAgents,
+				"attackSum": attackSum,
+				"shieldSum": shieldSum,
+				"numAgents": len(agentMap),
+			}).Info(fmt.Sprintf("Battle summary"))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, globalState, stateChannels, decisionChannels)
