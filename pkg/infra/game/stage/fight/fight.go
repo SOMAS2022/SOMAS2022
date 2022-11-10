@@ -32,7 +32,6 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, prevDecis
 	for agentID, agent := range agents {
 		handleFightDecision(agent.FightDecisionChannel, decisions, agentID, agent.State)
 	}
-
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
@@ -54,9 +53,7 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, prevDecis
 }
 
 func handleFightDecision(decisionC chan decision.FightDecision, decisions map[uint]decision.FightDecision, agentID uint, s state.AgentState) {
-	for {
-		receivedDecision := <-decisionC
-		receivedDecision.ValidateDecision(s)
-		decisions[agentID] = receivedDecision
-	}
+	receivedDecision := <-decisionC
+	receivedDecision.ValidateDecision(s)
+	decisions[agentID] = receivedDecision
 }

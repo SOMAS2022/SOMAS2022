@@ -16,7 +16,7 @@ func (d *FightDecision) ValidateDecision(s state.AgentState) {
 	if d.Cower {
 		return
 	}
-	if d.Attack <= s.TotalAttack() && d.Defend <= s.TotalDefense() && d.Attack+d.Defend <= s.AbilityPoints {
+	if !(d.Attack <= s.TotalAttack() && d.Defend <= s.TotalDefense() && d.Attack+d.Defend <= s.AbilityPoints) {
 		d.Cower = true
 	}
 }

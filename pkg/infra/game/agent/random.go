@@ -16,6 +16,7 @@ func (RandomAgent) HandleFight(state state.State, agent Agent, prevDecisions map
 		attackVal := rand.Intn(int(agent.State.TotalAttack()))
 		defendVal := rand.Intn(int(agent.State.TotalDefense()))
 		action = decision.FightDecision{Cower: false, Attack: uint(attackVal), Defend: uint(defendVal)}
+
 	} else {
 		action = decision.FightDecision{Cower: true}
 	}
