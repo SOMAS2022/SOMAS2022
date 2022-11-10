@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 )
 
 type Communication struct {
-	Peer     []chan message.Message
-	Receiver <-chan state.State
-	Sender   chan<- decision.Decision
+	Peer   []chan message.Message
+	Sender chan<- decision.Decision
 }
 
 func SaturatingSub(x uint, y uint) uint {
