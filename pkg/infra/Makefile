@@ -6,6 +6,9 @@ build:
 
 run:
 	  go run main.go
+
+runWithJSON:
+		go run main.go -j
  
 clean:
 		go clean
