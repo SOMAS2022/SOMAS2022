@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/joho/godotenv"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -14,6 +13,8 @@ import (
 	"log"
 	"math"
 	"math/rand"
+
+	"github.com/joho/godotenv"
 )
 
 /*
@@ -57,8 +58,6 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 				}
 			}
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				// FIXME: This comparison is wrong. Presumably, we need to compare to number of agents that have started this
-				// particular round as opposed to the game, but we don't have a way to store this afaik
 				log.Printf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
 				return
 			}
