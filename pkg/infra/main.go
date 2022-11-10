@@ -6,7 +6,6 @@ import (
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
-	"infra/game/decision"
 	gamemath "infra/game/math"
 	"infra/game/stage/fight"
 	"infra/game/state"
@@ -94,7 +93,6 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 	agentMap := make(map[uint]agent.Agent)
 
 	agentStateMap := make(map[uint]state.AgentState)
-	decisionChannels := make(map[uint]<-chan decision.Decision)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -112,7 +110,7 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 	}
 
-	instantiateAgent(gameConfig, decisionChannels, agentMap, agentStateMap, agent.RandomAgent{})
+	instantiateAgent(gameConfig, agentMap, agentStateMap, agent.RandomAgent{})
 
 	gameConfig.InitialNumAgents = gameConfig.AgentRandomQty
 
@@ -125,16 +123,11 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	decisionChannels map[uint]<-chan decision.Decision,
 	agentMap map[uint]agent.Agent,
 	agentStateMap map[uint]state.AgentState,
 	strategy S) {
 	for i := uint(0); i < gameConfig.AgentRandomQty; i++ {
 		// TODO: add peer channels
-		decisionChan := make(chan decision.Decision)
-
-		decisionChannels[i] = decisionChan
-
 		agentMap[i] = agent.Agent{
 			BaseAgent: agent.BaseAgent{
 				Communication: commons.Communication{

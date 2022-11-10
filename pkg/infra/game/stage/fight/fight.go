@@ -43,10 +43,14 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 		case decision.Fight:
 			attackSum += v.Attack
 			shieldSum += v.Defend
+			//if entry, ok := state.AgentState[agentID]; ok {
+			//	//entry.Stamina -=
+			//}
 		case decision.Cower:
 			coweringAgents++
 			if entry, ok := state.AgentState[agentID]; ok {
 				entry.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+				entry.Stamina += 1
 				state.AgentState[agentID] = entry
 			}
 		}

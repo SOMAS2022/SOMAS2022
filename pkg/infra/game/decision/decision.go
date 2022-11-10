@@ -2,16 +2,6 @@ package decision
 
 import "infra/game/state"
 
-type Decision interface {
-	decisionSealed()
-}
-
-type FightDecision struct {
-	Action FightAction
-}
-
-func (FightDecision) decisionSealed() {}
-
 type LootDecision struct{}
 
 func (LootDecision) decisionSealed() {}
