@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/joho/godotenv"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -91,6 +92,11 @@ func initialise() (map[uint]agent.Agent, map[uint]chan<- state.State, map[uint]<
 
 	stateChannels := make(map[uint]chan<- state.State)
 	decisionChannels := make(map[uint]<-chan decision.Decision)
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalln("No .env file located, using defaults")
+	}
 
 	gameConfig := config.GameConfig{
 		NumLevels:              config.EnvToUint("LEVELS", 60),
