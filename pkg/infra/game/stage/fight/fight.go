@@ -5,6 +5,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+	"math"
 )
 
 func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, stateChannels map[uint]chan<- state.State, decisionChannels map[uint]<-chan decision.Decision) {
@@ -20,18 +21,17 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 			delete(decisionChannels, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
-				Hp:            newHp,
-				Attack:        agentState.Attack,
-				Defense:       agentState.Defense,
-				AbilityPoints: agentState.AbilityPoints,
-				BonusAttack:   agentState.BonusAttack,
-				BonusDefense:  agentState.BonusDefense,
+				Hp:           newHp,
+				Attack:       agentState.Attack,
+				Defense:      agentState.Defense,
+				BonusAttack:  agentState.BonusAttack,
+				BonusDefense: agentState.BonusDefense,
 			}
 		}
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) (uint, uint, uint) {
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, baseHealth uint) (uint, uint, uint) {
 	for _, a := range agents {
 		go a.Strategy.HandleFight(*state, a.BaseAgent)
 	}
@@ -53,7 +53,7 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionC
 		case decision.Cower:
 			coweringAgents++
 			if entry, ok := state.AgentState[agentID]; ok {
-				entry.Hp += 1
+				entry.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				state.AgentState[agentID] = entry
 			}
 		}

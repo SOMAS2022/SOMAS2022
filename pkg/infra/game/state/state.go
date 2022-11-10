@@ -1,12 +1,11 @@
 package state
 
 type AgentState struct {
-	Hp            uint
-	Attack        uint
-	Defense       uint
-	AbilityPoints uint
-	BonusAttack   uint
-	BonusDefense  uint
+	Hp           uint
+	Attack       uint
+	Defense      uint
+	BonusAttack  uint
+	BonusDefense uint
 }
 
 func (a AgentState) TotalAttack() uint {
