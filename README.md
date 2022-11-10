@@ -26,7 +26,7 @@ Following some Golang Standards [[1]](https://github.com/golang-standards/projec
 
 ## Programming Language
 
-* Download [GoLang](https://go.dev/dl/) 1.16 (?)
+* Download [GoLang](https://go.dev/dl/) (1.19)
 
 ### Get Started
 
@@ -38,7 +38,7 @@ Following some Golang Standards [[1]](https://github.com/golang-standards/projec
 
 ## Contribution Guidelines
 
-A lot of these guidelines are from the [SOMAS2020 repo](https://github.com/SOMAS2020/SOMAS2020/blob/main/docs/SETUP.md) :)
+A lot of these guidelines are from the [SOMAS2021](https://github.com/SOMAS2021/SOMAS2021/blob/main/README.md) and [SOMAS2020](https://github.com/SOMAS2020/SOMAS2020/blob/main/docs/SETUP.md) repos :)
 
 ### Coding Rules
 
@@ -63,14 +63,15 @@ s4 := S{name: "pittson"} // OK if `pittson`'s age is 0
 6. Do not use system-specific packages (e.g. `internal/syscall/unix`).
 
 7. Use the superior `errors.Errorf` to create your errors so that we have a stack trace.
+
 ### Code Reviews and PRs
 - Do not push to the `main` branch. Make your own branch and create a PR into `main` when it's ready for review.
 - When working on your own team's features, please name your branch as: `teamX-FEATURE_NAME-WHATEVER_YOU_LIKE_HERE`
 - Do not use force push. Use `git push --force-with-lease` instead.
 - When ready to merge into your team's feature branch, create a PR to merge into `teamX-FEATURE_NAME`. When the feature is complete, then create a PR into `main`.
 - Make sure that you have reviewed your own code before creating the PR.
-- Keep PRs small: if they are too large, you will be told to split your code into smaller PRs. This ensures they can be reviewed properly.
-- You need to make sure your code is up-to-date with the `main` branch. Merge commits are *not allowed*: learn how to rebase. Ask someone in the #git-env-infra channel if you don't know how to do this.
+- Keep PRs small and include a description of what's been covered on your PR. This ensures they can be reviewed properly.
+- You need to make sure your code is up-to-date with the `main` branch. Merge commits are *not allowed*: [learn how to rebase](https://stackoverflow.com/questions/35901915/how-to-rebase-after-squashing-commits-in-the-original-branch/70994400#70994400).
 - Do not review your own code. That completely defeats the purpose of code review.
 - Team leads: when doing a PR for your team's code, do not approve it yourself - get another team lead to review it.
 - Review PRs in a timely manner! Ideally by the next day so that other teams aren't blocked.
