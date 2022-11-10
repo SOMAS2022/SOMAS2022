@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State) {
+func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState *state.State) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -31,9 +31,15 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 
 func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealth uint) (uint, uint, uint) {
 	decisionMap := make(map[uint]decision.FightAction)
+	channels := make(map[uint]chan decision.FightAction)
 	for i, a := range agents {
-		processAgentDecision(*state, a, decisionMap, i)
+		channels[i] = startAgentFightHandlers(*state, a)
 	}
+	for i, dChan := range channels {
+		decisionMap[i] = <-dChan
+		close(dChan)
+	}
+
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
@@ -71,9 +77,8 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 	return coweringAgents, attackSum, shieldSum
 }
 
-func processAgentDecision(state state.State, a agent.Agent, decisionMap map[uint]decision.FightAction, i uint) {
+func startAgentFightHandlers(state state.State, a agent.Agent) chan decision.FightAction {
 	decisionChan := make(chan decision.FightAction)
-	defer close(decisionChan)
 	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan)
-	decisionMap[i] = <-decisionChan
+	return decisionChan
 }

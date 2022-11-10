@@ -49,12 +49,12 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 			}).Info(fmt.Sprintf("Battle summary"))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, globalState)
+				fight.DealDamage(attack, agentMap, &globalState)
 			} else {
 				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
 				if globalState.MonsterHealth > 0 {
 					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, globalState)
+					fight.DealDamage(damageTaken, agentMap, &globalState)
 					// TODO: Monster disruptive ability
 				}
 			}
@@ -64,6 +64,8 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 			}
 		}
 		//todo: fix this
+		//todo: There is a weird bug due to the mathematics that agents gain more health from cowering than monster attack when all cower
+		//todo: Results in infinite game run-through
 		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, globalState.CurrentLevel)
 		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel)
 
@@ -77,7 +79,7 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		for _, agentState := range globalState.AgentState {
+		for i, agentState := range globalState.AgentState {
 			allocatedWeapon := rand.Intn(len(weaponLoot))
 			allocatedShield := rand.Intn(len(shieldLoot))
 
@@ -85,6 +87,8 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 			agentState.BonusDefense = shieldLoot[allocatedShield]
 			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
 			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
+
+			globalState.AgentState[i] = agentState
 		}
 	}
 }
