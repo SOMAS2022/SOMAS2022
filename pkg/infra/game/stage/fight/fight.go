@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, stateChannels map[uint]chan<- state.State, decisionChannels map[uint]<-chan decision.Decision) {
+func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, decisionChannels map[uint]<-chan decision.Decision) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -17,7 +17,6 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 			// todo: prune peer channels somehow...
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
-			delete(stateChannels, id)
 			delete(decisionChannels, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{

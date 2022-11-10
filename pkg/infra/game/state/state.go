@@ -2,6 +2,7 @@ package state
 
 type AgentState struct {
 	Hp           uint
+	Stamina      uint
 	Attack       uint
 	Defense      uint
 	BonusAttack  uint
