@@ -34,15 +34,18 @@ func main() {
 
 	logging.InitLogger(*useJSONFormatter)
 
-	agentMap, stateChannels, decisionChannels, globalState := initialise()
-	gameLoop(globalState, agentMap, decisionChannels, stateChannels)
+	agentMap, globalState := initialise()
+	gameLoop(globalState, agentMap)
 }
 
-func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, stateChannels map[uint]chan<- state.State) {
+func gameLoop(globalState state.State, agentMap map[uint]agent.Agent) {
+	var prevDecisions map[uint]decision.FightDecision
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < numLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
-			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, decisionChannels)
+
+			coweringAgents, attackSum, shieldSum, decisions := fight.HandleFightRound(&globalState, agentMap, prevDecisions)
+			prevDecisions = decisions
 			logging.Log.WithFields(logging.LogField{
 				"currLevel": globalState.CurrentLevel,
 				"numCoward": coweringAgents,
@@ -52,12 +55,12 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			}).Info(fmt.Sprintf("Battle summary"))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, globalState, stateChannels, decisionChannels)
+				fight.DealDamage(attack, agentMap, globalState)
 			} else {
 				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
 				if globalState.MonsterHealth > 0 {
 					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, globalState, stateChannels, decisionChannels)
+					fight.DealDamage(damageTaken, agentMap, globalState)
 					// TODO: Monster disruptive ability
 				}
 			}
@@ -76,61 +79,44 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		for _, agentState := range globalState.AgentState {
+		for _, agent := range agentMap {
 			allocatedWeapon := rand.Intn(len(weaponLoot))
 			allocatedShield := rand.Intn(len(shieldLoot))
 
-			agentState.BonusAttack = weaponLoot[allocatedWeapon]
-			agentState.BonusDefense = shieldLoot[allocatedShield]
+			agent.State.BonusAttack = weaponLoot[allocatedWeapon]
+			agent.State.BonusDefense = shieldLoot[allocatedShield]
 			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
 			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
-
 		}
 	}
 }
 
-func initialise() (map[uint]agent.Agent, map[uint]chan<- state.State, map[uint]<-chan decision.Decision, state.State) {
+func initialise() (map[uint]agent.Agent, state.State) {
 	agentMap := make(map[uint]agent.Agent)
-
-	agentStateMap := make(map[uint]state.AgentState)
-
-	stateChannels := make(map[uint]chan<- state.State)
-	decisionChannels := make(map[uint]<-chan decision.Decision)
 
 	for i := uint(0); i < numAgents; i++ {
 		//todo: add peer channels
 
-		stateChan := make(chan state.State)
-		decisionChan := make(chan decision.Decision)
-
-		stateChannels[i] = stateChan
-		decisionChannels[i] = decisionChan
-
 		agentMap[i] = agent.Agent{
-			BaseAgent: agent.BaseAgent{
-				Communication: commons.Communication{
-					Peer:     nil,
-					Receiver: stateChan,
-					Sender:   decisionChan,
-				},
-				Id: i,
+			Strategy:             agent.RandomAgent{},
+			StateChannel:         make(chan state.State),
+			FightDecisionChannel: make(chan decision.FightDecision),
+			State: state.AgentState{
+				Hp:            5,
+				Attack:        5,
+				Defense:       3,
+				AbilityPoints: 10,
+				BonusAttack:   0,
+				BonusDefense:  0,
 			},
-			Strategy: agent.RandomAgent{},
 		}
-		agentStateMap[i] = state.AgentState{
-			Hp:            5,
-			Attack:        5,
-			Defense:       3,
-			AbilityPoints: 10,
-			BonusAttack:   0,
-			BonusDefense:  0,
-		}
+
 	}
 
 	globalState := state.State{
 		MonsterHealth: monsterHealth,
 		MonsterAttack: monsterAttack,
-		AgentState:    agentStateMap,
+		// AgentState:    agentStateMap,
 	}
-	return agentMap, stateChannels, decisionChannels, globalState
+	return agentMap, globalState
 }
