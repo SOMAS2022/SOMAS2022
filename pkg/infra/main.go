@@ -100,7 +100,7 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 
 	err := godotenv.Load()
 	if err != nil {
-		logging.Log.Infoln("No .env file located, using defaults")
+		logging.Log.Warnln("No .env file located, using defaults")
 	}
 
 	gameConfig := config.GameConfig{
