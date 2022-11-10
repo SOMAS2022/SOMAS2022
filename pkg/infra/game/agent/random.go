@@ -9,15 +9,16 @@ import (
 type RandomAgent struct {
 }
 
-func (r RandomAgent) HandleFight(state state.State, baseAgent BaseAgent) {
+func (RandomAgent) HandleFight(state state.State, agent Agent, prevDecisions map[uint]decision.FightDecision) {
 	fight := rand.Intn(2) == 0
-	var action decision.FightAction
+	var action decision.FightDecision
 	if fight {
-		attackVal := rand.Intn(int(state.AgentState[baseAgent.Id].TotalAttack()))
-		defendVal := rand.Intn(int(state.AgentState[baseAgent.Id].TotalDefense()))
-		action = decision.Fight{Attack: uint(attackVal), Defend: uint(defendVal)}
+		attackVal := rand.Intn(int(agent.State.TotalAttack()))
+		defendVal := rand.Intn(int(agent.State.TotalDefense()))
+		action = decision.FightDecision{Cower: false, Attack: uint(attackVal), Defend: uint(defendVal)}
 	} else {
-		action = decision.Cower{}
+		action = decision.FightDecision{Cower: true}
 	}
-	baseAgent.Communication.Sender <- decision.FightDecision{Action: action}
+	// baseAgent.Communication.Sender <- decision.FightDecision{Action: action}
+	agent.FightDecisionChannel <- action
 }

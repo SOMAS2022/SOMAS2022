@@ -7,7 +7,18 @@ type Decision interface {
 }
 
 type FightDecision struct {
-	Action FightAction
+	Cower  bool
+	Attack uint
+	Defend uint
+}
+
+func (d *FightDecision) ValidateDecision(s state.AgentState) {
+	if d.Cower {
+		return
+	}
+	if d.Attack <= s.TotalAttack() && d.Defend <= s.TotalDefense() && d.Attack+d.Defend <= s.AbilityPoints {
+		d.Cower = true
+	}
 }
 
 func (FightDecision) decisionSealed() {}
@@ -19,26 +30,3 @@ func (LootDecision) decisionSealed() {}
 type HPPoolDecision struct{}
 
 func (HPPoolDecision) decisionSealed() {}
-
-type FightAction interface {
-	HandleAction(state.AgentState) FightAction
-}
-
-type Cower struct{}
-
-func (c Cower) HandleAction(state.AgentState) FightAction {
-	return c
-}
-
-type Fight struct {
-	Attack uint
-	Defend uint
-}
-
-func (f Fight) HandleAction(s state.AgentState) FightAction {
-	if f.Attack <= s.TotalAttack() && f.Defend <= s.TotalDefense() && f.Attack+f.Defend <= s.AbilityPoints {
-		return f
-	} else {
-		return Cower{}
-	}
-}

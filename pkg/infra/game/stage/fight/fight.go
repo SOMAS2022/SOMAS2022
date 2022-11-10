@@ -7,38 +7,30 @@ import (
 	"infra/game/state"
 )
 
-func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, stateChannels map[uint]chan<- state.State, decisionChannels map[uint]<-chan decision.Decision) {
+func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State) {
 	splitDamage := attack / uint(len(agentMap))
-	for id, agentState := range globalState.AgentState {
-		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
+	for id, agent := range agentMap {
+		newHp := commons.SaturatingSub(agent.State.Hp, splitDamage)
 		if newHp == 0 {
 			// kill agent
 			// todo: prune peer channels somehow...
-			delete(globalState.AgentState, id)
 			delete(agentMap, id)
-			delete(stateChannels, id)
-			delete(decisionChannels, id)
 		} else {
-			globalState.AgentState[id] = state.AgentState{
-				Hp:            newHp,
-				Attack:        agentState.Attack,
-				Defense:       agentState.Defense,
-				AbilityPoints: agentState.AbilityPoints,
-				BonusAttack:   agentState.BonusAttack,
-				BonusDefense:  agentState.BonusDefense,
-			}
+			agent.State.Hp = newHp
+			agentMap[id] = agent
 		}
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision) (uint, uint, uint) {
-	for _, a := range agents {
-		go a.Strategy.HandleFight(*state, a.BaseAgent)
-	}
-	decisions := make(map[uint]decision.FightAction)
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, prevDecisions map[uint]decision.FightDecision) (uint, uint, uint, map[uint]decision.FightDecision) {
 
-	for agentID, decisionC := range decisionChannels {
-		handleFightDecision(decisionC, decisions, agentID, state.AgentState[agentID])
+	for _, a := range agents {
+		go a.Strategy.HandleFight(*state, a, prevDecisions)
+	}
+	decisions := make(map[uint]decision.FightDecision)
+
+	for agentID, agent := range agents {
+		handleFightDecision(agent.FightDecisionChannel, decisions, agentID, agent.State)
 	}
 
 	var coweringAgents uint
@@ -46,31 +38,25 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionC
 	var shieldSum uint
 
 	for agentID, d := range decisions {
-		switch v := d.(type) {
-		case decision.Fight:
-			attackSum += v.Attack
-			shieldSum += v.Defend
-		case decision.Cower:
+		if d.Cower {
 			coweringAgents++
-			if entry, ok := state.AgentState[agentID]; ok {
-				entry.Hp += 1
-				state.AgentState[agentID] = entry
+			if entry, ok := agents[agentID]; ok {
+				entry.State.Hp += 1
+				agents[agentID] = entry
 			}
+		} else {
+			attackSum += d.Attack
+			shieldSum += d.Defend
 		}
 	}
 
-	return coweringAgents, attackSum, shieldSum
+	return coweringAgents, attackSum, shieldSum, decisions
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, agentID uint, s state.AgentState) {
+func handleFightDecision(decisionC chan decision.FightDecision, decisions map[uint]decision.FightDecision, agentID uint, s state.AgentState) {
 	for {
-		received := <-decisionC
-		switch d := received.(type) {
-		case decision.FightDecision:
-			decisions[agentID] = d.Action.HandleAction(s)
-			return
-		default:
-			continue
-		}
+		receivedDecision := <-decisionC
+		receivedDecision.ValidateDecision(s)
+		decisions[agentID] = receivedDecision
 	}
 }

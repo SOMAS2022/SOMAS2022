@@ -1,20 +1,22 @@
 package agent
 
 import (
-	"infra/game/commons"
+	"infra/game/decision"
 	"infra/game/state"
 )
 
 type Strategy interface {
-	HandleFight(state state.State, baseAgent BaseAgent)
+	HandleFight(state state.State, agent Agent, prevDecisions map[uint]decision.FightDecision)
 }
 
 type Agent struct {
-	BaseAgent BaseAgent
-	Strategy  Strategy
+	Strategy             Strategy
+	StateChannel         chan state.State
+	FightDecisionChannel chan decision.FightDecision
+	State                state.AgentState
 }
 
-type BaseAgent struct {
-	Communication commons.Communication
-	Id            uint
-}
+// type BaseAgent struct {
+// 	Communication commons.Communication
+// 	Id            uint
+// }

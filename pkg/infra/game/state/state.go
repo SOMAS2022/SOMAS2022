@@ -22,5 +22,4 @@ type State struct {
 	HpPool        uint
 	MonsterHealth uint
 	MonsterAttack uint
-	AgentState    map[uint]AgentState
 }
