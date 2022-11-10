@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, decisionChannels map[uint]<-chan decision.Decision) {
+func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -17,7 +17,6 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 			// todo: prune peer channels somehow...
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
-			delete(decisionChannels, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
 				Hp:           newHp,
@@ -30,21 +29,16 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, baseHealth uint) (uint, uint, uint) {
-	for _, a := range agents {
-		go a.Strategy.HandleFight(*state, a.BaseAgent)
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealth uint) (uint, uint, uint) {
+	decisionMap := make(map[uint]decision.FightAction)
+	for i, a := range agents {
+		processAgentDecision(*state, a, decisionMap, i)
 	}
-	decisions := make(map[uint]decision.FightAction)
-
-	for agentID, decisionC := range decisionChannels {
-		handleFightDecision(decisionC, decisions, agentID, state.AgentState[agentID])
-	}
-
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
 
-	for agentID, d := range decisions {
+	for agentID, d := range decisionMap {
 		switch v := d.(type) {
 		case decision.Fight:
 			attackSum += v.Attack
@@ -61,15 +55,9 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionC
 	return coweringAgents, attackSum, shieldSum
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, agentID uint, s state.AgentState) {
-	for {
-		received := <-decisionC
-		switch d := received.(type) {
-		case decision.FightDecision:
-			decisions[agentID] = d.Action.HandleAction(s)
-			return
-		default:
-			continue
-		}
-	}
+func processAgentDecision(state state.State, a agent.Agent, decisionMap map[uint]decision.FightAction, i uint) {
+	decisionChan := make(chan decision.FightAction)
+	defer close(decisionChan)
+	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan)
+	decisionMap[i] = (<-decisionChan).HandleAction(state.AgentState[i])
 }
