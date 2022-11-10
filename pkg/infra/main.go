@@ -1,12 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/stage/fight"
 	"infra/game/state"
+	"infra/logging"
 	"math/rand"
 )
 
@@ -26,6 +28,12 @@ const monsterHealth = 100
 const monsterAttack = 240
 
 func main() {
+	// define flags
+	useJSONFormatter := flag.Bool("j", false, "whether to use JSONFormatter for logging")
+	flag.Parse()
+
+	logging.InitLogger(*useJSONFormatter)
+
 	agentMap, stateChannels, decisionChannels, globalState := initialise()
 	gameLoop(globalState, agentMap, decisionChannels, stateChannels)
 }
@@ -35,7 +43,7 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth = monsterHealth; globalState.MonsterHealth != 0; {
 			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, decisionChannels)
-			fmt.Printf("%d cowards, %d att, %d def, %d agents\n", coweringAgents, attackSum, shieldSum, len(agentMap))
+			logging.Log.Info(fmt.Sprintf("%4d cowards, %4d att, %4d def, %4d agents\n", coweringAgents, attackSum, shieldSum, len(agentMap)))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, globalState, stateChannels, decisionChannels)
