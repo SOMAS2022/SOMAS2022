@@ -8,6 +8,9 @@ on:
     branches: [ "main" ]
 
   pull_request:
+    types:
+      - opened
+      - edited
     branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -37,13 +40,14 @@ jobs:
           go-version-file: './pkg/infra/go.mod'
 
       - name: Set environment variables
-        run: echo "LEVELS = ${{ matrix.levels }}" >> $GITHUB_ENV
-        run: echo "STARTING_HP = ${{ matrix.starting_hp }}" >> $GITHUB_ENV
-        run: echo "STARTING_ATTACK = ${{ matrix.starting_attack }}" >> $GITHUB_ENV
-        run: echo "STARTING_SHIELD = ${{ matrix.starting_shield }}" >> $GITHUB_ENV
-        run: echo "BASE_STAMINA = ${{ matrix.base_stamina }}" >> $GITHUB_ENV
-        run: echo "THRESHOLD_PCT = ${{ matrix.threshold_pct }}" >> $GITHUB_ENV
-        run: echo "AGENT_RANDOM_QUANTITY = ${{ matrix.agent_random_quantity }}" >> $GITHUB_ENV
+        run: >
+          echo "LEVELS = ${{ matrix.levels }}" >> $GITHUB_ENV \
+          echo "STARTING_HP = ${{ matrix.starting_hp }}" >> $GITHUB_ENV \
+          echo "STARTING_ATTACK = ${{ matrix.starting_attack }}" >> $GITHUB_ENV \
+          echo "STARTING_SHIELD = ${{ matrix.starting_shield }}" >> $GITHUB_ENV \
+          echo "BASE_STAMINA = ${{ matrix.base_stamina }}" >> $GITHUB_ENV \
+          echo "THRESHOLD_PCT = ${{ matrix.threshold_pct }}" >> $GITHUB_ENV \
+          echo "AGENT_RANDOM_QUANTITY = ${{ matrix.agent_random_quantity }}" >> $GITHUB_ENV
 
       - name: Build main.go to tmp directory
         run: go build -o /tmp/infra
