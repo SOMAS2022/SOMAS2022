@@ -6,11 +6,6 @@ import (
 	"strconv"
 )
 
-func EnvIsSet(key string) bool {
-	_, err := strconv.ParseUint(os.Getenv(key), 10, 0)
-	return err == nil
-}
-
 func EnvToUint(key string, def uint) uint {
 	levels, err := strconv.ParseUint(os.Getenv(key), 10, 0)
 	if err != nil {
