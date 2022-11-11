@@ -18,5 +18,5 @@ type Agent struct {
 
 type BaseAgent struct {
 	Communication commons.Communication
-	Id            uint
+	Id            string
 }

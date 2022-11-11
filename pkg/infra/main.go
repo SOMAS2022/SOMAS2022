@@ -15,8 +15,13 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
+
+var InitAgentMap = map[string]agent.Strategy{
+	"RANDOM": agent.RandomAgent{},
+}
 
 /*
 Each agent is initialised with these modes of communication
@@ -118,14 +123,17 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 1000),
 		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 1000),
 		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
-		AgentRandomQty:         config.EnvToUint("AGENT_RANDOM_QUANTITY", 100),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 	}
 
-	instantiateAgent(gameConfig, agentMap, agentStateMap, agent.RandomAgent{})
+	for agentName, strategy := range InitAgentMap {
+		expected_env_name := "AGENT_" + agentName + "_QUANTITY"
+		quantity := config.EnvToUint(expected_env_name, 0)
 
-	gameConfig.InitialNumAgents = gameConfig.AgentRandomQty
+		gameConfig.InitialNumAgents += quantity
+		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy)
+	}
 
 	globalState := state.State{
 		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, 0),
@@ -138,15 +146,16 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	agentMap map[uint]agent.Agent,
 	agentStateMap map[uint]state.AgentState,
+	quantity uint,
 	strategy S) {
-	for i := uint(0); i < gameConfig.AgentRandomQty; i++ {
+	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentMap[i] = agent.Agent{
 			BaseAgent: agent.BaseAgent{
 				Communication: commons.Communication{
 					Peer: nil,
 				},
-				Id: i,
+				Id: uuid.New().String(),
 			},
 			Strategy: strategy,
 		}
