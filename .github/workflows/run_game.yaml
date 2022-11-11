@@ -19,14 +19,13 @@ jobs:
     strategy:
       matrix:
         # Configurations with which the script will be run
-        agents: ['agent_1', 'agent_2'] # Add the name of your agent here
         levels: [60]
         starting_hp: [10]
         starting_attack: [100]
         starting_shield: [100]
         base_stamina: [400]
         threshold_pct: [0.6]
-        agent_random_quantity: [25, 100]
+        agent_quantity: [25, 100]
 
     name: Testing performance of ${{ matrix.agents }}
     steps:
@@ -40,6 +39,8 @@ jobs:
         run: go build -o /tmp/infra
         working-directory: pkg/infra
 
+      # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
+      # the game for your agent
       - name: Run the compiled program
         run: ./infra
         working-directory: /tmp
@@ -50,4 +51,4 @@ jobs:
           STARTING_SHIELD: ${{ matrix.starting_shield }}
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
-          AGENT_RANDOM_QUANTITY: ${{ matrix.agent_random_quantity }}
+          AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
