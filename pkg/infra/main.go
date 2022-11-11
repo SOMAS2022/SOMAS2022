@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
+	"infra/game/decision"
 	gamemath "infra/game/math"
 	"infra/game/stage/fight"
 	"infra/game/state"
@@ -34,10 +36,17 @@ func main() {
 }
 
 func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig config.GameConfig) {
+	var decisionMap map[uint]decision.FightAction
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints)
+			decisionMapView := immutable.NewMapBuilder[uint, decision.FightAction](nil)
+			for u, action := range decisionMap {
+				decisionMapView.Set(u, action)
+			}
+			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints, decisionMapView.Map())
+			decisionMap = dMap
+
 			logging.Log.WithFields(logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
