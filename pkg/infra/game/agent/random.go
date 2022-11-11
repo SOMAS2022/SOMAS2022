@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/decision"
 	"infra/game/state"
 	"math/rand"
@@ -9,7 +10,7 @@ import (
 type RandomAgent struct {
 }
 
-func (RandomAgent) HandleFight(state state.State, baseAgent BaseAgent, decisionC chan<- decision.FightAction) {
+func (RandomAgent) HandleFight(_ state.State, _ BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[uint, decision.FightAction]) {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:
