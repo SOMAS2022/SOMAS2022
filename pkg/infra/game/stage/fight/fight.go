@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.State, decisionChannels map[uint]<-chan decision.Decision) {
+func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState *state.State) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -17,7 +17,6 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 			// todo: prune peer channels somehow...
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
-			delete(decisionChannels, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
 				Hp:           newHp,
@@ -30,46 +29,56 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState state.St
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, baseHealth uint) (uint, uint, uint) {
-	for _, a := range agents {
-		go a.Strategy.HandleFight(*state, a.BaseAgent)
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealth uint) (uint, uint, uint) {
+	decisionMap := make(map[uint]decision.FightAction)
+	channels := make(map[uint]chan decision.FightAction)
+	for i, a := range agents {
+		channels[i] = startAgentFightHandlers(*state, a)
 	}
-	decisions := make(map[uint]decision.FightAction)
-
-	for agentID, decisionC := range decisionChannels {
-		handleFightDecision(decisionC, decisions, agentID, state.AgentState[agentID])
+	for i, dChan := range channels {
+		decisionMap[i] = <-dChan
+		close(dChan)
 	}
 
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
 
-	for agentID, d := range decisions {
-		switch v := d.(type) {
-		case decision.Fight:
-			attackSum += v.Attack
-			shieldSum += v.Defend
+	for agentID, d := range decisionMap {
+		agentState := state.AgentState[agentID]
+
+		switch d {
+		case decision.Attack:
+			if agentState.Stamina > agentState.BonusAttack {
+				attackSum += agentState.TotalAttack()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
+			} else {
+				coweringAgents++
+				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+				agentState.Stamina += 1
+			}
+		case decision.Defend:
+			if agentState.Stamina > agentState.BonusDefense {
+				shieldSum += agentState.TotalDefense()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
+			} else {
+				coweringAgents++
+				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+				agentState.Stamina += 1
+			}
 		case decision.Cower:
 			coweringAgents++
-			if entry, ok := state.AgentState[agentID]; ok {
-				entry.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
-				state.AgentState[agentID] = entry
-			}
+			agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
+			agentState.Stamina += 1
 		}
+		state.AgentState[agentID] = agentState
 	}
 
 	return coweringAgents, attackSum, shieldSum
 }
 
-func handleFightDecision(decisionC <-chan decision.Decision, decisions map[uint]decision.FightAction, agentID uint, s state.AgentState) {
-	for {
-		received := <-decisionC
-		switch d := received.(type) {
-		case decision.FightDecision:
-			decisions[agentID] = d.Action.HandleAction(s)
-			return
-		default:
-			continue
-		}
-	}
+func startAgentFightHandlers(state state.State, a agent.Agent) chan decision.FightAction {
+	decisionChan := make(chan decision.FightAction)
+	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan)
+	return decisionChan
 }

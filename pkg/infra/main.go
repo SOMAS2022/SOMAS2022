@@ -6,8 +6,7 @@ import (
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
-	"infra/game/decision"
-	game_math "infra/game/math"
+	gamemath "infra/game/math"
 	"infra/game/stage/fight"
 	"infra/game/state"
 	"infra/logging"
@@ -30,15 +29,15 @@ func main() {
 
 	logging.InitLogger(*useJSONFormatter)
 
-	agentMap, decisionChannels, globalState, gameConfig := initialise()
-	gameLoop(globalState, agentMap, decisionChannels, gameConfig)
+	agentMap, globalState, gameConfig := initialise()
+	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionChannels map[uint]<-chan decision.Decision, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig config.GameConfig) {
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, decisionChannels, gameConfig.StartingHealthPoints)
+			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints)
 			logging.Log.WithFields(logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
@@ -50,12 +49,12 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			}).Info(fmt.Sprintf("Battle summary"))
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, globalState, decisionChannels)
+				fight.DealDamage(attack, agentMap, &globalState)
 			} else {
 				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
 				if globalState.MonsterHealth > 0 {
 					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, globalState, decisionChannels)
+					fight.DealDamage(damageTaken, agentMap, &globalState)
 					// TODO: Monster disruptive ability
 				}
 			}
@@ -65,8 +64,10 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			}
 		}
 		//todo: fix this
-		globalState.MonsterHealth = game_math.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, globalState.CurrentLevel)
-		globalState.MonsterAttack = game_math.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel)
+		//todo: There is a weird bug due to the mathematics that agents gain more health from cowering than monster attack when all cower
+		//todo: Results in infinite game run-through
+		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, globalState.CurrentLevel)
+		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel)
 
 		// TODO: End of Level looting and trading
 		// FIXME: This loot allocation should not stay for long!
@@ -78,7 +79,7 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		for _, agentState := range globalState.AgentState {
+		for i, agentState := range globalState.AgentState {
 			allocatedWeapon := rand.Intn(len(weaponLoot))
 			allocatedShield := rand.Intn(len(shieldLoot))
 
@@ -86,19 +87,20 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, decisionCh
 			agentState.BonusDefense = shieldLoot[allocatedShield]
 			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
 			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
+
+			globalState.AgentState[i] = agentState
 		}
 	}
 }
 
-func initialise() (map[uint]agent.Agent, map[uint]<-chan decision.Decision, state.State, config.GameConfig) {
+func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 	agentMap := make(map[uint]agent.Agent)
 
 	agentStateMap := make(map[uint]state.AgentState)
-	decisionChannels := make(map[uint]<-chan decision.Decision)
 
 	err := godotenv.Load()
 	if err != nil {
-		logging.Log.Fatalln("No .env file located, using defaults")
+		logging.Log.Warnln("No .env file located, using defaults")
 	}
 
 	gameConfig := config.GameConfig{
@@ -112,39 +114,34 @@ func initialise() (map[uint]agent.Agent, map[uint]<-chan decision.Decision, stat
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 	}
 
-	instantiateAgent(gameConfig, decisionChannels, agentMap, agentStateMap, agent.RandomAgent{})
+	instantiateAgent(gameConfig, agentMap, agentStateMap, agent.RandomAgent{})
 
 	gameConfig.InitialNumAgents = gameConfig.AgentRandomQty
 
 	globalState := state.State{
-		MonsterHealth: game_math.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, 0),
-		MonsterAttack: game_math.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 0),
+		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, 0),
+		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 0),
 		AgentState:    agentStateMap,
 	}
-	return agentMap, decisionChannels, globalState, gameConfig
+	return agentMap, globalState, gameConfig
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	decisionChannels map[uint]<-chan decision.Decision,
 	agentMap map[uint]agent.Agent,
 	agentStateMap map[uint]state.AgentState,
 	strategy S) {
 	for i := uint(0); i < gameConfig.AgentRandomQty; i++ {
 		// TODO: add peer channels
-		decisionChan := make(chan decision.Decision)
-
-		decisionChannels[i] = decisionChan
-
 		agentMap[i] = agent.Agent{
 			BaseAgent: agent.BaseAgent{
 				Communication: commons.Communication{
-					Peer:   nil,
-					Sender: decisionChan,
+					Peer: nil,
 				},
 				Id: i,
 			},
 			Strategy: strategy,
 		}
+
 		agentStateMap[i] = state.AgentState{
 			Hp:           gameConfig.StartingHealthPoints,
 			Stamina:      gameConfig.Stamina,

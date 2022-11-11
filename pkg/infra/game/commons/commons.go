@@ -3,13 +3,11 @@ package commons
 import (
 	"errors"
 	"fmt"
-	"infra/game/decision"
 	"infra/game/message"
 )
 
 type Communication struct {
-	Peer   []chan message.Message
-	Sender chan<- decision.Decision
+	Peer []chan message.Message
 }
 
 func SaturatingSub(x uint, y uint) uint {
