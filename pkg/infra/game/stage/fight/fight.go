@@ -1,6 +1,7 @@
 package fight
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -29,11 +30,12 @@ func DealDamage(attack uint, agentMap map[uint]agent.Agent, globalState *state.S
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealth uint) (uint, uint, uint) {
+func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[uint, decision.FightAction]) (uint, uint, uint, map[uint]decision.FightAction) {
 	decisionMap := make(map[uint]decision.FightAction)
 	channels := make(map[uint]chan decision.FightAction)
+
 	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(*state, a)
+		channels[i] = startAgentFightHandlers(*state, a, previousDecisions)
 	}
 	for i, dChan := range channels {
 		decisionMap[i] = <-dChan
@@ -54,6 +56,7 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
 			} else {
 				coweringAgents++
+				decisionMap[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
@@ -63,6 +66,7 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
 			} else {
 				coweringAgents++
+				decisionMap[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
@@ -74,11 +78,11 @@ func HandleFightRound(state *state.State, agents map[uint]agent.Agent, baseHealt
 		state.AgentState[agentID] = agentState
 	}
 
-	return coweringAgents, attackSum, shieldSum
+	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
-func startAgentFightHandlers(state state.State, a agent.Agent) chan decision.FightAction {
+func startAgentFightHandlers(state state.State, a agent.Agent, decisionLog *immutable.Map[uint, decision.FightAction]) chan decision.FightAction {
 	decisionChan := make(chan decision.FightAction)
-	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan)
+	go a.Strategy.HandleFight(state, a.BaseAgent, decisionChan, decisionLog)
 	return decisionChan
 }
