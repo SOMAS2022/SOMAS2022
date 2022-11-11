@@ -1,7 +1,6 @@
 package commons
 
 import (
-	"errors"
 	"fmt"
 	"infra/game/message"
 )
@@ -25,7 +24,7 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 		s[i] = s[len(s)-1]
 		return s[:len(s)-1], nil
 	} else {
-		return s, errors.New(fmt.Sprintf("Out of bounds error, attempted to access index %d in slice %v\n", i, s))
+		return s, fmt.Errorf("Out of bounds error, attempted to access index %d in slice %v\n", i, s)
 	}
 
 }

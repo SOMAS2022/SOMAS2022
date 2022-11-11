@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
@@ -60,7 +59,7 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 				"attackSum":     attackSum,
 				"shieldSum":     shieldSum,
 				"numAgents":     len(agentMap),
-			}).Info(fmt.Sprintf("Battle summary"))
+			}).Info("Battle summary")
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, &globalState)
