@@ -2,6 +2,23 @@
 
 ## [Specifications](spec.pdf)
 
+## Programming Language
+
+* Download [GoLang](https://go.dev/dl/) (1.19)
+
+### Get Started
+
+* [GoLang Get Started](https://go.dev/learn/)
+
+## Quick Start
+
+```
+git clone git@github.com:SOMAS2022/SOMAS2022.git
+cd SOMAS2022
+make build
+make run
+```
+
 ## Project Structure
 
 Following some Golang Standards [[1]](https://github.com/golang-standards/project-layout), [[2]](https://medium.com/sellerapp/golang-project-structuring-ben-johnson-way-2a11035f94bc) and previous year project structures ([2021](https://github.com/SOMAS2021/SOMAS2021))
@@ -23,14 +40,6 @@ Following some Golang Standards [[1]](https://github.com/golang-standards/projec
 └── scripts
     └── (Automation/Execution scripts)
 ```
-
-## Programming Language
-
-* Download [GoLang](https://go.dev/dl/) (1.19)
-
-### Get Started
-
-* [GoLang Get Started](https://go.dev/learn/)
 
 ## Project Management
 
