@@ -40,12 +40,12 @@ func main() {
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig config.GameConfig) {
-	var decisionMap map[uint]decision.FightAction
+func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConfig config.GameConfig) {
+	var decisionMap map[string]decision.FightAction
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			decisionMapView := immutable.NewMapBuilder[uint, decision.FightAction](nil)
+			decisionMapView := immutable.NewMapBuilder[string, decision.FightAction](nil)
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
@@ -107,10 +107,10 @@ func gameLoop(globalState state.State, agentMap map[uint]agent.Agent, gameConfig
 	}
 }
 
-func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[uint]agent.Agent)
+func initialise() (map[string]agent.Agent, state.State, config.GameConfig) {
+	agentMap := make(map[string]agent.Agent)
 
-	agentStateMap := make(map[uint]state.AgentState)
+	agentStateMap := make(map[string]state.AgentState)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -144,23 +144,24 @@ func initialise() (map[uint]agent.Agent, state.State, config.GameConfig) {
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[uint]agent.Agent,
-	agentStateMap map[uint]state.AgentState,
+	agentMap map[string]agent.Agent,
+	agentStateMap map[string]state.AgentState,
 	quantity uint,
 	strategy S) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
-		agentMap[i] = agent.Agent{
+		agentId := uuid.New().String()
+		agentMap[agentId] = agent.Agent{
 			BaseAgent: agent.BaseAgent{
 				Communication: commons.Communication{
 					Peer: nil,
 				},
-				Id: uuid.New().String(),
+				Id: agentId,
 			},
 			Strategy: strategy,
 		}
 
-		agentStateMap[i] = state.AgentState{
+		agentStateMap[agentId] = state.AgentState{
 			Hp:           gameConfig.StartingHealthPoints,
 			Stamina:      gameConfig.Stamina,
 			Attack:       gameConfig.StartingAttackStrength,
