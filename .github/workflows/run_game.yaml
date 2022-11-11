@@ -5,7 +5,7 @@ name: agent_performance
 on:
   # Triggers the workflow on push events but only for the "main" branch
   push:
-    branches: [ "main" , "update-actions" ]
+    branches: [ "main" ]
 
   pull_request:
     types:
@@ -33,9 +33,15 @@ jobs:
         with:
           go-version-file: './pkg/infra/go.mod'
 
+      - name: Set environment variables
+        run: echo "A=50" >> $GITHUB_ENV
+
       - name: Build main.go to tmp directory
         run: go build -o /tmp/infra
         working-directory: pkg/infra
+
+      - name: Test
+        run: echo ${{ env.A }}
 
       - name: Run the compiled program
         run: ./infra
