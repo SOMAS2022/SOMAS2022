@@ -40,7 +40,8 @@ jobs:
         run: go build -o /tmp/infra
         working-directory: pkg/infra
 
-       - name: Set environment variables
+      - name: Set environment variables
+        working-directory: /tmp
         run: >
           echo "LEVELS = ${{ matrix.levels }}" >> $GITHUB_ENV \
           echo "STARTING_HP = ${{ matrix.starting_hp }}" >> $GITHUB_ENV \
@@ -49,7 +50,6 @@ jobs:
           echo "BASE_STAMINA = ${{ matrix.base_stamina }}" >> $GITHUB_ENV \
           echo "THRESHOLD_PCT = ${{ matrix.threshold_pct }}" >> $GITHUB_ENV \
           echo "AGENT_RANDOM_QUANTITY = ${{ matrix.agent_random_quantity }}" >> $GITHUB_ENV
-        working-directory: /tmp
 
       - name: Run the compiled program
         run: ./infra
