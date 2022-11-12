@@ -8,7 +8,7 @@ build:
 		go build -o ${BINARY_NAME} infra
 
 run: build
-	  ${BINARY_NAME}
+		${BINARY_NAME}
 
 runWithJSON: build
 		${BINARY_NAME} -j
