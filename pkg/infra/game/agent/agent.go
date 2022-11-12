@@ -15,6 +15,7 @@ type Strategy interface {
 	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
+	HandleElection(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Ballot)
 }
 
 type Agent struct {
