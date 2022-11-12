@@ -4,7 +4,6 @@ import (
 	"github.com/benbjohnson/immutable"
 	"infra/game/decision"
 	"infra/game/state"
-	"infra/logging"
 	"math/rand"
 )
 
@@ -23,24 +22,24 @@ func (RandomAgent) HandleFight(_ *state.View, _ BaseAgent, decisionC chan<- deci
 	}
 }
 
-func (RandomAgent) HandleElection(gameState state.State, _ BaseAgent, decisionC chan<- decision.Ballot) {
-	var ballot decision.Ballot
-
+func (RandomAgent) HandleElection(view *state.View, _ BaseAgent, decisionC chan<- decision.Ballot) {
 	// Extract ID of alive agents
-	aliveAgentIds := make([]string, len(gameState.AgentState))
+	agentState := *(*view).AgentState
+	aliveAgentIds := make([]string, agentState.Len())
 	i := 0
-	for id, agent := range gameState.AgentState {
-		if agent.Hp > 0 {
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, agent, ok := itr.Next()
+		if ok && agent.Hp > 0 {
 			aliveAgentIds[i] = id
 			i++
 		}
 	}
 
+	// Randomly fill the ballot
+	var ballot decision.Ballot
 	numAliveAgents := len(aliveAgentIds)
 	numCandidate := 2
-
-	logging.Log.Debug(numAliveAgents)
-
 	for i := 0; i < numCandidate; i++ {
 		randomIdx := rand.Intn(numAliveAgents)
 		randomCandidate := aliveAgentIds[uint(randomIdx)]
