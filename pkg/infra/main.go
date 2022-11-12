@@ -19,7 +19,8 @@ import (
 )
 
 var InitAgentMap = map[string]agent.Strategy{
-	"RANDOM": agent.RandomAgent{},
+//	"RANDOM": agent.RandomAgent{},
+    "AGENT2": agent.Agent2{},
 }
 
 /*
