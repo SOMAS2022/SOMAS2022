@@ -1,5 +1,7 @@
 package state
 
+import "github.com/benbjohnson/immutable"
+
 type AgentState struct {
 	Hp           uint
 	Stamina      uint
@@ -23,4 +25,27 @@ type State struct {
 	MonsterHealth uint
 	MonsterAttack uint
 	AgentState    map[string]AgentState
+}
+
+type View struct {
+	CurrentLevel  uint
+	HpPool        uint
+	MonsterHealth uint
+	MonsterAttack uint
+	AgentState    *immutable.Map[string, AgentState]
+}
+
+func (s *State) ToView() *View {
+	b := immutable.NewMapBuilder[string, AgentState](nil)
+	for uuid, state := range s.AgentState {
+		b.Set(uuid, state)
+	}
+
+	return &View{
+		CurrentLevel:  s.CurrentLevel,
+		HpPool:        s.HpPool,
+		MonsterHealth: s.MonsterHealth,
+		MonsterAttack: s.MonsterAttack,
+		AgentState:    b.Map(),
+	}
 }

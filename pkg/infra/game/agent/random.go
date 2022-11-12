@@ -10,7 +10,7 @@ import (
 type RandomAgent struct {
 }
 
-func (RandomAgent) HandleFight(_ state.State, _ BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[string, decision.FightAction]) {
+func (RandomAgent) HandleFight(_ *state.View, _ BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[string, decision.FightAction]) {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:

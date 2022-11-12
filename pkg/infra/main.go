@@ -109,7 +109,6 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 
 func initialise() (map[string]agent.Agent, state.State, config.GameConfig) {
 	agentMap := make(map[string]agent.Agent)
-
 	agentStateMap := make(map[string]state.AgentState)
 
 	err := godotenv.Load()
@@ -128,8 +127,8 @@ func initialise() (map[string]agent.Agent, state.State, config.GameConfig) {
 	}
 
 	for agentName, strategy := range InitAgentMap {
-		expected_env_name := "AGENT_" + agentName + "_QUANTITY"
-		quantity := config.EnvToUint(expected_env_name, 0)
+		expectedEnvName := "AGENT_" + agentName + "_QUANTITY"
+		quantity := config.EnvToUint(expectedEnvName, 0)
 
 		gameConfig.InitialNumAgents += quantity
 		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy)
