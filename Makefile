@@ -1,11 +1,13 @@
 BINARY_NAME=cmd/main.out
 SOURCE_DIR=pkg/infra
+TEAM?=default
+LDFLAGS=-ldflags="-X 'infra/game/api.mode=${TEAM}'"
 
 all: run
 
 build:
 		cd ${SOURCE_DIR}; go mod tidy
-		go build -o ${BINARY_NAME} infra
+		go build $(LDFLAGS) -o ${BINARY_NAME} infra 
 
 run: build
 		${BINARY_NAME}

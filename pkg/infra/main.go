@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
+	"infra/game/api"
 	"infra/game/commons"
 	"infra/game/decision"
 	gamemath "infra/game/math"
@@ -13,6 +13,8 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
+
+	"github.com/benbjohnson/immutable"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -48,7 +50,8 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints, decisionMapView.Map())
+			dMap := api.AgentFightDecisions(globalState.ToView(), agentMap, decisionMapView.Map())
+			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
 			decisionMap = dMap
 
 			logging.Log.WithFields(logging.LogField{
@@ -92,17 +95,9 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		for i, agentState := range globalState.AgentState {
-			allocatedWeapon := rand.Intn(len(weaponLoot))
-			allocatedShield := rand.Intn(len(shieldLoot))
+		new_global_state := api.AllocateLoot(globalState, weaponLoot, shieldLoot)
+		globalState = new_global_state
 
-			agentState.BonusAttack = weaponLoot[allocatedWeapon]
-			agentState.BonusDefense = shieldLoot[allocatedShield]
-			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
-
-			globalState.AgentState[i] = agentState
-		}
 	}
 }
 
