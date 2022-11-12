@@ -51,4 +51,5 @@ jobs:
           STARTING_SHIELD: ${{ matrix.starting_shield }}
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
-          AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
+          #          AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
+          AGENT_AGENT2_QUANTITY: ${{ matrix.agent_quantity }}
