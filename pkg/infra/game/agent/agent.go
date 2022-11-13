@@ -8,7 +8,7 @@ import (
 )
 
 type Strategy interface {
-	HandleFight(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[string, decision.FightAction])
+	HandleFight(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[commons.AgentID, decision.FightAction])
 }
 
 type Agent struct {
@@ -18,5 +18,5 @@ type Agent struct {
 
 type BaseAgent struct {
 	Communication commons.Communication
-	Id            string
+	Id            commons.AgentID
 }

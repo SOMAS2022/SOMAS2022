@@ -2,11 +2,15 @@ package commons
 
 import (
 	"fmt"
+	"github.com/benbjohnson/immutable"
 	"infra/game/message"
 )
 
+type AgentID = string
+
 type Communication struct {
-	Peer []chan message.Message
+	Receipt <-chan message.Message
+	Peer    immutable.Map[AgentID, chan<- message.Message]
 }
 
 func SaturatingSub(x uint, y uint) uint {

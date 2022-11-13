@@ -9,7 +9,7 @@ import (
 	"math"
 )
 
-func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state.State) {
+func DealDamage(attack uint, agentMap map[commons.AgentID]agent.Agent, globalState *state.State) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -30,14 +30,14 @@ func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[string]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[string, decision.FightAction]) (uint, uint, uint, map[string]decision.FightAction) {
-	decisionMap := make(map[string]decision.FightAction)
-	channels := make(map[string]chan decision.FightAction)
+func HandleFightRound(state *state.State, agents map[commons.AgentID]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[commons.AgentID, decision.FightAction]) (uint, uint, uint, map[commons.AgentID]decision.FightAction) {
+	decisionMap := make(map[commons.AgentID]decision.FightAction)
+	channels := make(map[commons.AgentID]chan decision.FightAction)
 
 	view := state.ToView()
 
 	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(view, a, previousDecisions)
+		channels[i] = startAgentFightHandlers(view, &a, previousDecisions)
 	}
 	for i, dChan := range channels {
 		decisionMap[i] = <-dChan
@@ -83,7 +83,7 @@ func HandleFightRound(state *state.State, agents map[string]agent.Agent, baseHea
 	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
-func startAgentFightHandlers(view *state.View, a agent.Agent, decisionLog *immutable.Map[string, decision.FightAction]) chan decision.FightAction {
+func startAgentFightHandlers(view *state.View, a *agent.Agent, decisionLog *immutable.Map[commons.AgentID, decision.FightAction]) chan decision.FightAction {
 	decisionChan := make(chan decision.FightAction)
 	go a.Strategy.HandleFight(view, a.BaseAgent, decisionChan, decisionLog)
 	return decisionChan

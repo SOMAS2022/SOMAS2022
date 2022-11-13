@@ -1,6 +1,9 @@
 package state
 
-import "github.com/benbjohnson/immutable"
+import (
+	"github.com/benbjohnson/immutable"
+	"infra/game/commons"
+)
 
 type AgentState struct {
 	Hp           uint
@@ -24,7 +27,7 @@ type State struct {
 	HpPool        uint
 	MonsterHealth uint
 	MonsterAttack uint
-	AgentState    map[string]AgentState
+	AgentState    map[commons.AgentID]AgentState
 }
 
 type View struct {
@@ -32,11 +35,11 @@ type View struct {
 	HpPool        uint
 	MonsterHealth uint
 	MonsterAttack uint
-	AgentState    *immutable.Map[string, AgentState]
+	AgentState    *immutable.Map[commons.AgentID, AgentState]
 }
 
 func (s *State) ToView() *View {
-	b := immutable.NewMapBuilder[string, AgentState](nil)
+	b := immutable.NewMapBuilder[commons.AgentID, AgentState](nil)
 	for uuid, state := range s.AgentState {
 		b.Set(uuid, state)
 	}
