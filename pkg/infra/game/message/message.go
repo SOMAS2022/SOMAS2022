@@ -1,5 +1,7 @@
 package message
 
+import "infra/game/commons"
+
 type Payload interface {
 	isPayload()
 }
@@ -15,4 +17,9 @@ const (
 type Message struct {
 	mType   Type
 	payload Payload
+}
+
+type TaggedMessage struct {
+	Sender  commons.ID
+	Message Message
 }

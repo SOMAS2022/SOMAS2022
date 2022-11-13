@@ -28,21 +28,45 @@ func NewBaseAgent(communication *Communication, id commons.ID) BaseAgent {
 }
 
 type Communication struct {
-	receipt <-chan message.Message
-	peer    *immutable.Map[commons.ID, chan<- message.Message]
+	receipt <-chan message.TaggedMessage
+	peer    *immutable.Map[commons.ID, chan<- message.TaggedMessage]
 }
 
-func NewCommunication(receipt <-chan message.Message, peer *immutable.Map[commons.ID, chan<- message.Message]) *Communication {
+func NewCommunication(receipt <-chan message.TaggedMessage, peer *immutable.Map[commons.ID, chan<- message.TaggedMessage]) *Communication {
 	return &Communication{receipt: receipt, peer: peer}
 }
 
-func (c Communication) sendMessage(id commons.ID, message message.Message) error {
-	m := message
-	value, ok := c.peer.Get(id)
+func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) error {
+	value, ok := b.communication.peer.Get(id)
 	if ok {
-		value <- m
+		value <- message.TaggedMessage{
+			Sender:  b.Id,
+			Message: m,
+		}
 		return nil
 	} else {
 		return fmt.Errorf("agent %s not available for messaging, either dead or submitted", id)
+	}
+}
+
+func (b BaseAgent) receiveAllMessages() (res []message.TaggedMessage) {
+	res = make([]message.TaggedMessage, 0)
+	for {
+		receive, b := nonBlockingReceive(b.communication.receipt)
+		if b {
+			res = append(res, receive)
+		} else {
+			return
+		}
+	}
+}
+
+func nonBlockingReceive[T any](c <-chan T) (T, bool) {
+	select {
+	case msg := <-c:
+		return msg, true
+	default:
+		var result T
+		return result, false
 	}
 }
