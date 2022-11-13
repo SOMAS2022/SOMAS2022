@@ -2,15 +2,7 @@ package commons
 
 import (
 	"fmt"
-	"github.com/benbjohnson/immutable"
-	"infra/game/agent"
-	"infra/game/message"
 )
-
-type Communication struct {
-	Receipt <-chan message.Message
-	Peer    immutable.Map[agent.ID, chan<- message.Message]
-}
 
 func SaturatingSub(x uint, y uint) uint {
 	res := x - y
@@ -31,3 +23,5 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 	}
 
 }
+
+type ID = string

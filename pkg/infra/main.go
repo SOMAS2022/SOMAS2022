@@ -19,7 +19,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[agent.ID]agent.Strategy{
+var InitAgentMap = map[commons.ID]agent.Strategy{
 	"RANDOM": agent.RandomAgent{},
 }
 
@@ -40,12 +40,12 @@ func main() {
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[agent.ID]agent.Agent, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[string]decision.FightAction
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			decisionMapView := immutable.NewMapBuilder[agent.ID, decision.FightAction](nil)
+			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
@@ -107,9 +107,9 @@ func gameLoop(globalState state.State, agentMap map[agent.ID]agent.Agent, gameCo
 	}
 }
 
-func initialise() (map[agent.ID]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[agent.ID]agent.Agent)
-	agentStateMap := make(map[agent.ID]state.AgentState)
+func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
+	agentMap := make(map[commons.ID]agent.Agent)
+	agentStateMap := make(map[commons.ID]state.AgentState)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -143,22 +143,16 @@ func initialise() (map[agent.ID]agent.Agent, state.State, config.GameConfig) {
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[agent.ID]agent.Agent,
-	agentStateMap map[agent.ID]state.AgentState,
+	agentMap map[commons.ID]agent.Agent,
+	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
 	strategy S) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{
-				Communication: commons.Communication{
-					Receipt: nil,
-					Peer:    *immutable.NewMap[agent.ID, chan<- message.Message](nil),
-				},
-				Id: agentId,
-			},
-			Strategy: strategy,
+			BaseAgent: agent.NewBaseAgent(agent.NewCommunication(nil, immutable.NewMap[commons.ID, chan<- message.Message](nil)), agentId),
+			Strategy:  strategy,
 		}
 
 		agentStateMap[agentId] = state.AgentState{
