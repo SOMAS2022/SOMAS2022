@@ -19,7 +19,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[commons.AgentID]agent.Strategy{
+var InitAgentMap = map[agent.ID]agent.Strategy{
 	"RANDOM": agent.RandomAgent{},
 }
 
@@ -40,12 +40,12 @@ func main() {
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[commons.AgentID]agent.Agent, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[agent.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[string]decision.FightAction
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			decisionMapView := immutable.NewMapBuilder[commons.AgentID, decision.FightAction](nil)
+			decisionMapView := immutable.NewMapBuilder[agent.ID, decision.FightAction](nil)
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
@@ -107,9 +107,9 @@ func gameLoop(globalState state.State, agentMap map[commons.AgentID]agent.Agent,
 	}
 }
 
-func initialise() (map[commons.AgentID]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[commons.AgentID]agent.Agent)
-	agentStateMap := make(map[commons.AgentID]state.AgentState)
+func initialise() (map[agent.ID]agent.Agent, state.State, config.GameConfig) {
+	agentMap := make(map[agent.ID]agent.Agent)
+	agentStateMap := make(map[agent.ID]state.AgentState)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -143,8 +143,8 @@ func initialise() (map[commons.AgentID]agent.Agent, state.State, config.GameConf
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[commons.AgentID]agent.Agent,
-	agentStateMap map[commons.AgentID]state.AgentState,
+	agentMap map[agent.ID]agent.Agent,
+	agentStateMap map[agent.ID]state.AgentState,
 	quantity uint,
 	strategy S) {
 	for i := uint(0); i < quantity; i++ {
@@ -154,7 +154,7 @@ func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 			BaseAgent: agent.BaseAgent{
 				Communication: commons.Communication{
 					Receipt: nil,
-					Peer:    *immutable.NewMap[commons.AgentID, chan<- message.Message](nil),
+					Peer:    *immutable.NewMap[agent.ID, chan<- message.Message](nil),
 				},
 				Id: agentId,
 			},
