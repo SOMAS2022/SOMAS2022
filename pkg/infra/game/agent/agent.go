@@ -36,6 +36,20 @@ func NewCommunication(receipt <-chan message.TaggedMessage, peer *immutable.Map[
 	return &Communication{receipt: receipt, peer: peer}
 }
 
+func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
+	iterator := b.communication.peer.Iterator()
+	tm := message.TaggedMessage{
+		Sender:  b.Id,
+		Message: m,
+	}
+	for !iterator.Done() {
+		_, c, ok := iterator.Next()
+		if ok {
+			c <- tm
+		}
+	}
+}
+
 func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) error {
 	value, ok := b.communication.peer.Get(id)
 	if ok {
