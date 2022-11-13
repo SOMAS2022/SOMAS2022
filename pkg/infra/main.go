@@ -94,7 +94,7 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		new_global_state := stages.AgentLootDecisions(globalState, weaponLoot, shieldLoot)
+		new_global_state := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
 		// TODO: Add verification if needed
 		globalState = new_global_state
 
