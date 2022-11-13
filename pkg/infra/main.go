@@ -4,18 +4,17 @@ import (
 	"flag"
 	"infra/config"
 	"infra/game/agent"
-	"infra/game/api"
 	"infra/game/commons"
 	"infra/game/decision"
 	gamemath "infra/game/math"
 	"infra/game/stage/fight"
+	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
 	"math"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
-
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
@@ -50,7 +49,7 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			dMap := api.AgentFightDecisions(globalState.ToView(), agentMap, decisionMapView.Map())
+			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, decisionMapView.Map())
 			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
 			decisionMap = dMap
 
@@ -95,7 +94,8 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		new_global_state := api.AllocateLoot(globalState, weaponLoot, shieldLoot)
+		new_global_state := stages.AgentLootDecisions(globalState, weaponLoot, shieldLoot)
+		// TODO: Add verification if needed
 		globalState = new_global_state
 
 	}

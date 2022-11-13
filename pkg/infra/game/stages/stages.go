@@ -1,4 +1,4 @@
-package api
+package stages
 
 import (
 	"infra/game/agent"
@@ -9,24 +9,27 @@ import (
 
 	"github.com/benbjohnson/immutable"
 
+	//? Add you team folder like this:
 	t0 "infra/teams/team0"
 )
 
+// ? Changed at compile time. eg run with `make TEAM=0` to set this to '0'
 var mode = "default"
 
 // TODO: Change to using views
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
+func AgentLootDecisions(globalState state.State, agents map[string]agent.Agent, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
 	switch mode {
 	case "0":
 		return t0.AllocateLoot(globalState, weaponLoot, shieldLoot)
 	default:
 		return loot.AllocateLoot(globalState, weaponLoot, shieldLoot)
 	}
-
 }
+
 func AgentFightDecisions(state *state.View, agents map[string]agent.Agent, previousDecisions *immutable.Map[string, decision.FightAction]) map[string]decision.FightAction {
 	switch mode {
 	case "0":
+		//? Not necessary to use all function arguments
 		return t0.AllDefend(agents)
 	default:
 		return fight.AgentFightDecisions(state, agents, previousDecisions)

@@ -1,7 +1,7 @@
-BINARY_NAME=cmd/main.out
+BINARY_NAME?=cmd/main.out
 SOURCE_DIR=pkg/infra
 TEAM?=default
-LDFLAGS=-ldflags="-X 'infra/game/api.mode=${TEAM}'"
+LDFLAGS=-ldflags="-X 'infra/game/stages.mode=${TEAM}'"
 
 all: run
 
