@@ -36,10 +36,8 @@ jobs:
           go-version-file: './pkg/infra/go.mod'
 
       - name: Build main.go to tmp directory
-        run: make build BINARY_NAME=/tmp/infra
-
-      - name: Build team 0 file
-        run: make build BINARY_NAME=/tmp/team0 TEAM=0
+        run: go build -o /tmp/infra
+        working-directory: pkg/infra
 
       # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
       # the game for your agent
@@ -54,7 +52,3 @@ jobs:
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
           AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
-
-      - name: Run Team0 program
-        run: ./team0
-        working-directory: /tmp
