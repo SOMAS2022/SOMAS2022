@@ -38,7 +38,7 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 	view := state.ToView()
 
 	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(view, &a, previousDecisions)
+		channels[i] = startAgentFightHandlers(*view, &a, *previousDecisions)
 	}
 
 	for _, messages := range channelsMap {
@@ -50,7 +50,6 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 
 	for i, dChan := range channels {
 		decisionMap[i] = <-dChan
-		close(channelsMap[i])
 		close(dChan)
 	}
 
@@ -93,8 +92,8 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
-func startAgentFightHandlers(view *state.View, a *agent.Agent, decisionLog *immutable.Map[commons.ID, decision.FightAction]) chan decision.FightAction {
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction]) chan decision.FightAction {
 	decisionChan := make(chan decision.FightAction)
-	go a.HandleFight(view, decisionLog)
+	go a.HandleFight(view, decisionLog, decisionChan)
 	return decisionChan
 }

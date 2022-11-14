@@ -63,5 +63,9 @@ func (r RandomAgent) HandleFightMessage(m message.TaggedMessage, view *state.Vie
 		*fightDecisionToTake = decision.Cower
 	}
 
+	if fightDecisionToTake == nil {
+		*fightDecisionToTake = decision.Cower
+	}
+
 	return fightDecisionToTake
 }
