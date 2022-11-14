@@ -15,10 +15,12 @@
 ```
 git clone git@github.com:SOMAS2022/SOMAS2022.git
 cd SOMAS2022
-make build
-make run
+make
 ```
-
+If running a team experiment, eg for team 0:
+```
+make TEAM=0
+```
 ## Project Structure
 
 Following some Golang Standards [[1]](https://github.com/golang-standards/project-layout), [[2]](https://medium.com/sellerapp/golang-project-structuring-ben-johnson-way-2a11035f94bc) and previous year project structures ([2021](https://github.com/SOMAS2021/SOMAS2021))
@@ -37,6 +39,8 @@ Following some Golang Standards [[1]](https://github.com/golang-standards/projec
 │   │   └── (Teams Agents)
 │   └── infra
 │       └── (Infrastructure Implementation)
+|       └── teams
+|           └── (Individual Team Experiments)
 └── scripts
     └── (Automation/Execution scripts)
 ```
