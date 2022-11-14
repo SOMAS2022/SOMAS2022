@@ -110,6 +110,6 @@ func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[strin
 	return coweringAgents, attackSum, shieldSum
 }
 
-func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(view, decisionLog, channel, wg)
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog *immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(view, *decisionLog, channel, wg)
 }

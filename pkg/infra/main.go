@@ -2,8 +2,11 @@ package main
 
 import (
 	"flag"
+<<<<<<< HEAD
 	"fmt"
 	"github.com/benbjohnson/immutable"
+=======
+>>>>>>> 15c929f... [infra] Create API for individual team use (#39)
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -17,6 +20,7 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
