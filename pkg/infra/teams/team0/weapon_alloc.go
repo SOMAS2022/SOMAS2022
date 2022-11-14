@@ -9,9 +9,9 @@ import (
 /**
 * This default function allocates loot randomly
  */
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
 
-	allocatedState = globalState
+	allocatedState := globalState
 
 	for _, agentState := range allocatedState.AgentState {
 		allocatedWeapon := rand.Intn(len(weaponLoot))
@@ -23,5 +23,5 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint)
 		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
 	}
 
-	return
+	return allocatedState
 }
