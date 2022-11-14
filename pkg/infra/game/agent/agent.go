@@ -11,11 +11,51 @@ import (
 
 type Strategy interface {
 	HandleFight(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[commons.ID, decision.FightAction])
+	HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) *decision.FightAction
+	Default() decision.FightAction
 }
 
 type Agent struct {
 	BaseAgent BaseAgent
 	Strategy  Strategy
+}
+
+func (a *Agent) HandleFight(view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {
+	for m := range a.BaseAgent.communication.receipt {
+		action := a.handleMessage(view, log, m)
+		if action != nil {
+			return *action
+		}
+	}
+	return a.Strategy.Default()
+}
+
+func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) *decision.FightAction {
+	switch m.Message.MType() {
+	case message.Close:
+		a.BaseAgent.communication.peer = a.BaseAgent.communication.peer.Delete(m.Sender)
+	default:
+		fightMessage := a.Strategy.HandleFightMessage(m, view, a.BaseAgent, log)
+		if fightMessage != nil {
+			a.handleDecisionMaking()
+		}
+		return fightMessage
+	}
+	return nil
+}
+
+func (a *Agent) handleDecisionMaking() {
+	iterator := a.BaseAgent.communication.peer.Iterator()
+	go func() {
+		<-a.BaseAgent.communication.receipt
+	}()
+	for !iterator.Done() {
+		_, c, _ := iterator.Next()
+		c <- message.TaggedMessage{
+			Sender:  a.BaseAgent.Id,
+			Message: *message.NewMessage(message.Close, nil),
+		}
+	}
 }
 
 type BaseAgent struct {
@@ -50,29 +90,23 @@ func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
 	}
 }
 
-func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) error {
+func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
+		}
+	}()
+
 	value, ok := b.communication.peer.Get(id)
 	if ok {
 		value <- message.TaggedMessage{
 			Sender:  b.Id,
 			Message: m,
 		}
-		return nil
 	} else {
-		return fmt.Errorf("agent %s not available for messaging, either dead or submitted", id)
+		e = fmt.Errorf("agent %s not available for messaging, dead", id)
 	}
-}
-
-func (b BaseAgent) receiveAllMessages() (res []message.TaggedMessage) {
-	res = make([]message.TaggedMessage, 0)
-	for {
-		receive, b := nonBlockingReceive(b.communication.receipt)
-		if b {
-			res = append(res, receive)
-		} else {
-			return
-		}
-	}
+	return
 }
 
 func nonBlockingReceive[T any](c <-chan T) (T, bool) {

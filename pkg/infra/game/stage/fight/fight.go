@@ -5,6 +5,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message"
 	"infra/game/state"
 	"math"
 )
@@ -30,7 +31,7 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[commons.ID, decision.FightAction]) (uint, uint, uint, map[commons.ID]decision.FightAction) {
+func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
 	decisionMap := make(map[commons.ID]decision.FightAction)
 	channels := make(map[commons.ID]chan decision.FightAction)
 
@@ -39,8 +40,17 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 	for i, a := range agents {
 		channels[i] = startAgentFightHandlers(view, &a, previousDecisions)
 	}
+
+	for _, messages := range channelsMap {
+		messages <- message.TaggedMessage{
+			Sender:  "server",
+			Message: *message.NewMessage(message.Something, nil),
+		}
+	}
+
 	for i, dChan := range channels {
 		decisionMap[i] = <-dChan
+		close(channelsMap[i])
 		close(dChan)
 	}
 
@@ -85,6 +95,6 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 
 func startAgentFightHandlers(view *state.View, a *agent.Agent, decisionLog *immutable.Map[commons.ID, decision.FightAction]) chan decision.FightAction {
 	decisionChan := make(chan decision.FightAction)
-	go a.Strategy.HandleFight(view, a.BaseAgent, decisionChan, decisionLog)
+	go a.HandleFight(view, decisionLog)
 	return decisionChan
 }

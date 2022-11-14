@@ -20,7 +20,7 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM": agent.RandomAgent{},
+	"RANDOM": agent.NewRandomAgent(),
 }
 
 /*
@@ -42,6 +42,8 @@ func main() {
 
 func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[string]decision.FightAction
+	var channelsMap map[commons.ID]chan message.TaggedMessage
+	channelsMap = addCommsChannels(agentMap)
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
@@ -49,7 +51,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints, decisionMapView.Map())
+			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints, decisionMapView.Map(), channelsMap)
 			decisionMap = dMap
 
 			logging.Log.WithFields(logging.LogField{
@@ -72,6 +74,9 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 					// TODO: Monster disruptive ability
 				}
 			}
+
+			channelsMap = addCommsChannels(agentMap)
+
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
 				logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
 				return
@@ -142,6 +147,36 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	return agentMap, globalState, gameConfig
 }
 
+func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]chan message.TaggedMessage) {
+	keys := make([]commons.ID, len(agentMap))
+	res = make(map[commons.ID]chan message.TaggedMessage)
+	i := 0
+	for k := range agentMap {
+		keys[i] = k
+		i++
+	}
+
+	for _, key := range keys {
+		res[key] = make(chan message.TaggedMessage, 20)
+	}
+
+	for id, a := range agentMap {
+		a.BaseAgent = createBaseAgent(id, res)
+		agentMap[id] = a
+	}
+	return
+}
+
+func createBaseAgent(id commons.ID, peerChannels map[commons.ID]chan message.TaggedMessage) agent.BaseAgent {
+	builder := immutable.NewMapBuilder[commons.ID, chan<- message.TaggedMessage](nil)
+	for pId, channel := range peerChannels {
+		if pId != id {
+			builder.Set(pId, channel)
+		}
+	}
+	return agent.NewBaseAgent(agent.NewCommunication(peerChannels[id], builder.Map()), id)
+}
+
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
@@ -151,7 +186,7 @@ func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.NewBaseAgent(agent.NewCommunication(nil, immutable.NewMap[commons.ID, chan<- message.TaggedMessage](nil)), agentId),
+			BaseAgent: agent.BaseAgent{},
 			Strategy:  strategy,
 		}
 

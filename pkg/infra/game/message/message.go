@@ -9,7 +9,7 @@ type Payload interface {
 type Type int64
 
 const (
-	Proposal Type = iota
+	Close Type = iota
 	Something
 	SomethingElse
 )
@@ -17,6 +17,18 @@ const (
 type Message struct {
 	mType   Type
 	payload Payload
+}
+
+func NewMessage(mType Type, payload Payload) *Message {
+	return &Message{mType: mType, payload: payload}
+}
+
+func (m Message) MType() Type {
+	return m.mType
+}
+
+func (m Message) Payload() Payload {
+	return m.payload
 }
 
 type TaggedMessage struct {
