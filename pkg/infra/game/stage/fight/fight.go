@@ -1,7 +1,6 @@
 package fight
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -9,6 +8,8 @@ import (
 	"infra/game/state"
 	"math"
 	"sync"
+
+	"github.com/benbjohnson/immutable"
 )
 
 func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
@@ -32,17 +33,16 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 	}
 }
 
-func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
+func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions *immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[string]decision.FightAction {
 	decisionMap := make(map[commons.ID]decision.FightAction)
 	channel := make(chan message.ActionMessage, 100)
 
-	view := state.ToView()
 	var wg sync.WaitGroup
 
 	for _, a := range agents {
 		a := a
 		wg.Add(1)
-		startAgentFightHandlers(*view, &a, previousDecisions, channel, &wg)
+		startAgentFightHandlers(*state, &a, previousDecisions, channel, &wg)
 	}
 
 	for _, messages := range channelsMap {
@@ -64,10 +64,17 @@ func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, base
 		decisionMap[actionMessage.Sender] = actionMessage.Action
 	}
 
+	wg.Wait()
+
+	return decisionMap
+}
+
+func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[string]decision.FightAction) (uint, uint, uint) {
+
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
-	wg.Wait()
+
 	for agentID, d := range decisionMap {
 		agentState := state.AgentState[agentID]
 
@@ -100,9 +107,9 @@ func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, base
 		state.AgentState[agentID] = agentState
 	}
 
-	return coweringAgents, attackSum, shieldSum, decisionMap
+	return coweringAgents, attackSum, shieldSum
 }
 
-func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(view, decisionLog, channel, wg)
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog *immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(view, *decisionLog, channel, wg)
 }
