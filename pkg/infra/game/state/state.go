@@ -31,11 +31,31 @@ type State struct {
 }
 
 type View struct {
-	CurrentLevel  uint
-	HpPool        uint
-	MonsterHealth uint
-	MonsterAttack uint
-	AgentState    *immutable.Map[commons.ID, AgentState]
+	currentLevel  uint
+	hpPool        uint
+	monsterHealth uint
+	monsterAttack uint
+	agentState    *immutable.Map[commons.ID, AgentState]
+}
+
+func (v *View) CurrentLevel() uint {
+	return v.currentLevel
+}
+
+func (v *View) HpPool() uint {
+	return v.hpPool
+}
+
+func (v *View) MonsterHealth() uint {
+	return v.monsterHealth
+}
+
+func (v *View) MonsterAttack() uint {
+	return v.monsterAttack
+}
+
+func (v *View) AgentState() *immutable.Map[commons.ID, AgentState] {
+	return v.agentState
 }
 
 func (s *State) ToView() *View {
@@ -45,10 +65,10 @@ func (s *State) ToView() *View {
 	}
 
 	return &View{
-		CurrentLevel:  s.CurrentLevel,
-		HpPool:        s.HpPool,
-		MonsterHealth: s.MonsterHealth,
-		MonsterAttack: s.MonsterAttack,
-		AgentState:    b.Map(),
+		currentLevel:  s.CurrentLevel,
+		hpPool:        s.HpPool,
+		monsterHealth: s.MonsterHealth,
+		monsterAttack: s.MonsterAttack,
+		agentState:    b.Map(),
 	}
 }
