@@ -8,6 +8,7 @@ import (
 	"infra/game/message"
 	"infra/game/state"
 	"math"
+	"sync"
 )
 
 func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
@@ -31,14 +32,15 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
+func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
 	decisionMap := make(map[commons.ID]decision.FightAction)
 	channels := make(map[commons.ID]chan decision.FightAction)
 
 	view := state.ToView()
-
+	//todo: unify to single channel to avoid mutex
 	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(*view, &a, *previousDecisions)
+		a := a
+		channels[i] = startAgentFightHandlers(*view, &a, previousDecisions)
 	}
 
 	for _, messages := range channelsMap {
@@ -47,16 +49,24 @@ func HandleFightRound(state *state.State, agents map[commons.ID]agent.Agent, bas
 			Message: *message.NewMessage(message.Something, nil),
 		}
 	}
+	var mutex = &sync.RWMutex{}
+	var wg sync.WaitGroup
 
 	for i, dChan := range channels {
-		decisionMap[i] = <-dChan
-		close(dChan)
+		wg.Add(1)
+		go func(i commons.ID, c chan decision.FightAction) {
+			defer wg.Done()
+			mutex.Lock()
+			decisionMap[i] = <-c
+			mutex.Unlock()
+			close(c)
+		}(i, dChan)
 	}
 
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
-
+	wg.Wait()
 	for agentID, d := range decisionMap {
 		agentState := state.AgentState[agentID]
 

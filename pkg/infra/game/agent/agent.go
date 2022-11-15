@@ -32,7 +32,6 @@ func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decis
 }
 
 func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) *decision.FightAction {
-	logging.Log.Infof("%v", m)
 	switch m.Message.MType() {
 	case message.Close:
 		//a.BaseAgent.communication.peer = *a.BaseAgent.communication.peer.Delete(m.Sender)
