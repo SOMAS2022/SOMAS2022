@@ -5,11 +5,13 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message"
 	"infra/game/state"
 	"math"
+	"sync"
 )
 
-func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state.State) {
+func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
 	splitDamage := attack / uint(len(agentMap))
 	for id, agentState := range globalState.AgentState {
 		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
@@ -30,24 +32,42 @@ func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state
 	}
 }
 
-func HandleFightRound(state *state.State, agents map[string]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[string, decision.FightAction]) (uint, uint, uint, map[string]decision.FightAction) {
-	decisionMap := make(map[string]decision.FightAction)
-	channels := make(map[string]chan decision.FightAction)
+func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
+	decisionMap := make(map[commons.ID]decision.FightAction)
+	channel := make(chan message.ActionMessage)
 
 	view := state.ToView()
+	var wg sync.WaitGroup
 
-	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(view, a, previousDecisions)
+	for _, a := range agents {
+		a := a
+		wg.Add(1)
+		startAgentFightHandlers(*view, &a, previousDecisions, channel, &wg)
 	}
-	for i, dChan := range channels {
-		decisionMap[i] = <-dChan
-		close(dChan)
+
+	for _, messages := range channelsMap {
+		messages <- message.TaggedMessage{
+			Sender:  "server",
+			Message: *message.NewMessage(message.Something, nil),
+		}
+	}
+
+	go func(group *sync.WaitGroup) {
+		group.Wait()
+		for _, messages := range channelsMap {
+			close(messages)
+		}
+		close(channel)
+	}(&wg)
+
+	for actionMessage := range channel {
+		decisionMap[actionMessage.Sender] = actionMessage.Action
 	}
 
 	var coweringAgents uint
 	var attackSum uint
 	var shieldSum uint
-
+	wg.Wait()
 	for agentID, d := range decisionMap {
 		agentState := state.AgentState[agentID]
 
@@ -83,8 +103,6 @@ func HandleFightRound(state *state.State, agents map[string]agent.Agent, baseHea
 	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
-func startAgentFightHandlers(view *state.View, a agent.Agent, decisionLog *immutable.Map[string, decision.FightAction]) chan decision.FightAction {
-	decisionChan := make(chan decision.FightAction)
-	go a.Strategy.HandleFight(view, a.BaseAgent, decisionChan, decisionLog)
-	return decisionChan
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(view, decisionLog, channel, wg)
 }

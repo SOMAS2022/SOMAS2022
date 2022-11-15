@@ -19,13 +19,13 @@ jobs:
     strategy:
       matrix:
         # Configurations with which the script will be run
-        levels: [60]
-        starting_hp: [10]
-        starting_attack: [100]
-        starting_shield: [100]
-        base_stamina: [400]
-        threshold_pct: [0.6]
-        agent_quantity: [25, 100]
+        levels: [ 60 ]
+        starting_hp: [ 10 ]
+        starting_attack: [ 100 ]
+        starting_shield: [ 100 ]
+        base_stamina: [ 400 ]
+        threshold_pct: [ 0.6 ]
+        agent_quantity: [ 25, 100 ]
 
     name: Testing performance of ${{ matrix.agents }}
     steps:

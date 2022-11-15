@@ -10,4 +10,5 @@ const (
 	Attack FightAction = iota
 	Defend
 	Cower
+	Undecided
 )
