@@ -12,21 +12,3 @@ const (
 	Cower
 	Undecided
 )
-
-func CowerPtr() (p *FightAction) {
-	p = new(FightAction)
-	*p = Cower
-	return
-}
-
-func AttackPtr() (p *FightAction) {
-	p = new(FightAction)
-	*p = Attack
-	return
-}
-
-func DefendPtr() (p *FightAction) {
-	p = new(FightAction)
-	*p = Defend
-	return
-}
