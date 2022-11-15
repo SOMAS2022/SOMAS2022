@@ -8,6 +8,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	gamemath "infra/game/math"
+	"infra/game/message"
 	"infra/game/stage/fight"
 	"infra/game/state"
 	"infra/logging"
@@ -18,9 +19,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[string]agent.Strategy{
-//	"RANDOM": agent.RandomAgent{},
-    "AGENT2": agent.Agent2{},
+var InitAgentMap = map[commons.ID]agent.Strategy{
+	"RANDOM": agent.NewRandomAgent(),
 }
 
 /*
@@ -40,16 +40,18 @@ func main() {
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[string]decision.FightAction
+	var channelsMap map[commons.ID]chan message.TaggedMessage
+	channelsMap = addCommsChannels(agentMap)
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
-			decisionMapView := immutable.NewMapBuilder[string, decision.FightAction](nil)
+			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(&globalState, agentMap, gameConfig.StartingHealthPoints, decisionMapView.Map())
+			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
 			decisionMap = dMap
 
 			logging.Log.WithFields(logging.LogField{
@@ -72,6 +74,9 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 					// TODO: Monster disruptive ability
 				}
 			}
+
+			channelsMap = addCommsChannels(agentMap)
+
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
 				logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
 				return
@@ -107,9 +112,9 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 	}
 }
 
-func initialise() (map[string]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[string]agent.Agent)
-	agentStateMap := make(map[string]state.AgentState)
+func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
+	agentMap := make(map[commons.ID]agent.Agent)
+	agentStateMap := make(map[commons.ID]state.AgentState)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -142,22 +147,47 @@ func initialise() (map[string]agent.Agent, state.State, config.GameConfig) {
 	return agentMap, globalState, gameConfig
 }
 
+func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]chan message.TaggedMessage) {
+	keys := make([]commons.ID, len(agentMap))
+	res = make(map[commons.ID]chan message.TaggedMessage)
+	i := 0
+	for k := range agentMap {
+		keys[i] = k
+		i++
+	}
+
+	for _, key := range keys {
+		res[key] = make(chan message.TaggedMessage, 100)
+	}
+
+	for id, a := range agentMap {
+		a.BaseAgent = createBaseAgent(id, res)
+		agentMap[id] = a
+	}
+	return
+}
+
+func createBaseAgent(id commons.ID, peerChannels map[commons.ID]chan message.TaggedMessage) agent.BaseAgent {
+	builder := immutable.NewMapBuilder[commons.ID, chan<- message.TaggedMessage](nil)
+	for pId, channel := range peerChannels {
+		if pId != id {
+			builder.Set(pId, channel)
+		}
+	}
+	return agent.NewBaseAgent(agent.NewCommunication(peerChannels[id], *builder.Map()), id)
+}
+
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[string]agent.Agent,
-	agentStateMap map[string]state.AgentState,
+	agentMap map[commons.ID]agent.Agent,
+	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
 	strategy S) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{
-				Communication: commons.Communication{
-					Peer: nil,
-				},
-				Id: agentId,
-			},
-			Strategy: strategy,
+			BaseAgent: agent.BaseAgent{},
+			Strategy:  strategy,
 		}
 
 		agentStateMap[agentId] = state.AgentState{

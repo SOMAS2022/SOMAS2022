@@ -2,12 +2,9 @@ package commons
 
 import (
 	"fmt"
-	"infra/game/message"
+	"github.com/benbjohnson/immutable"
+	"golang.org/x/exp/constraints"
 )
-
-type Communication struct {
-	Peer []chan message.Message
-}
 
 func SaturatingSub(x uint, y uint) uint {
 	res := x - y
@@ -28,3 +25,15 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 	}
 
 }
+
+func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) (keys []K) {
+	keys = make([]K, p.Len())
+	iterator := p.Iterator()
+	for !iterator.Done() {
+		key, _, _ := iterator.Next()
+		keys = append(keys, key)
+	}
+	return
+}
+
+type ID = string
