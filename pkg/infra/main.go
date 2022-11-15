@@ -159,22 +159,20 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	for _, key := range keys {
 		res[key] = make(chan message.TaggedMessage, 100)
 	}
-
+	immutableMap := createImmutableMap(res)
 	for id, a := range agentMap {
-		a.BaseAgent = createBaseAgent(id, res)
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id)
 		agentMap[id] = a
 	}
 	return
 }
 
-func createBaseAgent(id commons.ID, peerChannels map[commons.ID]chan message.TaggedMessage) agent.BaseAgent {
+func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) immutable.Map[commons.ID, chan<- message.TaggedMessage] {
 	builder := immutable.NewMapBuilder[commons.ID, chan<- message.TaggedMessage](nil)
 	for pId, channel := range peerChannels {
-		if pId != id {
-			builder.Set(pId, channel)
-		}
+		builder.Set(pId, channel)
 	}
-	return agent.NewBaseAgent(agent.NewCommunication(peerChannels[id], *builder.Map()), id)
+	return *builder.Map()
 }
 
 func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
