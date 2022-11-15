@@ -34,7 +34,7 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 
 func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
 	decisionMap := make(map[commons.ID]decision.FightAction)
-	channel := make(chan message.ActionMessage)
+	channel := make(chan message.ActionMessage, 100)
 
 	view := state.ToView()
 	var wg sync.WaitGroup
