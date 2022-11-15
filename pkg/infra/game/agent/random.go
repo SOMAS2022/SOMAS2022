@@ -22,26 +22,15 @@ func NewRandomAgent() *RandomAgent {
 	return &RandomAgent{bravery: 0}
 }
 
-func (RandomAgent) HandleFight(_ *state.View, _ BaseAgent, decisionC chan<- decision.FightAction, _ *immutable.Map[commons.ID, decision.FightAction]) {
+func (r RandomAgent) HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {
 	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		decisionC <- decision.Cower
-	case 1:
-		decisionC <- decision.Attack
-	case 2:
-		decisionC <- decision.Defend
-	}
-}
 
-func (r RandomAgent) HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) *decision.FightAction {
-	fight := rand.Intn(3)
 	switch fight {
 	case 0:
-		return decision.CowerPtr()
+		return decision.Cower
 	case 1:
-		return decision.AttackPtr()
+		return decision.Attack
 	default:
-		return decision.DefendPtr()
+		return decision.Defend
 	}
 }

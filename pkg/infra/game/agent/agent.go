@@ -7,11 +7,11 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-	"infra/logging"
+	"sync"
 )
 
 type Strategy interface {
-	HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) *decision.FightAction
+	HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction
 	Default() decision.FightAction
 }
 
@@ -20,50 +20,29 @@ type Agent struct {
 	Strategy  Strategy
 }
 
-func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan decision.FightAction) {
+func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
 	for m := range a.BaseAgent.communication.receipt {
 		action := a.handleMessage(&view, &log, m)
-		if action != nil {
-			decisionChan <- *action
+		if action != decision.Undecided {
+			go func() {
+				<-a.BaseAgent.communication.receipt
+			}()
+			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.Id}
+			wg.Done()
 			return
 		}
 	}
-	decisionChan <- a.Strategy.Default()
+	decisionChan <- message.ActionMessage{Action: a.Strategy.Default(), Sender: a.BaseAgent.Id}
 }
 
-func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) *decision.FightAction {
+func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
 	switch m.Message.MType() {
 	case message.Close:
-		//a.BaseAgent.communication.peer = *a.BaseAgent.communication.peer.Delete(m.Sender)
 	default:
 		fightMessage := a.Strategy.HandleFightMessage(m, view, a.BaseAgent, log)
-		if fightMessage != nil {
-			a.handleDecisionMaking()
-		}
 		return fightMessage
 	}
-	return nil
-}
-
-func (a *Agent) handleDecisionMaking() {
-	iterator := a.BaseAgent.communication.peer.Iterator()
-	go func() {
-		<-a.BaseAgent.communication.receipt
-	}()
-	for !iterator.Done() {
-		_, c, _ := iterator.Next()
-		func(c chan<- message.TaggedMessage) {
-			defer func() {
-				if r := recover(); r != nil {
-					logging.Log.Warnln("Unavailable")
-				}
-			}()
-			c <- message.TaggedMessage{
-				Sender:  a.BaseAgent.Id,
-				Message: *message.NewMessage(message.Close, nil),
-			}
-		}(c)
-	}
+	return decision.Undecided
 }
 
 type BaseAgent struct {
@@ -115,14 +94,4 @@ func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e erro
 		e = fmt.Errorf("agent %s not available for messaging, dead", id)
 	}
 	return
-}
-
-func nonBlockingReceive[T any](c <-chan T) (T, bool) {
-	select {
-	case msg := <-c:
-		return msg, true
-	default:
-		var result T
-		return result, false
-	}
 }

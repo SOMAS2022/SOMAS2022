@@ -10,6 +10,7 @@ const (
 	Attack FightAction = iota
 	Defend
 	Cower
+	Undecided
 )
 
 func CowerPtr() (p *FightAction) {

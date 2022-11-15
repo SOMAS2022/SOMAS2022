@@ -34,13 +34,15 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 
 func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, baseHealth uint, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) (uint, uint, uint, map[commons.ID]decision.FightAction) {
 	decisionMap := make(map[commons.ID]decision.FightAction)
-	channels := make(map[commons.ID]chan decision.FightAction)
+	channel := make(chan message.ActionMessage)
 
 	view := state.ToView()
-	//todo: unify to single channel to avoid mutex
-	for i, a := range agents {
+	var wg sync.WaitGroup
+
+	for _, a := range agents {
 		a := a
-		channels[i] = startAgentFightHandlers(*view, &a, previousDecisions)
+		wg.Add(1)
+		startAgentFightHandlers(*view, &a, previousDecisions, channel, &wg)
 	}
 
 	for _, messages := range channelsMap {
@@ -49,18 +51,17 @@ func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, base
 			Message: *message.NewMessage(message.Something, nil),
 		}
 	}
-	var mutex = &sync.RWMutex{}
-	var wg sync.WaitGroup
 
-	for i, dChan := range channels {
-		wg.Add(1)
-		go func(i commons.ID, c chan decision.FightAction) {
-			defer wg.Done()
-			mutex.Lock()
-			decisionMap[i] = <-c
-			mutex.Unlock()
-			close(c)
-		}(i, dChan)
+	go func(group *sync.WaitGroup) {
+		group.Wait()
+		for _, messages := range channelsMap {
+			close(messages)
+		}
+		close(channel)
+	}(&wg)
+
+	for actionMessage := range channel {
+		decisionMap[actionMessage.Sender] = actionMessage.Action
 	}
 
 	var coweringAgents uint
@@ -102,8 +103,6 @@ func HandleFightRound(state state.State, agents map[commons.ID]agent.Agent, base
 	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
-func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction]) chan decision.FightAction {
-	decisionChan := make(chan decision.FightAction)
-	go a.HandleFight(view, decisionLog, decisionChan)
-	return decisionChan
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(view, decisionLog, channel, wg)
 }

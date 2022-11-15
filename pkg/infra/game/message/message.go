@@ -1,6 +1,9 @@
 package message
 
-import "infra/game/commons"
+import (
+	"infra/game/commons"
+	"infra/game/decision"
+)
 
 type Payload interface {
 	isPayload()
@@ -34,4 +37,9 @@ func (m Message) Payload() Payload {
 type TaggedMessage struct {
 	Sender  commons.ID
 	Message Message
+}
+
+type ActionMessage struct {
+	Action decision.FightAction
+	Sender commons.ID
 }
