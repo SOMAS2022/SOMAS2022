@@ -1,13 +1,12 @@
 package fight
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"math"
-
-	"github.com/benbjohnson/immutable"
 )
 
 func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state.State) {
@@ -31,22 +30,19 @@ func DealDamage(attack uint, agentMap map[string]agent.Agent, globalState *state
 	}
 }
 
-func AgentFightDecisions(state *state.View, agents map[string]agent.Agent, previousDecisions *immutable.Map[string, decision.FightAction]) map[string]decision.FightAction {
+func HandleFightRound(state *state.State, agents map[string]agent.Agent, baseHealth uint, previousDecisions *immutable.Map[string, decision.FightAction]) (uint, uint, uint, map[string]decision.FightAction) {
 	decisionMap := make(map[string]decision.FightAction)
 	channels := make(map[string]chan decision.FightAction)
 
+	view := state.ToView()
+
 	for i, a := range agents {
-		channels[i] = startAgentFightHandlers(state, a, previousDecisions)
+		channels[i] = startAgentFightHandlers(view, a, previousDecisions)
 	}
 	for i, dChan := range channels {
 		decisionMap[i] = <-dChan
 		close(dChan)
 	}
-
-	return decisionMap
-}
-
-func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[string]decision.FightAction) (uint, uint, uint) {
 
 	var coweringAgents uint
 	var attackSum uint
@@ -84,7 +80,7 @@ func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[strin
 		state.AgentState[agentID] = agentState
 	}
 
-	return coweringAgents, attackSum, shieldSum
+	return coweringAgents, attackSum, shieldSum, decisionMap
 }
 
 func startAgentFightHandlers(view *state.View, a agent.Agent, decisionLog *immutable.Map[string, decision.FightAction]) chan decision.FightAction {
