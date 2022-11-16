@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { exec } from "child_process";
-import { team_names, team_score } from "./types/global";
+import { battle_summary, game_summary, simulation_result, team_names, team_score } from "./types/global";
 
 const app = express();
 const PORT = 9000;
@@ -32,10 +32,10 @@ app.get("/fetchLeaderboardData", (_, res) => {
 });
 
 app.post("/sendToQueue", (req, res) => {
-    console.log(req.body);
+    const config = req.body as simulation_result;
     const env_vars = process.env;
-    env_vars["LEVELS"] = "400";
-    exec("cd ../../ && make run", { env: env_vars }, (error, stdout, stderr) => {
+    env_vars["LEVELS"] = config.config.levels.toString();
+    exec("cd ../../ && make runWithJSON", { env: env_vars }, (error, stdout, stderr) => {
         if (error) {
             console.error(`error: ${error.message}`);
             return;
@@ -45,8 +45,27 @@ app.post("/sendToQueue", (req, res) => {
             console.error(`stderr: ${stderr}`);
             return;
         }
+        const log: Array<battle_summary | game_summary> = [];
 
-        console.log(`stdout:\n${stdout}`);
+        const stdoutToLogJSON = (stdout: string) => {
+            const array = stdout.split("\n");
+            for (let i = 0; i < array.length; i++) {
+                if (array[i][0] != "{") continue;
+                try {
+                    const json = JSON.parse(array[i]) as battle_summary | game_summary;
+                    json.time = new Date(json.time);
+                    console.log(json);
+                    log.push(json);
+                } catch {
+                    console.log(`Invalid JSON: ${array[i]}`);
+                    continue;
+                }
+            }
+        };
+        
+        stdoutToLogJSON(stdout);
+        console.log(log);
+        
     });
     res.status(202).send("Accepted");
 });
