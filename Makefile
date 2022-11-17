@@ -26,6 +26,7 @@ fmt:
 	gofmt -s -w .
 # change to `run ./pkg/*` after agents are implemented
 # should just be `run`, but seems to be problems with go.work  
+# nb: using cd to /pkg/infra dosen't fix this (on wsl2)
 check:
 	golangci-lint run ./pkg/infra\
 		--timeout=5m0s \

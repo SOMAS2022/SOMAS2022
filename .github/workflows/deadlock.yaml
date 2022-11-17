@@ -34,7 +34,7 @@ jobs:
       run: find . -type f -name "*.go" -not -path '*/\.*' -exec sed -i -- 's/\t"sync"/\tsync "github.com\/sasha-s\/go-deadlock"/g' {} +
 
     - name: Adding go-deadlock package
-      run: go get github.com/sasha-s/go-deadlock
+      run: go install github.com/sasha-s/go-deadlock
 
     - name: Test with deadlock detection
       run: make test
