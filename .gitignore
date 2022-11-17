@@ -6,3 +6,4 @@ web/backend/dist/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+coverage.txt
