@@ -21,6 +21,7 @@ import (
 
 var InitAgentMap = map[commons.ID]agent.Strategy{
 	"RANDOM": agent.NewRandomAgent(),
+    "AGENT2": agent.NewAgent2(),
 }
 
 /*

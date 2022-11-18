@@ -5,12 +5,24 @@ import (
 	"infra/game/decision"
 	"infra/game/state"
 	"math/rand"
+    "infra/game/message"
+    "infra/game/commons"
 )
 
 type Agent2 struct {
+    bravery int
 }
 
-func (Agent2) HandleFight(_ state.State, _ BaseAgent, decisionC chan<- decision.FightAction, log *immutable.Map[uint, decision.FightAction]) {
+func (a Agent2) Default() decision.FightAction {
+    //TODO implement me
+    panic("implement me")
+}
+
+func NewAgent2() *Agent2 {
+    return &Agent2{bravery: 0}
+}
+
+func (a Agent2) HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {
 /*
 Fighting is similar to Random Agent for MVP.
 - Agent attacks by default (50% of the time)
@@ -20,10 +32,10 @@ Fighting is similar to Random Agent for MVP.
 	fight := rand.Intn(10)
 	switch {
 	case fight == 0:
-		decisionC <- decision.Cower
+		return decision.Cower
 	case (fight <= 4) && (fight > 0) :
-		decisionC <- decision.Defend
+		return decision.Defend
     default:
-        decisionC <- decision.Attack
+        return decision.Attack
 	}
 }
