@@ -13,8 +13,9 @@ export default function Schedule() {
     const [formInput, setFormInput] = useState<simulation_result>({
         name: uuidv4(),
         id: uuidv4(),
+        onGITCommit: "",
         time_queued: new Date(Date.now()),
-        time_completed: null,
+        time_taken: 0,
         sim_status: simulation_status.In_Queue,
         result: null,
         error: null,
@@ -33,12 +34,14 @@ export default function Schedule() {
             team4Qty: 0,
             team5Qty: 0,
             team6Qty: 0,
-        }
+        },
+        logs: [],
     });
 
     const toggleModal = () => {
         setLoading(false);
         setShowSubmitModal(!showSubmitModal);
+        window.location.reload();
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {

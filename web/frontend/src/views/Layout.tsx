@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { styled, useTheme } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
@@ -25,7 +25,7 @@ import { Tooltip } from "@mui/material";
 import Summary from "./Summary";
 import Schedule from "./Schedule";
 import Result from "./Result";
-import { run_result, simulation_result, simulation_status, team_names } from "../types/global";
+import { simulation_result, simulation_status } from "../types/global";
 
 const drawerWidth = 240;
 
@@ -79,95 +79,29 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 interface LayoutProps {
-    connected: boolean
+    connected: boolean,
+    latestGitCommit: string
 }
 
-export default function Layout({connected}: LayoutProps) {
+export default function Layout({ connected, latestGitCommit }: LayoutProps) {
     const theme = useTheme();
     const colourMode = useContext(ColourModeContext);
     const [open, setOpen] = useState<boolean>(true);
     const [view, setView] = useState<number>(0);
     const [selectedRes, setSelectedRes] = useState<simulation_result | null>(null);
-
-    const sim_results: simulation_result[] = [
-        {
-            name: "Queue",
-            id: "9203748927349097",
-            sim_status: simulation_status.In_Queue,
-            time_queued: new Date(Date.now()-5),
-            time_completed: new Date(Date.now()),
-            result: null,
-            winner: null,
-            error: null,
-            config: {
-                levels: 100,
-                runs: 1,
-                startingHP: 1000,
-                startingAT: 1000,
-                startingSH: 1000,
-                baseSTAM: 100,
-                randomQty: 100,
-                team1Qty: 0,
-                team2Qty: 0,
-                team3Qty: 0,
-                team4Qty: 0,
-                team5Qty: 0,
-                team6Qty: 0,
-            }
-        },
-        {
-            name: "Fin",
-            id: "123534598128972",
-            sim_status: simulation_status.Finished,
-            time_queued: new Date(Date.now()),
-            time_completed: null,
-            result: null,
-            winner: null,
-            error: null,
-            config: {
-                levels: 100,
-                runs: 1,
-                startingHP: 1000,
-                startingAT: 1000,
-                startingSH: 1000,
-                baseSTAM: 100,
-                randomQty: 100,
-                team1Qty: 0,
-                team2Qty: 0,
-                team3Qty: 0,
-                team4Qty: 0,
-                team5Qty: 0,
-                team6Qty: 0,
-            }
-        },
-        {
-            name: "Running",
-            id: "1235345981289272",
-            sim_status: simulation_status.Running,
-            time_queued: new Date(Date.now()),
-            time_completed: null,
-            result: run_result.Win,
-            winner: team_names.randomAgent,
-            error: null,
-            config: {
-                levels: 100,
-                runs: 1,
-                startingHP: 1000,
-                startingAT: 1000,
-                startingSH: 1000,
-                baseSTAM: 100,
-                randomQty: 100,
-                team1Qty: 0,
-                team2Qty: 0,
-                team3Qty: 0,
-                team4Qty: 0,
-                team5Qty: 0,
-                team6Qty: 0,
-            }
+    const [simResults, setSimResults] = useState<simulation_result[]>([]);
+    
+    useEffect(() => {
+        async function fetchResults() {
+            const res = await fetch("http://localhost:9000/fetchSimResults");
+            const data = await res.json();
+            console.log(data);
+            setSimResults(data);
         }
-    ];
-        
 
+        fetchResults();
+    }, []);
+        
     const handleDrawerOpen = () => {
         setOpen(true);
     };
@@ -203,6 +137,11 @@ export default function Layout({connected}: LayoutProps) {
                             <IconButton sx={connected ? { ml: 1, float: "right", color: theme.palette.success.main } : { ml: 1, float: "right", color: theme.palette.error.main }} >
                                 {connected ? <SignalCellular4Bar /> : <WifiOff />}
                             </IconButton>
+                        </Tooltip>
+                        <Tooltip title={"Git Commit"}>
+                            <Typography variant="subtitle1" sx={{ ml: 1, float: "right", marginTop: "8px" }}>
+                                Commit: {latestGitCommit}
+                            </Typography>
                         </Tooltip>
                     </Box>
                 </Toolbar>
@@ -250,7 +189,7 @@ export default function Layout({connected}: LayoutProps) {
                 <Divider />
                 <List>
                     {
-                        sim_results.map((res) => {
+                        simResults.map((res) => {
                             let iconColour = theme.palette.warning.main;
                             if (res.sim_status === simulation_status.In_Queue) {
                                 iconColour = theme.palette.error.main;

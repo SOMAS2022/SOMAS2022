@@ -9,6 +9,7 @@ export default function App() {
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
     const [mode, setMode] = useState<"light" | "dark">(prefersDarkMode ? "dark" : "light");
     const [conn, setConn] = useState<boolean>(false);
+    const [latestGitCommit, setLatestGitCommit] = useState<string>("");
     const colorMode = useMemo(
         () => ({
             toggleColourMode: () => {
@@ -20,7 +21,15 @@ export default function App() {
 
     useEffect(() => {
         async function establishServerConnection() {
-            await fetch("http://localhost:9000/test").then(res => {console.info(res); setConn(true);}).catch((err) => {console.error(err); setConn(false);});
+            await fetch("http://localhost:9000/test")
+                .then(res => {
+                    console.info(res); 
+                    setConn(true); 
+                    return res.text();
+                }).then(txt => setLatestGitCommit(txt)).catch((err) => {
+                    console.error(err); 
+                    setConn(false);
+                });
         }
         establishServerConnection();
     }, []);
@@ -50,7 +59,7 @@ export default function App() {
     return (
         <ColourModeContext.Provider value={colorMode}>
             <ThemeProvider theme={theme}>
-                <Layout connected={conn}/>
+                <Layout connected={conn} latestGitCommit={latestGitCommit}/>
             </ThemeProvider>
         </ColourModeContext.Provider>
     );

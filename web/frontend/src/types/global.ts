@@ -48,11 +48,32 @@ export interface simulation_config {
 export interface simulation_result {
     name: string,
     id: string,
+    onGITCommit: string,
     time_queued: Date,
-    time_completed: Date | null,
+    time_taken: number,
     sim_status: simulation_status,
     result: run_result | null,
     error: run_errors | null,
     winner: team_names | null,
-    config: simulation_config
+    config: simulation_config,
+    logs: Array<battle_summary>
+}
+
+export interface battle_summary {
+    level: string,
+    msg: string,
+    currentLevel: number,
+    monsterHealth: number,
+    monsterDamage: number,
+    numberOfAgents: number,
+    attackSum: number,
+    shieldSum: number,
+    battleResult: string,
+    time: Date
+}
+
+export interface game_summary {
+    level: string,
+    msg: string,
+    time: Date
 }
