@@ -31,10 +31,11 @@ Enables peers to send and receive messages with broadcasting possible via non-bl
 
 func main() {
 	// define flags
-	useJSONFormatter := flag.Bool("j", false, "whether to use JSONFormatter for logging")
+	useJSONFormatter := flag.Bool("j", false, "Whether to output logs in JSON")
+	debug := flag.Bool("d", false, "Whether to run in debug mode. If false, only logs with level info or above will be shown")
 	flag.Parse()
 
-	logging.InitLogger(*useJSONFormatter)
+	logging.InitLogger(*useJSONFormatter, *debug)
 
 	agentMap, globalState, gameConfig := initialise()
 	gameLoop(globalState, agentMap, gameConfig)
@@ -54,7 +55,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
 			decisionMap = dMap
 
-			logging.Log.WithFields(logging.LogField{
+			logging.Log(logging.Trace, logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
@@ -62,7 +63,8 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				"attackSum":     attackSum,
 				"shieldSum":     shieldSum,
 				"numAgents":     len(agentMap),
-			}).Info("Battle summary")
+			}, "Battle Summary")
+			// logging.Log.WithFields().Info("Battle summary")
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, &globalState)
@@ -78,7 +80,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			channelsMap = addCommsChannels(agentMap)
 
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
+				// logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
 				return
 			}
 		}
@@ -118,7 +120,7 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	err := godotenv.Load()
 	if err != nil {
-		logging.Log.Warnln("No .env file located, using defaults")
+		// logging.Log.Warnln("No .env file located, using defaults")
 	}
 
 	gameConfig := config.GameConfig{
