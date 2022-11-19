@@ -21,14 +21,13 @@ const (
 
 func InitLogger(useJSONFormatter bool, debug bool) {
 	if useJSONFormatter {
-		// Log as JSON instead of the default ASCII formatter.
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		log.SetFormatter(&logrus.TextFormatter{})
 	}
-	// Output to stdout instead of the default stderr
+
 	log.SetOutput(os.Stdout)
-	// Only log the warning severity or above.
+
 	if debug {
 		log.SetLevel(logrus.TraceLevel)
 	} else {

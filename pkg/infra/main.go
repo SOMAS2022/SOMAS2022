@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
@@ -55,7 +56,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
 			decisionMap = dMap
 
-			logging.Log(logging.Trace, logging.LogField{
+			logging.Log(logging.Info, logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
@@ -64,7 +65,6 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				"shieldSum":     shieldSum,
 				"numAgents":     len(agentMap),
 			}, "Battle Summary")
-			// logging.Log.WithFields().Info("Battle summary")
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, &globalState)
@@ -80,7 +80,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			channelsMap = addCommsChannels(agentMap)
 
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				// logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
+				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
 		}
@@ -120,7 +120,7 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	err := godotenv.Load()
 	if err != nil {
-		// logging.Log.Warnln("No .env file located, using defaults")
+		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
 
 	gameConfig := config.GameConfig{
