@@ -9,7 +9,7 @@ import (
 func AllDefend(agents map[commons.ID]agent.Agent) map[commons.ID]decision.FightAction {
 	decisionMap := make(map[commons.ID]decision.FightAction)
 
-	for i, _ := range agents {
+	for i := range agents {
 		decisionMap[i] = decision.Defend
 	}
 
