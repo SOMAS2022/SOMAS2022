@@ -54,7 +54,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, decisionMapView.Map(), channelsMap)
+			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)
 			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
 			decisionMap = dMap
 

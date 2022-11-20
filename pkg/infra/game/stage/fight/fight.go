@@ -33,7 +33,7 @@ func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *s
 	}
 }
 
-func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions *immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[string]decision.FightAction {
+func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
 	decisionMap := make(map[commons.ID]decision.FightAction)
 	channel := make(chan message.ActionMessage, 100)
 
@@ -110,6 +110,6 @@ func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[strin
 	return coweringAgents, attackSum, shieldSum
 }
 
-func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog *immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(view, *decisionLog, channel, wg)
+func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(view, decisionLog, channel, wg)
 }
