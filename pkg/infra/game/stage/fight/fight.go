@@ -69,7 +69,7 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	return decisionMap
 }
 
-func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[string]decision.FightAction) (uint, uint, uint) {
+func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[commons.ID]decision.FightAction) (uint, uint, uint) {
 
 	var coweringAgents uint
 	var attackSum uint
