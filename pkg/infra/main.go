@@ -47,7 +47,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
 	channelsMap = addCommsChannels(agentMap)
-	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
+	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
 			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
@@ -70,7 +70,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 
 			if len(fightRoundResult.CoweringAgents) != len(agentMap) {
 				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
-				if globalState.MonsterHealth > 0 {
+				if globalState.MonsterHealth > 0 && fightRoundResult.ShieldSum < globalState.MonsterAttack {
 					agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
 					damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
 					fight.DealDamage(damageTaken, agentsFighting, agentMap, &globalState)
@@ -88,11 +88,10 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				return
 			}
 		}
-		//todo: fix this
-		//todo: There is a weird bug due to the mathematics that agents gain more health from cowering than monster attack when all cower
+		logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
 		//todo: Results in infinite game run-through
-		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, globalState.CurrentLevel)
-		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel)
+		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, (globalState.CurrentLevel + 1))
+		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, (globalState.CurrentLevel + 1))
 
 		// TODO: End of Level looting and trading
 		// FIXME: This loot allocation should not stay for long!
@@ -109,6 +108,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 		globalState = new_global_state
 
 	}
+	logging.Log.Infof("Congratulations, The Peasents have escaped the pit with %d remaining.", len(agentMap))
 }
 
 func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
@@ -125,8 +125,8 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	gameConfig := config.GameConfig{
 		NumLevels:              config.EnvToUint("LEVELS", 60),
 		StartingHealthPoints:   config.EnvToUint("STARTING_HP", 1000),
-		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 1000),
-		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 1000),
+		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 100),
+		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 100),
 		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
@@ -134,17 +134,18 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	for agentName, strategy := range InitAgentMap {
 		expectedEnvName := "AGENT_" + agentName + "_QUANTITY"
-		quantity := config.EnvToUint(expectedEnvName, 0)
+		quantity := config.EnvToUint(expectedEnvName, 100)
 
 		gameConfig.InitialNumAgents += quantity
 		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
 	}
 
 	globalState := state.State{
-		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, 0),
-		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 0),
+		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, 1),
+		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 1),
 		AgentState:    agentStateMap,
 	}
+
 	return agentMap, globalState, gameConfig
 }
 
