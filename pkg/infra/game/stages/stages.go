@@ -16,11 +16,11 @@ import (
 )
 
 // ? Changed at compile time. eg run with `make TEAM=0` to set this to '0'
-var mode = "default"
+var Mode string
 
 // TODO: Change to using views
 func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Agent, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
-	switch mode {
+	switch Mode {
 	case "0":
 		return t0.AllocateLoot(globalState, weaponLoot, shieldLoot)
 	default:
@@ -28,8 +28,8 @@ func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Age
 	}
 }
 
-func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[string]decision.FightAction {
-	switch mode {
+func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
+	switch Mode {
 	case "0":
 		//? Not necessary to use all function arguments
 		return t0.AllDefend(agents)

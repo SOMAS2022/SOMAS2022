@@ -17,9 +17,9 @@ git clone git@github.com:SOMAS2022/SOMAS2022.git
 cd SOMAS2022
 make
 ```
-If running a team experiment, eg for team 0:
+If running a team experiment, eg for team 0, set the `MODE` env variable in `.env`
 ```
-make TEAM=0
+MODE=0
 ```
 ## Project Structure
 

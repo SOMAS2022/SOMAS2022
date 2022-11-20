@@ -24,3 +24,12 @@ func EnvToFloat(key string, def float32) float32 {
 	}
 	return float32(levels)
 }
+
+func EnvToString(key string, def string) string {
+	s := os.Getenv(key)
+	if s == "" {
+		logging.Log(logging.Warn, nil, fmt.Sprintf("%s unset, defaulting to %s\n", key, def))
+		return def
+	}
+	return s
+}

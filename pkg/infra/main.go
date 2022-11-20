@@ -2,11 +2,8 @@ package main
 
 import (
 	"flag"
-<<<<<<< HEAD
 	"fmt"
 	"github.com/benbjohnson/immutable"
-=======
->>>>>>> 15c929f... [infra] Create API for individual team use (#39)
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -20,7 +17,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
@@ -121,6 +117,8 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
+
+	stages.Mode = config.EnvToString("MODE", "default")
 
 	gameConfig := config.GameConfig{
 		NumLevels:              config.EnvToUint("LEVELS", 60),
