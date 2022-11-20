@@ -76,6 +76,9 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 					fight.DealDamage(damageTaken, agentsFighting, agentMap, &globalState)
 					// TODO: Monster disruptive ability
 				}
+			} else {
+				damageTaken := globalState.MonsterAttack
+				fight.DealDamage(damageTaken, coweringAgents, agentMap, &globalState)
 			}
 
 			channelsMap = addCommsChannels(agentMap)
