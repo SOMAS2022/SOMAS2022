@@ -37,6 +37,7 @@ jobs:
 
       - name: Build main.go to tmp directory
         run: make build -o /tmp/infra
+        working-directory: pkg/infra
 
       # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
       # the game for your agent
