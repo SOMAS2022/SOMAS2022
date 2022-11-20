@@ -138,7 +138,7 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 		quantity := config.EnvToUint(expectedEnvName, 0)
 
 		gameConfig.InitialNumAgents += quantity
-		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy)
+		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
 	}
 
 	globalState := state.State{
@@ -163,7 +163,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	}
 	immutableMap := createImmutableMap(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id)
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.AgentName)
 		agentMap[id] = a
 	}
 	return
@@ -181,12 +181,14 @@ func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
-	strategy S) {
+	strategy S,
+	agentName string,
+) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{},
+			BaseAgent: agent.BaseAgent{AgentName: agentName},
 			Strategy:  strategy,
 		}
 
