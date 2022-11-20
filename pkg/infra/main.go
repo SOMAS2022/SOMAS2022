@@ -11,6 +11,7 @@ import (
 	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/fight"
+	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
 	"math"
@@ -43,7 +44,7 @@ func main() {
 }
 
 func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
-	var decisionMap map[string]decision.FightAction
+	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
 	channelsMap = addCommsChannels(agentMap)
 	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
@@ -53,7 +54,8 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
+			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)
+			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
 			decisionMap = dMap
 
 			logging.Log(logging.Info, logging.LogField{
@@ -100,17 +102,10 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		for i, agentState := range globalState.AgentState {
-			allocatedWeapon := rand.Intn(len(weaponLoot))
-			allocatedShield := rand.Intn(len(shieldLoot))
+		new_global_state := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
+		// TODO: Add verification if needed
+		globalState = new_global_state
 
-			agentState.BonusAttack = weaponLoot[allocatedWeapon]
-			agentState.BonusDefense = shieldLoot[allocatedShield]
-			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
-
-			globalState.AgentState[i] = agentState
-		}
 	}
 }
 
@@ -122,6 +117,8 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
+
+	stages.Mode = config.EnvToString("MODE", "default")
 
 	gameConfig := config.GameConfig{
 		NumLevels:              config.EnvToUint("LEVELS", 60),
