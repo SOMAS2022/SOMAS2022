@@ -7,6 +7,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/logging"
 	"sync"
 )
 
@@ -45,13 +46,23 @@ func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, d
 	return decision.Undecided
 }
 
+func (ba *BaseAgent) log(lvl logging.Level, fields logging.LogField, msg string) {
+	agentFields := logging.LogField{
+		"agentName": ba.AgentName,
+		"agentID":   ba.Id,
+	}
+
+	logging.Log(lvl, logging.CombineFields(agentFields, fields), msg)
+}
+
 type BaseAgent struct {
 	communication Communication
 	Id            commons.ID
+	AgentName     string
 }
 
-func NewBaseAgent(communication Communication, id commons.ID) BaseAgent {
-	return BaseAgent{communication: communication, Id: id}
+func NewBaseAgent(communication Communication, id commons.ID, agentName string) BaseAgent {
+	return BaseAgent{communication: communication, Id: id, AgentName: agentName}
 }
 
 type Communication struct {

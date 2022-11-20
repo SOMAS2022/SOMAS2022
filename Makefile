@@ -12,7 +12,9 @@ run: build
 
 runWithJSON: build
 		${BINARY_NAME} -j
- 
+
+runDebug: build
+		${BINARY_NAME} -d
 clean:
 		go clean
 		rm -rf ${BINARY_NAME}

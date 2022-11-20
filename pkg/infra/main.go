@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
@@ -31,10 +32,11 @@ Enables peers to send and receive messages with broadcasting possible via non-bl
 
 func main() {
 	// define flags
-	useJSONFormatter := flag.Bool("j", false, "whether to use JSONFormatter for logging")
+	useJSONFormatter := flag.Bool("j", false, "Whether to output logs in JSON")
+	debug := flag.Bool("d", false, "Whether to run in debug mode. If false, only logs with level info or above will be shown")
 	flag.Parse()
 
-	logging.InitLogger(*useJSONFormatter)
+	logging.InitLogger(*useJSONFormatter, *debug)
 
 	agentMap, globalState, gameConfig := initialise()
 	gameLoop(globalState, agentMap, gameConfig)
@@ -54,7 +56,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
 			decisionMap = dMap
 
-			logging.Log.WithFields(logging.LogField{
+			logging.Log(logging.Info, logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
@@ -62,7 +64,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				"attackSum":     attackSum,
 				"shieldSum":     shieldSum,
 				"numAgents":     len(agentMap),
-			}).Info("Battle summary")
+			}, "Battle Summary")
 			if coweringAgents == uint(len(agentMap)) {
 				attack := globalState.MonsterAttack
 				fight.DealDamage(attack, agentMap, &globalState)
@@ -78,7 +80,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			channelsMap = addCommsChannels(agentMap)
 
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
+				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
 		}
@@ -118,7 +120,7 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	err := godotenv.Load()
 	if err != nil {
-		logging.Log.Warnln("No .env file located, using defaults")
+		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
 
 	gameConfig := config.GameConfig{
@@ -136,7 +138,7 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 		quantity := config.EnvToUint(expectedEnvName, 0)
 
 		gameConfig.InitialNumAgents += quantity
-		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy)
+		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
 	}
 
 	globalState := state.State{
@@ -161,7 +163,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	}
 	immutableMap := createImmutableMap(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id)
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.AgentName)
 		agentMap[id] = a
 	}
 	return
@@ -179,12 +181,14 @@ func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
-	strategy S) {
+	strategy S,
+	agentName string,
+) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{},
+			BaseAgent: agent.BaseAgent{AgentName: agentName},
 			Strategy:  strategy,
 		}
 
