@@ -55,26 +55,25 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				decisionMapView.Set(u, action)
 			}
 			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)
-			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
+			attackingAgents, defendingAgents, coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
 			decisionMap = dMap
 
 			logging.Log(logging.Info, logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
-				"numCoward":     coweringAgents,
+				"numCoward":     len(coweringAgents),
 				"attackSum":     attackSum,
 				"shieldSum":     shieldSum,
 				"numAgents":     len(agentMap),
 			}, "Battle Summary")
-			if coweringAgents == uint(len(agentMap)) {
-				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, &globalState)
-			} else {
+
+			if len(coweringAgents) != len(agentMap) {
 				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
 				if globalState.MonsterHealth > 0 {
+					agentsFighting := append(attackingAgents, defendingAgents...)
 					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, &globalState)
+					fight.DealDamage(damageTaken, agentsFighting, agentMap, &globalState)
 					// TODO: Monster disruptive ability
 				}
 			}

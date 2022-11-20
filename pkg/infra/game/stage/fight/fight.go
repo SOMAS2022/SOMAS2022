@@ -11,18 +11,19 @@ import (
 	"sync"
 )
 
-func DealDamage(attack uint, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
-	splitDamage := attack / uint(len(agentMap))
-	for id, agentState := range globalState.AgentState {
-		newHp := commons.SaturatingSub(agentState.Hp, splitDamage)
-		if newHp == 0 {
+func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
+	splitDamage := damageToDeal / uint(len(agentsFighting))
+	for _, id := range agentsFighting {
+		agentState := globalState.AgentState[id]
+		newHP := commons.SaturatingSub(agentState.Hp, splitDamage)
+		if newHP == 0 {
 			// kill agent
 			// todo: prune peer channels somehow...
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
-				Hp:           newHp,
+				Hp:           newHP,
 				Attack:       agentState.Attack,
 				Defense:      agentState.Defense,
 				BonusAttack:  agentState.BonusAttack,
@@ -68,9 +69,11 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	return decisionMap
 }
 
-func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[commons.ID]decision.FightAction) (uint, uint, uint) {
+func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[commons.ID]decision.FightAction) ([]string, []string, []string, uint, uint) {
 
-	var coweringAgents uint
+	var attackingAgents []string
+	var defendingAgents []string
+	var coweringAgents []string
 	var attackSum uint
 	var shieldSum uint
 
@@ -80,33 +83,35 @@ func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[commo
 		switch d {
 		case decision.Attack:
 			if agentState.Stamina > agentState.BonusAttack {
+				attackingAgents = append(attackingAgents, agentID)
 				attackSum += agentState.TotalAttack()
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
 			} else {
-				coweringAgents++
+				coweringAgents = append(coweringAgents, agentID)
 				decisionMap[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
 			if agentState.Stamina > agentState.BonusDefense {
+				defendingAgents = append(defendingAgents, agentID)
 				shieldSum += agentState.TotalDefense()
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
 			} else {
-				coweringAgents++
+				coweringAgents = append(coweringAgents, agentID)
 				decisionMap[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Cower:
-			coweringAgents++
+			coweringAgents = append(coweringAgents, agentID)
 			agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 			agentState.Stamina += 1
 		}
 		state.AgentState[agentID] = agentState
 	}
 
-	return coweringAgents, attackSum, shieldSum
+	return attackingAgents, defendingAgents, coweringAgents, attackSum, shieldSum
 }
 
 func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
