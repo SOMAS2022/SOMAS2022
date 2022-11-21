@@ -7,7 +7,6 @@ import (
 )
 
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
-
 	allocatedState = globalState
 
 	for _, agentState := range allocatedState.AgentState {

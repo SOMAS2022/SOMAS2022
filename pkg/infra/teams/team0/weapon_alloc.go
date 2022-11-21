@@ -10,7 +10,6 @@ import (
 * This default function allocates loot randomly
  */
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
-
 	allocatedState := globalState
 
 	for _, agentState := range allocatedState.AgentState {
