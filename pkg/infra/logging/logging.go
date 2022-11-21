@@ -2,8 +2,9 @@ package logging
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 var log = logrus.New()

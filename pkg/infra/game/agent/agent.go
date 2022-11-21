@@ -2,13 +2,14 @@ package agent
 
 import (
 	"fmt"
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/logging"
 	"sync"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type Strategy interface {
