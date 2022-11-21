@@ -21,8 +21,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19
-        go-version-file: './pkg/infra/go.mod'
+        go-version-file: 'go.work'
 
     - name: Checkout code
       uses: actions/checkout@v3
