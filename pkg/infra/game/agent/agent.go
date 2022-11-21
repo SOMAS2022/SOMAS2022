@@ -12,39 +12,72 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type Strategy interface {
-	HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction
-	Default() decision.FightAction
-}
+// type Strategy interface {
+// 	// HandleFightMessage(m message.TaggedMessage,
+// 	// 	view *state.View, agent BaseAgent,
+// 	// 	log *immutable.Map[commons.ID, decision.FightAction],
+// 	// )
+// 	HandleInfoFightMessage(
+// 		m message.TaggedMessage,
+// 		view *state.View,
+// 		agent BaseAgent,
+// 		log *immutable.Map[commons.ID, decision.FightAction],
+// 	)
+// 	HandleResponseFightMessage(m message.TaggedMessage,
+// 		view *state.View,
+// 		agent BaseAgent,
+// 		log *immutable.Map[commons.ID, decision.FightAction],
+// 	) message.Message
+
+// 	Default() decision.FightAction
+// }
 
 type Agent struct {
 	BaseAgent BaseAgent
-	Strategy  Strategy
+	Strategy  message.Strategy
 }
 
-func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
+func (a *Agent) HandleFight(
+	agentMap map[commons.ID]Agent,
+	view state.View,
+	log immutable.Map[commons.ID, decision.FightAction],
+	decisionChan chan message.ActionDecision,
+	wg *sync.WaitGroup) {
+
+	// Give the agent the current state to process
+	a.Strategy.ProcessStartOfRound(view, log)
+
+	// Process any messages that the agent currently has in a loop
+	// TODO ? keep looping this for loop until all agents are completed
 	for m := range a.BaseAgent.communication.receipt {
-		action := a.handleMessage(&view, &log, m)
+		a.handleMessage(agentMap, &view, &log, m)
+		action := a.Strategy.GenerateActionDecision()
 		if action != decision.Undecided {
 			go func() {
 				<-a.BaseAgent.communication.receipt
 			}()
-			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.Id}
+			decisionChan <- message.ActionDecision{Action: action, Sender: a.BaseAgent.Id}
 			wg.Done()
 			return
 		}
 	}
-	decisionChan <- message.ActionMessage{Action: a.Strategy.Default(), Sender: a.BaseAgent.Id}
+
+	// Ask the agent for its final decision
+	decisionChan <- message.ActionDecision{Action: a.Strategy.GenerateActionDecision(), Sender: a.BaseAgent.Id}
 }
 
-func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
-	switch m.Message.MType() {
-	case message.Close:
+func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) {
+
+	switch m.Message.(type) {
+
+	case message.RequestMessageInterface:
+		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy)
+		agentMap[m.Sender].BaseAgent.sendBlockingMessage(a.BaseAgent.Id, response)
+	case message.InfoMessageInterface:
+		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy)
 	default:
-		fightMessage := a.Strategy.HandleFightMessage(m, view, a.BaseAgent, log)
-		return fightMessage
+
 	}
-	return decision.Undecided
 }
 
 func (ba *BaseAgent) log(lvl logging.Level, fields logging.LogField, msg string) {
