@@ -4,7 +4,7 @@ name: Lint and format check
 on:
   # Triggers the workflow on push events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
 
   pull_request:
     branches: [ "main" ]
