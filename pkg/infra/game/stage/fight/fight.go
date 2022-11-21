@@ -77,6 +77,7 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 	for agentID, d := range fightResult.Choices {
 		agentState := state.AgentState[agentID]
 
+		const scalingFactor = 0.01
 		switch d {
 		case decision.Attack:
 			if agentState.Stamina > agentState.BonusAttack {
@@ -86,7 +87,7 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
-				agentState.Hp += uint(math.Ceil(0.01 * float64(baseHealth)))
+				agentState.Hp += uint(math.Ceil(scalingFactor * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
@@ -97,12 +98,12 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
-				agentState.Hp += uint(math.Ceil(0.01 * float64(baseHealth)))
+				agentState.Hp += uint(math.Ceil(scalingFactor * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Cower:
 			fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
-			agentState.Hp += uint(math.Ceil(0.01 * float64(baseHealth)))
+			agentState.Hp += uint(math.Ceil(scalingFactor * float64(baseHealth)))
 			agentState.Stamina += 1
 		}
 		state.AgentState[agentID] = agentState
