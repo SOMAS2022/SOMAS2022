@@ -69,49 +69,46 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	return decisionMap
 }
 
-func HandleFightRound(state *state.State, baseHealth uint, decisionMap map[commons.ID]decision.FightAction) ([]string, []string, []string, uint, uint) {
-
-	var attackingAgents []string
-	var defendingAgents []string
-	var coweringAgents []string
+func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision.FightResult) {
 	var attackSum uint
 	var shieldSum uint
 
-	for agentID, d := range decisionMap {
+	for agentID, d := range fightResult.Choices {
 		agentState := state.AgentState[agentID]
 
 		switch d {
 		case decision.Attack:
 			if agentState.Stamina > agentState.BonusAttack {
-				attackingAgents = append(attackingAgents, agentID)
+				fightResult.AttackingAgents = append(fightResult.AttackingAgents, agentID)
 				attackSum += agentState.TotalAttack()
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
 			} else {
-				coweringAgents = append(coweringAgents, agentID)
-				decisionMap[agentID] = decision.Cower
+				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
+				fightResult.Choices[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
 			if agentState.Stamina > agentState.BonusDefense {
-				defendingAgents = append(defendingAgents, agentID)
+				fightResult.ShieldingAgents = append(fightResult.ShieldingAgents, agentID)
 				shieldSum += agentState.TotalDefense()
 				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
 			} else {
-				coweringAgents = append(coweringAgents, agentID)
-				decisionMap[agentID] = decision.Cower
+				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
+				fightResult.Choices[agentID] = decision.Cower
 				agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 				agentState.Stamina += 1
 			}
 		case decision.Cower:
-			coweringAgents = append(coweringAgents, agentID)
+			fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 			agentState.Hp += uint(math.Ceil(0.05 * float64(baseHealth)))
 			agentState.Stamina += 1
 		}
 		state.AgentState[agentID] = agentState
 	}
 
-	return attackingAgents, defendingAgents, coweringAgents, attackSum, shieldSum
+	fightResult.AttackSum = attackSum
+	fightResult.ShieldSum = shieldSum
 }
 
 func startAgentFightHandlers(view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
