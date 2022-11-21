@@ -1,0 +1,17 @@
+name: Run ESLint for backend
+on:
+  push:
+    paths:
+      - 'web/backend'
+  pull_request:
+    paths:
+      - 'web/backend'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        run: npm install
+      - name: Run ESLint
+        run: eslint
