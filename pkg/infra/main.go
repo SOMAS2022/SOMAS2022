@@ -54,29 +54,31 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			dMap := stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)
-			coweringAgents, attackSum, shieldSum := fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, dMap)
-			decisionMap = dMap
+			fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)}
+			fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
+			// decisionMap = dMap
 
 			logging.Log(logging.Info, logging.LogField{
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
-				"numCoward":     coweringAgents,
-				"attackSum":     attackSum,
-				"shieldSum":     shieldSum,
+				"numCoward":     len(fightRoundResult.CoweringAgents),
+				"attackSum":     fightRoundResult.AttackSum,
+				"shieldSum":     fightRoundResult.ShieldSum,
 				"numAgents":     len(agentMap),
 			}, "Battle Summary")
-			if coweringAgents == uint(len(agentMap)) {
-				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, &globalState)
-			} else {
-				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
+
+			if len(fightRoundResult.CoweringAgents) != len(agentMap) {
+				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
 				if globalState.MonsterHealth > 0 {
-					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, &globalState)
+					agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
+					damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
+					fight.DealDamage(damageTaken, agentsFighting, agentMap, &globalState)
 					// TODO: Monster disruptive ability
 				}
+			} else {
+				damageTaken := globalState.MonsterAttack
+				fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, &globalState)
 			}
 
 			channelsMap = addCommsChannels(agentMap)
