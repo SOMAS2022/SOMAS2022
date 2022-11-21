@@ -107,7 +107,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 		// TODO: Add verification if needed
 		globalState = newGlobalState
 	}
-	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasents have escaped the pit with %d remaining.", len(agentMap)))
+	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }
 
 func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
