@@ -1,26 +1,20 @@
 name: Go Report Card
-
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push events but only for the "main" branch
   pull_request:
-    branches: [ "main" ]
-
+    branches: ["main"]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
 jobs:
   go_report_card:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Setup go
-      uses: actions/setup-go@v3
-      with:
-        go-version-file: "go.work"
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Go Report Card
-      uses: creekorful/goreportcard-action@v1.0
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+      - name: Go Report Card
+        uses: creekorful/goreportcard-action@v1.0
