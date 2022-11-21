@@ -30,7 +30,7 @@ func (r RandomAgent) GenerateActionDecision() decision.FightAction {
 	}
 }
 
-func (r RandomAgent) ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r RandomAgent) ProcessStartOfRound(view state.View, log immutable.Map[commons.ID, decision.FightAction]) {
 
 }
 

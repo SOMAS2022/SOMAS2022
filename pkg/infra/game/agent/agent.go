@@ -12,6 +12,26 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+// type Strategy interface {
+// 	// HandleFightMessage(m message.TaggedMessage,
+// 	// 	view *state.View, agent BaseAgent,
+// 	// 	log *immutable.Map[commons.ID, decision.FightAction],
+// 	// )
+// 	HandleInfoFightMessage(
+// 		m message.TaggedMessage,
+// 		view *state.View,
+// 		agent BaseAgent,
+// 		log *immutable.Map[commons.ID, decision.FightAction],
+// 	)
+// 	HandleResponseFightMessage(m message.TaggedMessage,
+// 		view *state.View,
+// 		agent BaseAgent,
+// 		log *immutable.Map[commons.ID, decision.FightAction],
+// 	) message.Message
+
+// 	Default() decision.FightAction
+// }
+
 type Agent struct {
 	BaseAgent BaseAgent
 	Strategy  message.Strategy
@@ -25,7 +45,7 @@ func (a *Agent) HandleFight(
 	wg *sync.WaitGroup) {
 
 	// Give the agent the current state to process
-	a.Strategy.ProcessStartOfRound(&view, &log)
+	a.Strategy.ProcessStartOfRound(view, log)
 
 	// Process any messages that the agent currently has in a loop
 	// TODO ? keep looping this for loop until all agents are completed
@@ -48,15 +68,16 @@ func (a *Agent) HandleFight(
 }
 
 func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) {
+
 	switch m.Message.(type) {
+
 	case message.RequestMessageInterface:
-		// TODO add timeout in which agent must reply
-		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy, view, log)
-		response.SetUUID(m.Message.GetUUID())
+		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy)
 		agentMap[m.Sender].BaseAgent.sendBlockingMessage(a.BaseAgent.Id, response)
 	case message.InfoMessageInterface:
-		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy, view, log)
+		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy)
 	default:
+
 	}
 }
 
