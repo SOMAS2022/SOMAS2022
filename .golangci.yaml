@@ -1,0 +1,23 @@
+run:
+  # Timeout for analysis, e.g. 30s, 5m.
+  # Default: 1m
+  timeout: 5m
+  # Define the Go version limit.
+  # Mainly related to generics support since go1.18.
+  # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.18
+  go: '1.19'
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt 
+    - unconvert
+    - unparam
+    - asciicheck
+    - misspell
+    - decorder
+    - depguard
+    - nilerr
+    - exportloopref
+    - whitespace
+    - goimports
