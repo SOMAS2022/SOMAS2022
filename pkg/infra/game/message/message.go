@@ -8,6 +8,17 @@ import (
 	"infra/game/state"
 )
 
+/*
+Each message should either be an info message ort a request messages,
+request messages require the receiver to give a response in a certain amount of time
+
+Each message should implement either a ProcessRequestMessage or ProcessInfoMessage method
+These methods should call a method in the strategy interface on the strategy passed to them
+This means that message types do not have to be switched by the agent implementations
+*/
+
+// TODO need to add a mechanism for agents to send messages
+
 type Strategy interface {
 	ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction])
 	GenerateActionDecision() decision.FightAction
@@ -16,29 +27,51 @@ type Strategy interface {
 }
 
 type Message interface {
-	RequiresResponse() bool
+	GenerateUUID()
+	GetUUID() uuid.UUID
+	SetUUID(UUID uuid.UUID)
 }
 
 type RequestMessageInterface interface {
+	GenerateUUID()
+	SetUUID(UUID uuid.UUID)
+	GetUUID() uuid.UUID
 	ProcessRequestMessage(Strategy Strategy,
 		view *state.View,
 		log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface
-	RequiresResponse() bool
 }
 
 type InfoMessageInterface interface {
+	GenerateUUID()
+	SetUUID(UUID uuid.UUID)
+	GetUUID() uuid.UUID
 	ProcessInfoMessage(Strategy Strategy,
 		view *state.View,
 		log *immutable.Map[commons.ID, decision.FightAction])
-	RequiresResponse() bool
+}
+
+// Base Message
+
+type BaseMessage struct {
+	UUID uuid.UUID
+}
+
+func (b *BaseMessage) GenerateUUID() {
+	b.UUID = uuid.New()
+}
+
+func (b *BaseMessage) GetUUID() uuid.UUID {
+	return b.UUID
+}
+
+func (b *BaseMessage) SetUUID(UUID uuid.UUID) {
+	b.UUID = UUID
 }
 
 // Request Message force the receiver to respond in a given amount of time
 
-type RequestMessage struct{}
-
-func (RequestMessage) RequiresResponse() bool {
-	return true
+type RequestMessage struct {
+	*BaseMessage
 }
 
 func (RequestMessage) ProcessRequestMessage(Strategy Strategy,
@@ -48,10 +81,8 @@ func (RequestMessage) ProcessRequestMessage(Strategy Strategy,
 }
 
 // Info messages only send information from one agent to another
-type InfoMessage struct{}
-
-func (InfoMessage) RequiresResponse() bool {
-	return false
+type InfoMessage struct {
+	*BaseMessage
 }
 
 func (InfoMessage) ProcessInfoMessage(Strategy Strategy,
@@ -60,13 +91,15 @@ func (InfoMessage) ProcessInfoMessage(Strategy Strategy,
 }
 
 /*
-Examples of possible message structs
+Message Structs
 */
 
+// Message sent to agents to signify the start of a round
 type FightRoundStartMessage struct {
 	InfoMessage
 }
 
+// The start round message passes the current state to the agent
 func (m FightRoundStartMessage) ProcessInfoMessage(Strategy Strategy,
 	view *state.View,
 	log *immutable.Map[commons.ID, decision.FightAction]) {
@@ -98,62 +131,15 @@ func (m FightDecisionRequestMessage) ProcessRequestMessage(Strategy Strategy,
 }
 
 /*
-Associated message structs
+Associated messaging structs
 */
 
 type TaggedMessage struct {
 	Sender  commons.ID
 	Message Message
-	UUID    uuid.UUID
 }
 
 type ActionDecision struct {
 	Action decision.FightAction
 	Sender commons.ID
 }
-
-// type Payload interface {
-// 	isPayload()
-// }
-
-// type InfoMessageType int64
-
-// const (
-// 	Close InfoMessageType = iota
-// 	Something
-// 	SomethingElse
-// )
-
-// type InfoMessage struct {
-// 	mType   InfoMessageType
-// 	payload Payload
-// }
-
-// type RequestMessageType int64
-
-// const (
-// 	RequestTrade RequestMessageType = iota
-// )
-
-// type RequestMessage struct {
-// 	mType   RequestMessageType
-// 	payload Payload
-// }
-
-// func NewMessage(mType Type, payload Payload) *Message {
-// 	return &Message{mType: mType, payload: payload}
-// }
-
-// func (m Message) MType() Type {
-// 	return m.mType
-// }
-
-// func (m Message) Payload() Payload {
-// 	return m.payload
-// }
-
-// type TaggedMessage struct {
-// 	Sender          commons.ID
-// 	Message         Message
-// 	ResponseMessage bool
-// }

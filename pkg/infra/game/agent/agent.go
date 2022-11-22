@@ -10,28 +10,7 @@ import (
 	"sync"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
-
-// type Strategy interface {
-// 	// HandleFightMessage(m message.TaggedMessage,
-// 	// 	view *state.View, agent BaseAgent,
-// 	// 	log *immutable.Map[commons.ID, decision.FightAction],
-// 	// )
-// 	HandleInfoFightMessage(
-// 		m message.TaggedMessage,
-// 		view *state.View,
-// 		agent BaseAgent,
-// 		log *immutable.Map[commons.ID, decision.FightAction],
-// 	)
-// 	HandleResponseFightMessage(m message.TaggedMessage,
-// 		view *state.View,
-// 		agent BaseAgent,
-// 		log *immutable.Map[commons.ID, decision.FightAction],
-// 	) message.Message
-
-// 	Default() decision.FightAction
-// }
 
 type Agent struct {
 	BaseAgent BaseAgent
@@ -70,7 +49,8 @@ func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, l
 	case message.RequestMessageInterface:
 		// TODO add timeout in which agent must reply
 		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy, view, log)
-		agentMap[m.Sender].BaseAgent._sendBlockingResponseMessage(a.BaseAgent.Id, response, m)
+		response.SetUUID(m.Message.GetUUID())
+		agentMap[m.Sender].BaseAgent.sendBlockingMessage(a.BaseAgent.Id, response)
 	case message.InfoMessageInterface:
 		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy, view, log)
 	default:
@@ -119,26 +99,6 @@ func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
 	}
 }
 
-func (b BaseAgent) _sendBlockingResponseMessage(id commons.ID, response message.Message, request message.TaggedMessage) (e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
-		}
-	}()
-
-	value, ok := b.communication.peer.Get(id)
-	if ok {
-		value <- message.TaggedMessage{
-			Sender:  b.Id,
-			Message: response,
-			UUID:    request.UUID,
-		}
-	} else {
-		e = fmt.Errorf("agent %s not available for messaging, dead", id)
-	}
-	return
-}
-
 func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -151,7 +111,6 @@ func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e erro
 		value <- message.TaggedMessage{
 			Sender:  b.Id,
 			Message: m,
-			UUID:    uuid.New(),
 		}
 	} else {
 		e = fmt.Errorf("agent %s not available for messaging, dead", id)

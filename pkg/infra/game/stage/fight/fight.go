@@ -9,7 +9,6 @@ import (
 	"math"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/benbjohnson/immutable"
 )
 
@@ -55,7 +54,6 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 		messages <- message.TaggedMessage{
 			Sender:  "server",
 			Message: message.FightRoundStartMessage{},
-			UUID:    uuid.New(),
 		}
 	}
 
