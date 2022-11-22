@@ -50,17 +50,20 @@ func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, l
 		// TODO add timeout in which agent must reply
 		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy, view, log)
 		response.SetUUID(m.Message.GetUUID())
-		agentMap[m.Sender].BaseAgent.sendBlockingMessage(a.BaseAgent.Id, response)
+		//todo: handle error in case of message failure
+		agent := agentMap[m.Sender].BaseAgent
+		_ = agent.sendBlockingMessage(a.BaseAgent.Id, response)
+
 	case message.InfoMessageInterface:
 		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy, view, log)
 	default:
 	}
 }
 
-func (ba *BaseAgent) log(lvl logging.Level, fields logging.LogField, msg string) {
+func (b *BaseAgent) createLog(lvl logging.Level, fields logging.LogField, msg string) {
 	agentFields := logging.LogField{
-		"agentName": ba.AgentName,
-		"agentID":   ba.Id,
+		"agentName": b.AgentName,
+		"agentID":   b.Id,
 	}
 
 	logging.Log(lvl, logging.CombineFields(agentFields, fields), msg)
@@ -85,7 +88,7 @@ func NewCommunication(receipt <-chan message.TaggedMessage, peer immutable.Map[c
 	return Communication{receipt: receipt, peer: peer}
 }
 
-func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
+func (b *BaseAgent) broadcastBlockingMessage(m message.Message) {
 	iterator := b.communication.peer.Iterator()
 	tm := message.TaggedMessage{
 		Sender:  b.Id,
@@ -99,7 +102,7 @@ func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
 	}
 }
 
-func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
+func (b *BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
 			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
