@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
@@ -45,7 +46,7 @@ func (a *Agent) HandleFight(
 	wg *sync.WaitGroup) {
 
 	// Give the agent the current state to process
-	a.Strategy.ProcessStartOfRound(view, log)
+	a.Strategy.ProcessStartOfRound(&view, &log)
 
 	// Process any messages that the agent currently has in a loop
 	// TODO ? keep looping this for loop until all agents are completed
@@ -54,6 +55,7 @@ func (a *Agent) HandleFight(
 		action := a.Strategy.GenerateActionDecision()
 		if action != decision.Undecided {
 			go func() {
+				// TODO add switch here on message type
 				<-a.BaseAgent.communication.receipt
 			}()
 			decisionChan <- message.ActionDecision{Action: action, Sender: a.BaseAgent.Id}
@@ -67,16 +69,14 @@ func (a *Agent) HandleFight(
 }
 
 func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) {
-
 	switch m.Message.(type) {
-
 	case message.RequestMessageInterface:
-		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy)
-		agentMap[m.Sender].BaseAgent.sendBlockingMessage(a.BaseAgent.Id, response)
+		// TODO add timeout in which agent must reply
+		response := m.Message.(message.RequestMessageInterface).ProcessRequestMessage(a.Strategy, view, log)
+		agentMap[m.Sender].BaseAgent._sendBlockingResponseMessage(a.BaseAgent.Id, response, m)
 	case message.InfoMessageInterface:
-		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy)
+		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy, view, log)
 	default:
-
 	}
 }
 
@@ -122,6 +122,26 @@ func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
 	}
 }
 
+func (b BaseAgent) _sendBlockingResponseMessage(id commons.ID, response message.Message, request message.TaggedMessage) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
+		}
+	}()
+
+	value, ok := b.communication.peer.Get(id)
+	if ok {
+		value <- message.TaggedMessage{
+			Sender:  b.Id,
+			Message: response,
+			UUID:    request.UUID,
+		}
+	} else {
+		e = fmt.Errorf("agent %s not available for messaging, dead", id)
+	}
+	return
+}
+
 func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -134,6 +154,7 @@ func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e erro
 		value <- message.TaggedMessage{
 			Sender:  b.Id,
 			Message: m,
+			UUID:    uuid.New(),
 		}
 	} else {
 		e = fmt.Errorf("agent %s not available for messaging, dead", id)

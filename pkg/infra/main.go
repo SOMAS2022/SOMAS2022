@@ -21,7 +21,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[commons.ID]agent.Strategy{
+var InitAgentMap = map[commons.ID]message.Strategy{
 	"RANDOM": agent.NewRandomAgent(),
 }
 
@@ -176,7 +176,7 @@ func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) 
 	return *builder.Map()
 }
 
-func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
+func instantiateAgent[S message.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,

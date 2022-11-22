@@ -2,13 +2,14 @@ package message
 
 import (
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 )
 
 type Strategy interface {
-	ProcessStartOfRound(view state.View, log immutable.Map[commons.ID, decision.FightAction])
+	ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction])
 	GenerateActionDecision() decision.FightAction
 	ProcessFightDecisionRequestMessage(FightDecisionRequestMessage Message) FightDecisionMessage
 	ProcessFightDecisionMessage(FightDecisionMessage)
@@ -19,12 +20,16 @@ type Message interface {
 }
 
 type RequestMessageInterface interface {
-	ProcessRequestMessage(Strategy Strategy) InfoMessageInterface
+	ProcessRequestMessage(Strategy Strategy,
+		view *state.View,
+		log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface
 	RequiresResponse() bool
 }
 
 type InfoMessageInterface interface {
-	ProcessInfoMessage(Strategy Strategy)
+	ProcessInfoMessage(Strategy Strategy,
+		view *state.View,
+		log *immutable.Map[commons.ID, decision.FightAction])
 	RequiresResponse() bool
 }
 
@@ -36,7 +41,9 @@ func (RequestMessage) RequiresResponse() bool {
 	return true
 }
 
-func (RequestMessage) ProcessRequestMessage(Strategy Strategy) InfoMessageInterface {
+func (RequestMessage) ProcessRequestMessage(Strategy Strategy,
+	view *state.View,
+	log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface {
 	return InfoMessage{}
 }
 
@@ -47,12 +54,24 @@ func (InfoMessage) RequiresResponse() bool {
 	return false
 }
 
-func (InfoMessage) ProcessInfoMessage(Strategy Strategy) {
+func (InfoMessage) ProcessInfoMessage(Strategy Strategy,
+	view *state.View,
+	log *immutable.Map[commons.ID, decision.FightAction]) {
 }
 
 /*
 Examples of possible message structs
 */
+
+type FightRoundStartMessage struct {
+	InfoMessage
+}
+
+func (m FightRoundStartMessage) ProcessInfoMessage(Strategy Strategy,
+	view *state.View,
+	log *immutable.Map[commons.ID, decision.FightAction]) {
+	Strategy.ProcessStartOfRound(view, log)
+}
 
 type FightDecisionMessage struct {
 	// Info message from one agent to another indicating what its current fight decision is
@@ -60,7 +79,9 @@ type FightDecisionMessage struct {
 	FightDecision decision.FightAction
 }
 
-func (m FightDecisionMessage) ProcessInfoMessage(Strategy Strategy) {
+func (m FightDecisionMessage) ProcessInfoMessage(Strategy Strategy,
+	view *state.View,
+	log *immutable.Map[commons.ID, decision.FightAction]) {
 	Strategy.ProcessFightDecisionMessage(m)
 }
 
@@ -70,7 +91,9 @@ type FightDecisionRequestMessage struct {
 	FightDecision decision.FightAction
 }
 
-func (m FightDecisionRequestMessage) ProcessRequestMessage(Strategy Strategy) InfoMessageInterface {
+func (m FightDecisionRequestMessage) ProcessRequestMessage(Strategy Strategy,
+	view *state.View,
+	log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface {
 	return Strategy.ProcessFightDecisionRequestMessage(m)
 }
 
@@ -81,6 +104,7 @@ Associated message structs
 type TaggedMessage struct {
 	Sender  commons.ID
 	Message Message
+	UUID    uuid.UUID
 }
 
 type ActionDecision struct {

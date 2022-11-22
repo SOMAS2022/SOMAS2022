@@ -10,9 +10,13 @@ import (
 	"sync"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
+	if len(agentsFighting) == 0 {
+		return
+	}
 	splitDamage := damageToDeal / uint(len(agentsFighting))
 	for _, id := range agentsFighting {
 		agentState := globalState.AgentState[id]
@@ -50,7 +54,8 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	for _, messages := range channelsMap {
 		messages <- message.TaggedMessage{
 			Sender:  "server",
-			Message: *message.NewMessage(message.Something, nil),
+			Message: message.FightRoundStartMessage{},
+			UUID:    uuid.New(),
 		}
 	}
 
