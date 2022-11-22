@@ -45,3 +45,17 @@ jobs:
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
           AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
+
+      # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
+      # the game for your agent
+      - name: Test Performance of TEAM1 agent
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_TEAM1_QUANTITY: ${{ matrix.agent_quantity }}

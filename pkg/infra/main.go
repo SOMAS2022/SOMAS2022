@@ -23,7 +23,7 @@ import (
 
 var InitAgentMap = map[commons.ID]agent.Strategy{
 	"RANDOM": agent.NewRandomAgent(),
-	"TEAM1":  agent.Team1MVP{},
+	"TEAM1":  agent.NewTeam1Agent(),
 }
 
 /*
