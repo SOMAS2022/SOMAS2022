@@ -16,4 +16,4 @@ jobs:
         run: npm install
       - name: Run ESLint
         working-directory: web/frontend
-        run: npm run eslint
+        run: npm run lint
