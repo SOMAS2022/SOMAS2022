@@ -20,8 +20,8 @@ func (r RandomAgent) Default() decision.FightAction {
 	panic("implement me")
 }
 
-func NewRandomAgent() *RandomAgent {
-	return &RandomAgent{bravery: 0}
+func NewRandomAgent() Strategy {
+	return &RandomAgent{bravery: 10}
 }
 
 func (r RandomAgent) HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {

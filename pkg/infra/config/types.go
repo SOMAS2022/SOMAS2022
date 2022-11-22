@@ -1,5 +1,7 @@
 package config
 
+import "infra/logging"
+
 type GameConfig struct {
 	Initialised            bool
 	NumLevels              uint
@@ -15,6 +17,9 @@ var config = GameConfig{}
 
 func InitConfig(values GameConfig) {
 	if config.Initialised {
+		logging.Log(logging.Error, logging.LogField{
+			"levels": values.NumLevels,
+		}, "Trying to reinitialise GameConfig")
 		return
 	}
 
