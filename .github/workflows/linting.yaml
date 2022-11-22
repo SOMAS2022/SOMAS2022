@@ -28,3 +28,5 @@ jobs:
           working-directory: pkg/infra
           # Optional: golangci-lint command line arguments.
           args: -v
+      - name: go-vet
+        run: go vet ./pkg/infra
