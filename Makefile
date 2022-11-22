@@ -28,19 +28,7 @@ fmt:
 # should just be `run`, but seems to be problems with go.work  
 # nb: using cd to /pkg/infra dosen't fix this (on wsl2)
 check:
-	golangci-lint run ./pkg/infra\
-		--timeout=5m0s \
-		--enable=gofmt \
-		--enable=unconvert \
-		--enable=unparam \
-		--enable=asciicheck \
-		--enable=misspell \
-		--enable=decorder \
-		--enable=depguard \
-		--enable=nilerr \
-		--enable=exportloopref \
-		--enable=whitespace \
-		--enable=goimports
+	golangci-lint -v run ./pkg/infra
 
 # for future testing
 unit_test:
