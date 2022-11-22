@@ -60,7 +60,7 @@ func decayNumber(inputNumber float64) float64 {
 	if inputNumber < 0 {
 		return 0.70 * inputNumber
 	} else {
-		return 0.85 * inputNumber
+		return 0.90 * inputNumber
 	}
 }
 
@@ -73,35 +73,34 @@ func decayArray(inputArray [4]float64) [4]float64 {
 	}
 }
 
-func softmax(inputArray [4]float64) [4]float64 {
-	expValues := [4]float64{
+func softmax(inputArray [3]float64) [3]float64 {
+	expValues := [3]float64{
 		math.Exp(inputArray[0]),
 		math.Exp(inputArray[1]),
 		math.Exp(inputArray[2]),
-		math.Exp(inputArray[3]),
 	}
 
 	// Sum exponential array
 	sum := 0.0
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 3; i++ {
 		sum += expValues[i]
 	}
 
 	// Divide each element in input array by sum
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 3; i++ {
 		expValues[i] /= sum
 	}
 
 	return expValues
 }
 
-func makeIncremental(inputArray [4]float64) [4]float64 {
+func makeIncremental(inputArray [3]float64) [3]float64 {
 
-	var outputArray [4]float64
+	var outputArray [3]float64
 
 	outputArray[0] = inputArray[0]
 
-	for i := 1; i < 4; i++ {
+	for i := 1; i < 3; i++ {
 		outputArray[i] = outputArray[i-1] + inputArray[i]
 	}
 
@@ -137,17 +136,21 @@ type Team1Agent struct {
 }
 
 // Calculate utility value of different decisions
-func (r Team1Agent) utilityValue(action decision.FightAction) float64 {
+func (r Team1Agent) utilityValue(action decision.FightAction, view *state.View, agent BaseAgent) float64 {
 	// Utility of each action is dependent on relationship with others. If agent hates all other agents, then
 	// will only act in its own interest.
 
+	agentStats, _ := view.AgentState().Get(agent.Id)
+
 	switch action {
 	case decision.Cower:
-		return 1
+		// Goes down with health, and down with stamina and down with high social capital of others
+		return 0.005 * float64(1000-int(agentStats.Hp))
 	case decision.Attack:
-		return 1
+		// Goes up with health, and up with stamina and up with high social capital of others
+		return 0.005 * float64(int(agentStats.Hp))
 	case decision.Defend:
-		return 1
+		return 0.005 * float64(int(agentStats.Hp))
 	default:
 		return 1
 	}
@@ -174,6 +177,9 @@ func (r Team1Agent) updateSocialCapital(m message.TaggedMessage, view *state.Vie
 				r.socialCapital[key] = [4]float64{0.0, 0.0, 0.0, 0.0}
 			}
 		}
+
+		// Delete the agents own id from the socialCapital array
+		delete(r.socialCapital, agent.Id)
 
 		// Set the lastLevelUpdated variable
 		r.lastLevelUpdated = view.CurrentLevel()
@@ -225,15 +231,24 @@ func (r Team1Agent) HandleFightMessage(m message.TaggedMessage, view *state.View
 	r.updateSocialCapital(m, view, agent, log)
 
 	// Calculate utility value of each action
-	utilCower := r.utilityValue(decision.Cower)
-	utilAttack := r.utilityValue(decision.Attack)
-	utilDefend := r.utilityValue(decision.Defend)
+	utilCower := r.utilityValue(decision.Cower, view, agent)
+	utilAttack := r.utilityValue(decision.Attack, view, agent)
+	utilDefend := r.utilityValue(decision.Defend, view, agent)
 
 	// Apply softmax to get probabilities
-	softArray := softmax([4]float64{utilCower, utilAttack, utilDefend})
+	softArray := softmax([3]float64{utilCower, utilAttack, utilDefend})
 
 	// Make number representation incremental
 	probArray := makeIncremental(softArray)
+
+	/*it := view.AgentState().Iterator()
+	nextId, _, _ := it.Next()
+	if agent.Id == nextId {
+		fmt.Println(utilCower)
+		fmt.Println([3]float64{utilCower, utilAttack, utilDefend})
+		fmt.Println(softArray)
+		fmt.Println(probArray)
+	}*/
 
 	// Initialise a random seed
 	rand.Seed(time.Now().UnixNano())
@@ -242,9 +257,9 @@ func (r Team1Agent) HandleFightMessage(m message.TaggedMessage, view *state.View
 	switch random := rand.Float64(); {
 	case 0.0 < random && random < probArray[0]:
 		return decision.Cower
-	case probArray[1] < random && random < probArray[2]:
+	case probArray[0] < random && random < probArray[1]:
 		return decision.Attack
-	case probArray[2] < random:
+	case probArray[1] < random && random < probArray[2]:
 		return decision.Defend
 	default:
 		return decision.Attack
