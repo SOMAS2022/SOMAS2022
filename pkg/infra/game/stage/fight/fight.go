@@ -9,6 +9,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/benbjohnson/immutable"
 )
 
