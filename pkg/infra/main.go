@@ -39,15 +39,15 @@ func main() {
 
 	logging.InitLogger(*useJSONFormatter, *debug)
 
-	agentMap, globalState, gameConfig := initialise()
-	gameLoop(globalState, agentMap, gameConfig)
+	agentMap, globalState := initialise()
+	gameLoop(globalState, agentMap)
 }
 
-func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent) {
 	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
 	channelsMap = addCommsChannels(agentMap)
-	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
+	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (config.ViewConfig().NumLevels + 1); globalState.CurrentLevel++ {
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
 			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
@@ -55,7 +55,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				decisionMapView.Set(u, action)
 			}
 			fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(globalState.ToView(), agentMap, *decisionMapView.Map(), channelsMap)}
-			fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
+			fight.HandleFightRound(&globalState, config.ViewConfig().StartingHealthPoints, &fightRoundResult)
 			// decisionMap = dMap
 
 			logging.Log(logging.Info, logging.LogField{
@@ -83,15 +83,15 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 
 			channelsMap = addCommsChannels(agentMap)
 
-			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
+			if float64(len(agentMap)) < math.Ceil(float64(config.ViewConfig().ThresholdPercentage)*float64(config.ViewConfig().InitialNumAgents)) {
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
 		}
 		logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
 		//todo: Results in infinite game run-through
-		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, globalState.CurrentLevel+1)
-		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel+1)
+		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(config.ViewConfig().InitialNumAgents, config.ViewConfig().Stamina, config.ViewConfig().NumLevels, globalState.CurrentLevel+1)
+		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(config.ViewConfig().InitialNumAgents, config.ViewConfig().StartingHealthPoints, config.ViewConfig().Stamina, config.ViewConfig().ThresholdPercentage, config.ViewConfig().NumLevels, globalState.CurrentLevel+1)
 
 		// TODO: End of Level looting and trading
 		// FIXME: This loot allocation should not stay for long!
@@ -110,7 +110,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }
 
-func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
+func initialise() (map[commons.ID]agent.Agent, state.State) {
 	agentMap := make(map[commons.ID]agent.Agent)
 	agentStateMap := make(map[commons.ID]state.AgentState)
 
@@ -145,7 +145,8 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 		AgentState:    agentStateMap,
 	}
 
-	return agentMap, globalState, gameConfig
+	config.InitConfig(gameConfig)
+	return agentMap, globalState
 }
 
 func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]chan message.TaggedMessage) {
