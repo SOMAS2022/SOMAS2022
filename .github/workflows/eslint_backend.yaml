@@ -2,10 +2,10 @@ name: Run ESLint for backend
 on:
   push:
     paths:
-      - web/backend
+      - "web/backend/**"
   pull_request:
     paths:
-      - web/backend
+      - "web/backend/**"
 jobs:
   build:
     runs-on: ubuntu-latest
