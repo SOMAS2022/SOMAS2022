@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
