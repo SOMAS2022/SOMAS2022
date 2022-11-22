@@ -1,0 +1,19 @@
+name: Run ESLint for frontend
+on:
+  push:
+    paths:
+      - "web/frontend/**"
+  pull_request:
+    paths:
+      - "web/frontend/**"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install modules
+        working-directory: web/frontend
+        run: npm install
+      - name: Run ESLint
+        working-directory: web/frontend
+        run: npm run lint

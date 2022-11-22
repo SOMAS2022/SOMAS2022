@@ -1,1 +1,3 @@
-use pkg/infra
+go 1.19
+
+use ./pkg/infra

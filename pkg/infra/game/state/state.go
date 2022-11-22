@@ -1,8 +1,9 @@
 package state
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type AgentState struct {
