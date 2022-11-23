@@ -1,11 +1,12 @@
 package message
 
 import (
-	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+
+	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 /*
@@ -23,7 +24,7 @@ type Strategy interface {
 	ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction])
 	GenerateActionDecision() decision.FightAction
 	ProcessFightDecisionRequestMessage(FightDecisionRequestMessage Message) FightDecisionMessage
-	ProcessFightDecisionMessage(FightDecisionMessage)
+	ProcessFightDecisionMessage(m FightDecisionMessage)
 }
 
 type Message interface {

@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type Agent struct {
@@ -52,7 +53,7 @@ func (a *Agent) handleMessage(agentMap map[commons.ID]Agent, view *state.View, l
 		response.SetUUID(m.Message.GetUUID())
 		//todo: handle error in case of message failure
 		agent := agentMap[m.Sender].BaseAgent
-		_ = agent.sendBlockingMessage(a.BaseAgent.Id, response)
+		_ = sendBlockingMessageImp(&agent, a.BaseAgent.Id, response)
 
 	case message.InfoMessageInterface:
 		m.Message.(message.InfoMessageInterface).ProcessInfoMessage(a.Strategy, view, log)
@@ -102,7 +103,7 @@ func (b *BaseAgent) broadcastBlockingMessage(m message.Message) {
 	}
 }
 
-func (b *BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
+func sendBlockingMessageImp(b *BaseAgent, id commons.ID, m message.Message) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
 			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
@@ -119,4 +120,12 @@ func (b *BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e err
 		e = fmt.Errorf("agent %s not available for messaging, dead", id)
 	}
 	return
+}
+
+/*
+Available to the base agent implementations
+*/
+func (b *BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
+	m.SetUUID(uuid.New())
+	return sendBlockingMessageImp(b, id, m)
 }
