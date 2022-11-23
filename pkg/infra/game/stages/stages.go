@@ -59,9 +59,9 @@ func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Age
 
 func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
 	switch Mode {
-	case "0":
-		//? Not necessary to use all function arguments
-		return t0.AllDefend(agents)
+	// case "0":
+	// 	//? Not necessary to use all function arguments
+	// 	return t0.AllDefend(agents)
 	default:
 		return fight.AgentFightDecisions(state, agents, previousDecisions, channelsMap)
 	}
