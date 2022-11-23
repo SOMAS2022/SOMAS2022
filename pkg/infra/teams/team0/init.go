@@ -29,5 +29,4 @@ func InitAgents(defaultStratergyMap map[commons.ID]agent.Strategy, gameConfig co
 	}
 
 	return
-
 }

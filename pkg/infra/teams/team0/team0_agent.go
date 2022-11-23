@@ -24,7 +24,6 @@ func (r ProbabilisticAgent) Default() decision.FightAction {
  * Create agent with given probability of cowering, attacking, defending
  */
 func NewProbabilisticAgent(pCower float32, pAttack float32, pDefend float32) *ProbabilisticAgent {
-
 	// Ref: https://stackoverflow.com/questions/50507513/golang-choice-number-from-slice-array-with-given-probability
 	pdf := []float32{pCower, pAttack, pDefend}
 	// get cdf
