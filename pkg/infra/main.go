@@ -110,7 +110,6 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 }
 
 func init_game() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
-
 	err := godotenv.Load()
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
@@ -119,9 +118,7 @@ func init_game() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	stages.Mode = config.EnvToString("MODE", "default")
 
 	gameConfig := stages.InitGameConfig()
-
 	defStratergyMap := stages.ChooseDefaultStratergyMap(InitAgentMap)
-
 	numAgents, agentMap, agentStateMap := stages.InitAgents(defStratergyMap, gameConfig)
 	gameConfig.InitialNumAgents = numAgents
 
