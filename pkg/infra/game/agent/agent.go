@@ -22,7 +22,6 @@ func (a *Agent) HandleFight(
 	log immutable.Map[commons.ID, decision.FightAction],
 	decisionChan chan strategy.ActionDecision,
 	wg *sync.WaitGroup) {
-
 	// Process any messages that the agent currently has in a loop
 	// TODO ? keep looping this for loop until all agents are completed
 	for m := range a.BaseAgent.Communication.Receipt {
