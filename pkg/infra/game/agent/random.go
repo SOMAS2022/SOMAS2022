@@ -1,13 +1,14 @@
 package agent
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/strategy"
 	"math/rand"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type RandomAgent struct {

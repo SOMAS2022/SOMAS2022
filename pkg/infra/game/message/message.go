@@ -2,10 +2,11 @@ package message
 
 import (
 	"fmt"
-	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/logging"
+
+	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 /*

@@ -1,11 +1,12 @@
 package strategy
 
 import (
-	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+
+	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 
 	"infra/game/state"
 )
