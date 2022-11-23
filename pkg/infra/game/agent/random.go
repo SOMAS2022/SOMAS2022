@@ -1,17 +1,29 @@
 package agent
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/game/strategy"
 	"math/rand"
-
-	"github.com/benbjohnson/immutable"
 )
 
 type RandomAgent struct {
 	bravery int
+}
+
+func (r RandomAgent) ProcessStartOfRound(ba *message.BaseAgent, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
+
+}
+
+func (r RandomAgent) ProcessFightDecisionRequestMessage(ba *message.BaseAgent, FightDecisionRequestMessage message.Message, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) strategy.FightDecisionMessage {
+	return strategy.FightDecisionMessage{FightDecision: decision.Undecided}
+}
+
+func (r RandomAgent) ProcessFightDecisionMessage(ba *message.BaseAgent, m strategy.FightDecisionMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
+
 }
 
 func NewRandomAgent() *RandomAgent {
@@ -30,15 +42,16 @@ func (r RandomAgent) GenerateActionDecision() decision.FightAction {
 	}
 }
 
-func (r RandomAgent) ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
-
-}
-
-func (r RandomAgent) ProcessFightDecisionRequestMessage(
-	FightDecisionRequestMessage message.Message) message.FightDecisionMessage {
-	return message.FightDecisionMessage{FightDecision: decision.Undecided}
-}
-
-func (r RandomAgent) ProcessFightDecisionMessage(message.FightDecisionMessage) {
-
-}
+//func (r RandomAgent) ProcessStartOfRound(ba *message.BaseAgent, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
+//
+//}
+//
+//func (r RandomAgent) ProcessFightDecisionRequestMessage(
+//	ba *message.BaseAgent,
+//	FightDecisionRequestMessage message.Message) strategy.FightDecisionMessage {
+//	return strategy.FightDecisionMessage{FightDecision: decision.Undecided}
+//}
+//
+//func (r RandomAgent) ProcessFightDecisionMessage(ba *message.BaseAgent, strategy.FightDecisionMessage) {
+//
+//}

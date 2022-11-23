@@ -12,6 +12,7 @@ import (
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/game/state"
+	"infra/game/strategy"
 	"infra/logging"
 	"math"
 	"math/rand"
@@ -21,7 +22,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[commons.ID]message.Strategy{
+var InitAgentMap = map[commons.ID]strategy.Strategy{
 	"RANDOM": agent.NewRandomAgent(),
 }
 
@@ -162,7 +163,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	}
 	immutableMap := createImmutableMap(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.AgentName)
+		a.BaseAgent = message.NewBaseAgent(message.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.AgentName)
 		agentMap[id] = a
 	}
 	return
@@ -176,7 +177,7 @@ func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) 
 	return *builder.Map()
 }
 
-func instantiateAgent[S message.Strategy](gameConfig config.GameConfig,
+func instantiateAgent[S strategy.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
@@ -187,7 +188,7 @@ func instantiateAgent[S message.Strategy](gameConfig config.GameConfig,
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{AgentName: agentName},
+			BaseAgent: message.BaseAgent{AgentName: agentName},
 			Strategy:  strategy,
 		}
 

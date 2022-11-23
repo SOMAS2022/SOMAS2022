@@ -1,12 +1,11 @@
 package message
 
 import (
-	"infra/game/commons"
-	"infra/game/decision"
-	"infra/game/state"
-
+	"fmt"
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
+	"infra/game/commons"
+	"infra/logging"
 )
 
 /*
@@ -20,35 +19,10 @@ This means that message types do not have to be switched by the agent implementa
 
 // TODO need to add a mechanism for agents to send messages
 
-type Strategy interface {
-	ProcessStartOfRound(view *state.View, log *immutable.Map[commons.ID, decision.FightAction])
-	GenerateActionDecision() decision.FightAction
-	ProcessFightDecisionRequestMessage(FightDecisionRequestMessage Message) FightDecisionMessage
-	ProcessFightDecisionMessage(m FightDecisionMessage)
-}
-
 type Message interface {
 	GenerateUUID()
 	GetUUID() uuid.UUID
 	SetUUID(UUID uuid.UUID)
-}
-
-type RequestMessageInterface interface {
-	GenerateUUID()
-	SetUUID(UUID uuid.UUID)
-	GetUUID() uuid.UUID
-	ProcessRequestMessage(Strategy Strategy,
-		view *state.View,
-		log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface
-}
-
-type InfoMessageInterface interface {
-	GenerateUUID()
-	SetUUID(UUID uuid.UUID)
-	GetUUID() uuid.UUID
-	ProcessInfoMessage(Strategy Strategy,
-		view *state.View,
-		log *immutable.Map[commons.ID, decision.FightAction])
 }
 
 // Base Message
@@ -71,65 +45,9 @@ func (b *BaseMessage) SetUUID(UUID uuid.UUID) {
 
 // Request Message force the receiver to respond in a given amount of time
 
-type RequestMessage struct {
-	*BaseMessage
-}
-
-func (RequestMessage) ProcessRequestMessage(Strategy Strategy,
-	view *state.View,
-	log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface {
-	return InfoMessage{}
-}
-
-// Info messages only send information from one agent to another
-type InfoMessage struct {
-	*BaseMessage
-}
-
-func (InfoMessage) ProcessInfoMessage(Strategy Strategy,
-	view *state.View,
-	log *immutable.Map[commons.ID, decision.FightAction]) {
-}
-
 /*
 Message Structs
 */
-
-// Message sent to agents to signify the start of a round
-type FightRoundStartMessage struct {
-	InfoMessage
-}
-
-// The start round message passes the current state to the agent
-func (m FightRoundStartMessage) ProcessInfoMessage(Strategy Strategy,
-	view *state.View,
-	log *immutable.Map[commons.ID, decision.FightAction]) {
-	Strategy.ProcessStartOfRound(view, log)
-}
-
-type FightDecisionMessage struct {
-	// Info message from one agent to another indicating what its current fight decision is
-	InfoMessage
-	FightDecision decision.FightAction
-}
-
-func (m FightDecisionMessage) ProcessInfoMessage(Strategy Strategy,
-	view *state.View,
-	log *immutable.Map[commons.ID, decision.FightAction]) {
-	Strategy.ProcessFightDecisionMessage(m)
-}
-
-type FightDecisionRequestMessage struct {
-	// Request from one agent to another asking what its current fight decision is
-	RequestMessage
-	FightDecision decision.FightAction
-}
-
-func (m FightDecisionRequestMessage) ProcessRequestMessage(Strategy Strategy,
-	view *state.View,
-	log *immutable.Map[commons.ID, decision.FightAction]) InfoMessageInterface {
-	return Strategy.ProcessFightDecisionRequestMessage(m)
-}
 
 /*
 Associated messaging structs
@@ -140,7 +58,71 @@ type TaggedMessage struct {
 	Message Message
 }
 
-type ActionDecision struct {
-	Action decision.FightAction
-	Sender commons.ID
+type BaseAgent struct {
+	Communication Communication
+	Id            commons.ID
+	AgentName     string
+}
+
+func NewBaseAgent(communication Communication, id commons.ID, agentName string) BaseAgent {
+	return BaseAgent{Communication: communication, Id: id, AgentName: agentName}
+}
+
+type Communication struct {
+	Receipt <-chan TaggedMessage
+	peer    immutable.Map[commons.ID, chan<- TaggedMessage]
+}
+
+func NewCommunication(receipt <-chan TaggedMessage, peer immutable.Map[commons.ID, chan<- TaggedMessage]) Communication {
+	return Communication{Receipt: receipt, peer: peer}
+}
+
+func (b *BaseAgent) broadcastBlockingMessage(m Message) {
+	iterator := b.Communication.peer.Iterator()
+	tm := TaggedMessage{
+		Sender:  b.Id,
+		Message: m,
+	}
+	for !iterator.Done() {
+		_, c, ok := iterator.Next()
+		if ok {
+			c <- tm
+		}
+	}
+}
+
+func SendBlockingMessageImp(b *BaseAgent, id commons.ID, m Message) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
+		}
+	}()
+
+	value, ok := b.Communication.peer.Get(id)
+	if ok {
+		value <- TaggedMessage{
+			Sender:  b.Id,
+			Message: m,
+		}
+	} else {
+		e = fmt.Errorf("agent %s not available for messaging, dead", id)
+	}
+	return
+}
+
+/*
+Available to the base agent implementations
+*/
+func (b *BaseAgent) sendBlockingMessage(id commons.ID, m Message) (e error) {
+	m.SetUUID(uuid.New())
+	return SendBlockingMessageImp(b, id, m)
+}
+
+func (b *BaseAgent) createLog(lvl logging.Level, fields logging.LogField, msg string) {
+	agentFields := logging.LogField{
+		"agentName": b.AgentName,
+		"agentID":   b.Id,
+	}
+
+	logging.Log(lvl, logging.CombineFields(agentFields, fields), msg)
 }
