@@ -9,6 +9,8 @@ import (
 	"math"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"github.com/benbjohnson/immutable"
 )
 
@@ -48,10 +50,8 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	}
 
 	for _, messages := range channelsMap {
-		messages <- message.TaggedMessage{
-			Sender:  "server",
-			Message: *message.NewMessage(message.Something, nil),
-		}
+		mId, _ := uuid.NewUUID()
+		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mId)
 	}
 
 	go func(group *sync.WaitGroup) {

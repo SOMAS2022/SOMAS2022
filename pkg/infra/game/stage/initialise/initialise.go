@@ -20,7 +20,7 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{AgentName: agentName},
+			BaseAgent: agent.NewBaseAgent(nil, agentId, agentName),
 			Strategy:  strategy,
 		}
 

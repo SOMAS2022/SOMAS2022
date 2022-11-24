@@ -7,6 +7,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/example"
 	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/fight"
@@ -21,7 +22,7 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM": agent.NewRandomAgent(),
+	"RANDOM": example.NewRandomAgent(),
 }
 
 /*
@@ -145,7 +146,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	}
 	immutableMap := createImmutableMap(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.AgentName)
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name())
 		agentMap[id] = a
 	}
 	return
