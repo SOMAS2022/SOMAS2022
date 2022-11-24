@@ -44,19 +44,18 @@ func main() {
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
-func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConfig config.GameConfig) {
+func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
 	channelsMap = addCommsChannels(agentMap)
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
-
 		// Loop for each game level, exit if
 		// 1. #agents < required, i.e. lost game
 		// 2. defeat all monsters, i.e. win!
 		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 			// leader election
-			_, leader := election.HandleElection(&globalState, agentMap)
-			logging.Log(logging.Info, nil, fmt.Sprintf("[%4d] New leader has been elected %s", globalState.CurrentLevel, leader))
+			electedAgent, percentage := election.HandleElection(&globalState, agentMap)
+			logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
 
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 			// Loop for battle rounds, exit if
@@ -69,7 +68,6 @@ func gameLoop(globalState state.State, agentMap map[string]agent.Agent, gameConf
 				}
 				fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(&globalState, agentMap, *decisionMapView.Map(), channelsMap)}
 				fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
-				// decisionMap = dMap
 
 				logging.Log(logging.Info, logging.LogField{
 					"currLevel":     globalState.CurrentLevel,
