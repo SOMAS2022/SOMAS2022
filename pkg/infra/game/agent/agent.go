@@ -30,20 +30,20 @@ func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decis
 			go func() {
 				<-a.BaseAgent.communication.receipt
 			}()
-			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.Id}
+			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.id}
 			wg.Done()
 			return
 		}
 	}
-	decisionChan <- message.ActionMessage{Action: a.Strategy.CurrentAction(), Sender: a.BaseAgent.Id}
+	decisionChan <- message.ActionMessage{Action: a.Strategy.CurrentAction(), Sender: a.BaseAgent.id}
 }
 
 func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
-	switch m.Message.MType() {
+	switch m.Message().MType() {
 	case message.Close:
 	case message.Request:
 		payload := a.Strategy.HandleFightRequest(m, view, log)
-		err := a.BaseAgent.SendBlockingMessage(m.Sender, *message.NewMessage(message.Inform, payload))
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
 		logging.Log(logging.Error, nil, err.Error())
 	case message.Inform:
 		a.Strategy.HandleFightInformation(m, view, a.BaseAgent, log)

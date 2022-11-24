@@ -28,18 +28,30 @@ func NewMessage(mType Type, payload Payload) *Message {
 	return &Message{mType: mType, payload: payload}
 }
 
-func (m *Message) MType() Type {
+func (m Message) MType() Type {
 	return m.mType
 }
 
-func (m *Message) Payload() Payload {
+func (m Message) Payload() Payload {
 	return m.payload
 }
 
 type TaggedMessage struct {
-	Sender  commons.ID
-	Message Message
+	sender  commons.ID
+	message Message
 	mId     uuid.UUID
+}
+
+func NewTaggedMessage(sender commons.ID, message Message, mId uuid.UUID) *TaggedMessage {
+	return &TaggedMessage{sender: sender, message: message, mId: mId}
+}
+
+func (t TaggedMessage) Sender() commons.ID {
+	return t.Sender()
+}
+
+func (t TaggedMessage) Message() Message {
+	return t.message
 }
 
 type ActionMessage struct {

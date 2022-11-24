@@ -4,6 +4,7 @@ import (
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
+	"infra/game/example"
 	"infra/game/stage/initialise"
 	"infra/game/state"
 )
@@ -16,10 +17,10 @@ import (
  * do you observe?
  */
 var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM":          agent.NewRandomAgent(),
-	"AggressiveAgent": NewProbabilisticAgent(0.1, 0.8, 0.1),
+	"RANDOM": example.NewRandomAgent(),
+	// "AggressiveAgent": NewProbabilisticAgent(0.1, 0.8, 0.1),
 	//	"DefensiveAgent": NewProbabilisticAgent(0.1, 0.8, 0.1),
-	"CowardlyAgent": NewProbabilisticAgent(0.9, 0.05, 0.05),
+	// "CowardlyAgent": NewProbabilisticAgent(0.9, 0.05, 0.05),
 }
 
 func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {

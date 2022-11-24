@@ -6,6 +6,7 @@ import (
 	"math/rand"
 )
 
+// AllocateLoot
 /**
 * This default function allocates loot randomly
  */
