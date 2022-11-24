@@ -22,7 +22,8 @@ type Agent struct {
 	Strategy  Strategy
 }
 
-func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
+func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
+	a.BaseAgent.latestState = agentState
 	for m := range a.BaseAgent.communication.receipt {
 		a.handleMessage(&view, &log, m)
 		action := a.Strategy.CurrentAction()
