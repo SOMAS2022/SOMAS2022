@@ -14,13 +14,13 @@ var InitAgentMap = map[commons.ID]agent.Strategy{
 	"CowardlyAgent":   NewProbabilisticAgent(0.9, 0.05, 0.05),
 }
 
-func InitAgents(defaultStratergyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 
 	numAgents = 0
 
-	for agentName, strategy := range defaultStratergyMap {
+	for agentName, strategy := range defaultStrategyMap {
 		expectedEnvName := "AGENT_" + agentName + "_QUANTITY"
 		quantity := config.EnvToUint(expectedEnvName, 100)
 

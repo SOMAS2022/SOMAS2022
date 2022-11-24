@@ -118,8 +118,8 @@ func init_game() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	stages.Mode = config.EnvToString("MODE", "default")
 
 	gameConfig := stages.InitGameConfig()
-	defStratergyMap := stages.ChooseDefaultStratergyMap(InitAgentMap)
-	numAgents, agentMap, agentStateMap := stages.InitAgents(defStratergyMap, gameConfig)
+	defStrategyMap := stages.ChooseDefaultStrategyMap(InitAgentMap)
+	numAgents, agentMap, agentStateMap := stages.InitAgents(defStrategyMap, gameConfig)
 	gameConfig.InitialNumAgents = numAgents
 
 	globalState := state.State{

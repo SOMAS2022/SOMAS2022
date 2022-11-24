@@ -38,12 +38,12 @@ func InitGameConfig() config.GameConfig {
 	}
 }
 
-func InitAgents(defaultStratergyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	switch Mode {
 	case "0":
-		return t0.InitAgents(defaultStratergyMap, gameConfig)
+		return t0.InitAgents(defaultStrategyMap, gameConfig)
 	default:
-		return initialise.InitAgents(defaultStratergyMap, gameConfig)
+		return initialise.InitAgents(defaultStrategyMap, gameConfig)
 	}
 }
 
