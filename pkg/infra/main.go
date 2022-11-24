@@ -7,6 +7,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/example"
 	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/fight"
@@ -21,7 +22,7 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM": agent.NewRandomAgent(),
+	"RANDOM": example.NewRandomAgent(),
 }
 
 /*

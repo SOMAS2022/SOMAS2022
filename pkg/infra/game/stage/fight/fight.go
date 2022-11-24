@@ -50,7 +50,7 @@ func AgentFightDecisions(state *state.View, agents map[commons.ID]agent.Agent, p
 	for _, messages := range channelsMap {
 		messages <- message.TaggedMessage{
 			Sender:  "server",
-			Message: *message.NewMessage(message.Something, nil),
+			Message: *message.NewMessage(message.Inform, nil),
 		}
 	}
 
