@@ -54,14 +54,15 @@ func (v *View) MonsterAttack() uint {
 	return v.monsterAttack
 }
 
-func (v *View) AgentState() *immutable.Map[commons.ID, HiddenAgentState] {
-	return v.agentState
+func (v *View) AgentState() immutable.Map[commons.ID, HiddenAgentState] {
+	return *v.agentState
 }
 
 func (s *State) ToView() *View {
 	b := immutable.NewMapBuilder[commons.ID, HiddenAgentState](nil)
 	for uuid, state := range s.AgentState {
 		healthRange := MidHealth
+
 		if state.Hp < LowHealth {
 			healthRange = LowHealth
 		} else if state.Hp > HighHealth {
