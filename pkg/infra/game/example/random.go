@@ -17,7 +17,7 @@ type RandomAgent struct {
 }
 
 func (r RandomAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	agent.Log(logging.Trace, logging.LogField{"bravery": r.bravery}, "Cowering")
+	agent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": agent.ViewState().Hp}, "Cowering")
 }
 
 func (r RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {

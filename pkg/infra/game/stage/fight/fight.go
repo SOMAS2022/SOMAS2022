@@ -46,7 +46,7 @@ func AgentFightDecisions(state *state.State, agents map[commons.ID]agent.Agent, 
 	for _, a := range agents {
 		a := a
 		wg.Add(1)
-		agentState := state.AgentState[a.BaseAgent.Id]
+		agentState := state.AgentState[a.BaseAgent.Id()]
 		startAgentFightHandlers(agentState, *state.ToView(), &a, previousDecisions, channel, &wg)
 	}
 

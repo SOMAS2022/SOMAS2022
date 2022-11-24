@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"infra/game/commons"
 	"infra/game/message"
+	"infra/game/state"
 	"infra/logging"
 
 	"github.com/google/uuid"
@@ -13,6 +14,7 @@ type BaseAgent struct {
 	communication *Communication
 	id            commons.ID
 	name          string
+	latestState   state.AgentState
 }
 
 func (ba *BaseAgent) Id() commons.ID {
@@ -66,4 +68,8 @@ func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string)
 	}
 
 	logging.Log(lvl, logging.CombineFields(agentFields, fields), msg)
+}
+
+func (ba *BaseAgent) ViewState() state.AgentState {
+	return ba.latestState
 }
