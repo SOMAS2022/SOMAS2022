@@ -17,7 +17,6 @@ import (
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
@@ -39,7 +38,7 @@ func main() {
 
 	logging.InitLogger(*useJSONFormatter, *debug)
 
-	agentMap, globalState, gameConfig := initialise()
+	agentMap, globalState, gameConfig := init_game()
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
@@ -110,10 +109,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }
 
-func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[commons.ID]agent.Agent)
-	agentStateMap := make(map[commons.ID]state.AgentState)
-
+func init_game() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	err := godotenv.Load()
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
@@ -121,23 +117,10 @@ func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	stages.Mode = config.EnvToString("MODE", "default")
 
-	gameConfig := config.GameConfig{
-		NumLevels:              config.EnvToUint("LEVELS", 60),
-		StartingHealthPoints:   config.EnvToUint("STARTING_HP", 1000),
-		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 100),
-		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 100),
-		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
-		InitialNumAgents:       uint(0),
-		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
-	}
-
-	for agentName, strategy := range InitAgentMap {
-		expectedEnvName := "AGENT_" + agentName + "_QUANTITY"
-		quantity := config.EnvToUint(expectedEnvName, 100)
-
-		gameConfig.InitialNumAgents += quantity
-		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
-	}
+	gameConfig := stages.InitGameConfig()
+	defStrategyMap := stages.ChooseDefaultStrategyMap(InitAgentMap)
+	numAgents, agentMap, agentStateMap := stages.InitAgents(defStrategyMap, gameConfig)
+	gameConfig.InitialNumAgents = numAgents
 
 	globalState := state.State{
 		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, 1),
@@ -174,30 +157,4 @@ func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) 
 		builder.Set(pId, channel)
 	}
 	return *builder.Map()
-}
-
-func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[commons.ID]agent.Agent,
-	agentStateMap map[commons.ID]state.AgentState,
-	quantity uint,
-	strategy S,
-	agentName string,
-) {
-	for i := uint(0); i < quantity; i++ {
-		// TODO: add peer channels
-		agentId := uuid.New().String()
-		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{AgentName: agentName},
-			Strategy:  strategy,
-		}
-
-		agentStateMap[agentId] = state.AgentState{
-			Hp:           gameConfig.StartingHealthPoints,
-			Stamina:      gameConfig.Stamina,
-			Attack:       gameConfig.StartingAttackStrength,
-			Defense:      gameConfig.StartingShieldStrength,
-			BonusAttack:  0,
-			BonusDefense: 0,
-		}
-	}
 }
