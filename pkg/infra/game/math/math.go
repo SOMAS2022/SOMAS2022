@@ -17,5 +17,5 @@ func CalculateMonsterDamage(N uint, HP uint, ST uint, TH float32, L uint, CL uin
 	M := math.Ceil(float64(N) * float64(TH))
 	N_fp := float64(N)
 	L_fp := float64(L)
-	return uint(delta * (N_fp / L_fp) * (float64(HP) + float64(ST)) * (2.0*float64(CL)/L_fp + 0.5) * (1.0 - float64(M)/N_fp))
+	return uint(delta * (N_fp / L_fp) * (float64(HP) + float64(ST)) * (2.0*float64(CL)/L_fp + 0.5) * (1.0 - M/N_fp))
 }
