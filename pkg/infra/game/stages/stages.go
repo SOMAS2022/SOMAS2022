@@ -20,12 +20,12 @@ import (
 // ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'
 var Mode string
 
-func ChooseDefaultStratergyMap(defaultStratergyMap map[commons.ID]agent.Strategy) map[commons.ID]agent.Strategy {
+func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]agent.Strategy) map[commons.ID]agent.Strategy {
 	switch Mode {
 	case "0":
 		return t0.InitAgentMap
 	default:
-		return defaultStratergyMap
+		return defaultStrategyMap
 	}
 }
 
