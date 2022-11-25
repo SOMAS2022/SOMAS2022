@@ -15,12 +15,23 @@ type Strategy interface {
 	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
-	HandleElection(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Ballot, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint)
+	HandleIntentPoll(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Intent)
+	HandleElectionBallot(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Ballot, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint)
 }
 
 type Agent struct {
 	BaseAgent BaseAgent
 	Strategy  Strategy
+}
+
+func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState, view *state.View, baseAgent BaseAgent, decisionChan chan<- decision.Intent, wg *sync.WaitGroup) {
+	a.BaseAgent.latestState = agentState
+	a.Strategy.HandleIntentPoll(view, baseAgent, decisionC)
+}
+
+func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, baseAgent BaseAgent, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint, wg *sync.WaitGroup) {
+	a.BaseAgent.latestState = agentState
+	a.Strategy.HandleElectionBallot(view, baseAgent, decisionC, candidateList, strategy, qtyPreferences)
 }
 
 func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {

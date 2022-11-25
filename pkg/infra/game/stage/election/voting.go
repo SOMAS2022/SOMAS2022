@@ -13,7 +13,6 @@ import (
 	choices.
 
 	C <= 2
-	0. Confidence Vote (Yes/No)
 	1. Single/Double Choice plurality
 	C > 2
 	2. Plurality (1st rank choices)
