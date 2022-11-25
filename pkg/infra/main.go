@@ -61,22 +61,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			if termLeft == 0 {
 				termLeft = runElection(&globalState, agentMap, gameConfig)
 			} else {
-				votes := make(map[decision.Intent]uint)
-				view := globalState.ToView()
-				for _, a := range agentMap {
-					votes[a.Strategy.HandleConfidencePoll(view, a.BaseAgent)]++
-				}
-				logging.Log(logging.Info, logging.LogField{
-					"positive":  votes[decision.Positive],
-					"negative":  votes[decision.Negative],
-					"abstain":   votes[decision.Abstain],
-					"threshold": globalState.LeaderManifesto.OverthrowThreshold(),
-					"agent":     globalState.CurrentLeader,
-				}, "Confidence Vote")
-				if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
-					logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
-					termLeft = runElection(&globalState, agentMap, gameConfig)
-				}
+				termLeft = runConfidenceVote(globalState, agentMap, gameConfig, termLeft)
 			}
 
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -101,18 +86,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 					"numAgents":     len(agentMap),
 				}, "Battle Summary")
 
-				if len(fightRoundResult.CoweringAgents) != len(agentMap) {
-					globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
-					if globalState.MonsterHealth > 0 && fightRoundResult.ShieldSum < globalState.MonsterAttack {
-						agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
-						damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
-						fight.DealDamage(damageTaken, agentsFighting, agentMap, &globalState)
-						// TODO: Monster disruptive ability
-					}
-				} else {
-					damageTaken := globalState.MonsterAttack
-					fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, &globalState)
-				}
+				damageCalculation(&globalState, agentMap, fightRoundResult)
 
 				channelsMap = addCommsChannels(agentMap)
 
@@ -143,6 +117,41 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 		}
 		logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	}
+}
+
+func damageCalculation(globalState *state.State, agentMap map[commons.ID]agent.Agent, fightRoundResult decision.FightResult) {
+	if len(fightRoundResult.CoweringAgents) != len(agentMap) {
+		globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
+		if globalState.MonsterHealth > 0 && fightRoundResult.ShieldSum < globalState.MonsterAttack {
+			agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
+			damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
+			fight.DealDamage(damageTaken, agentsFighting, agentMap, globalState)
+			// TODO: Monster disruptive ability
+		}
+	} else {
+		damageTaken := globalState.MonsterAttack
+		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
+	}
+}
+
+func runConfidenceVote(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
+	votes := make(map[decision.Intent]uint)
+	view := globalState.ToView()
+	for _, a := range agentMap {
+		votes[a.Strategy.HandleConfidencePoll(view, a.BaseAgent)]++
+	}
+	logging.Log(logging.Info, logging.LogField{
+		"positive":  votes[decision.Positive],
+		"negative":  votes[decision.Negative],
+		"abstain":   votes[decision.Abstain],
+		"threshold": globalState.LeaderManifesto.OverthrowThreshold(),
+		"agent":     globalState.CurrentLeader,
+	}, "Confidence Vote")
+	if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
+		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
+		termLeft = runElection(&globalState, agentMap, gameConfig)
+	}
+	return termLeft
 }
 
 func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) uint {
