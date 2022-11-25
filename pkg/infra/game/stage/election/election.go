@@ -5,32 +5,36 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+	"sync"
 )
 
 func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (commons.ID, uint) {
-	ballots := make(map[commons.ID]decision.Ballot)
-	channels := make(map[commons.ID]chan decision.Ballot)
+	ballots := make([]decision.Ballot, len(agents))
 
 	// Make immutable view of current state
 	view := state.ToView()
 	candidateList := make([]commons.ID, len(agents))
-	decisionChan := make(chan decision.Ballot)
+	ballotChan := make(chan decision.Ballot)
 	i := 0
 	for id := range agents {
 		candidateList[i] = id
 		i++
 	}
 
-	params := decision.ElectionParams{candidateList: candidateList, strategy: strategy, numberOfPreferences: numberOfPreferences}
-	// Create channels to each agents
-	for id, agent := range agents {
-		channels[id] = startAgentElectionHandlers(state.AgentState[id], view, agent, params)
+	params := decision.NewElectionParams(candidateList, strategy, numberOfPreferences)
+	var wg sync.WaitGroup
+	for id, a := range agents {
+		wg.Add(1)
+		startAgentElectionHandlers(state.AgentState[id], view, a, params, ballotChan, &wg)
 	}
 
-	// Collect ballots
-	for i, dChan := range channels {
-		ballots[i] = <-dChan
-		close(dChan)
+	go func(group *sync.WaitGroup) {
+		group.Wait()
+		close(ballotChan)
+	}(&wg)
+
+	for ballot := range ballotChan {
+		ballots = append(ballots, ballot)
 	}
 
 	switch strategy {
@@ -42,7 +46,9 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 }
 
 // Create channel to a specific agent
-func startAgentElectionHandlers(agentState state.AgentState, view *state.View, a agent.Agent, params decision.ElectionParams) chan decision.Ballot {
-	go a.HandleElection(agentState, view, a.BaseAgent, params)
-	return decisionChan
+func startAgentElectionHandlers(agentState state.AgentState, view *state.View, a agent.Agent, params *decision.ElectionParams, dChan chan<- decision.Ballot, wg *sync.WaitGroup) {
+	go func(group *sync.WaitGroup) {
+		dChan <- a.HandleElection(agentState, view, a.BaseAgent, params)
+		group.Done()
+	}(wg)
 }

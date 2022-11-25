@@ -23,11 +23,13 @@ import (
 	7. Copeland Scoring
 */
 
-func singleChoicePlurality(ballots map[commons.ID]decision.Ballot) (commons.ID, uint) {
+func singleChoicePlurality(ballots []decision.Ballot) (commons.ID, uint) {
 	// Count number of votes collected for each candidate
 	votes := make(map[commons.ID]uint)
 	for _, ballot := range ballots {
-		votes[ballot[0]]++
+		if len(ballot) > 0 {
+			votes[ballot[0]]++
+		}
 	}
 
 	// Find the candidate(s) with max number of votes
@@ -40,18 +42,6 @@ func singleChoicePlurality(ballots map[commons.ID]decision.Ballot) (commons.ID, 
 		} else if numVotes == maxNumVotes {
 			winners = append(winners, agentId)
 		}
-	}
-
-	// Randomly pick one if no valid votes
-	if maxNumVotes == 0 {
-		candidateIds := make([]commons.ID, len(ballots))
-		i := uint(0)
-		for id := range ballots {
-			candidateIds[i] = id
-			i++
-		}
-		logging.Log(logging.Warn, nil, "No Valid Votes")
-		return candidateIds[len(ballots)], 0
 	}
 
 	// Randomly choose one if there are more than one winner

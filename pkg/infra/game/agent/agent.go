@@ -15,8 +15,8 @@ type Strategy interface {
 	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
-	HandleIntentPoll(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Intent)
-	HandleElectionBallot(view *state.View, baseAgent BaseAgent, decisionC chan<- decision.Ballot, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint)
+	HandleIntentPoll(view *state.View, baseAgent BaseAgent) decision.Intent
+	HandleElectionBallot(view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 }
 
 type Agent struct {
@@ -24,17 +24,18 @@ type Agent struct {
 	Strategy  Strategy
 }
 
-func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState, view *state.View, baseAgent BaseAgent, decisionChan chan<- decision.Intent, wg *sync.WaitGroup) {
+// HandleNoConfidenceVote todo: do we need to send the baseAgent here? I.e. is communication necessary at this point?
+func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState, view *state.View, baseAgent BaseAgent) decision.Intent {
 	a.BaseAgent.latestState = agentState
-	a.Strategy.HandleIntentPoll(view, baseAgent, decisionC)
+	return a.Strategy.HandleIntentPoll(view, baseAgent)
 }
 
-func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, baseAgent BaseAgent, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint, wg *sync.WaitGroup) {
+func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot {
 	a.BaseAgent.latestState = agentState
-	a.Strategy.HandleElectionBallot(view, baseAgent, decisionC, candidateList, strategy, qtyPreferences)
+	return a.Strategy.HandleElectionBallot(view, baseAgent, params)
 }
 
-func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
+func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan<- message.ActionMessage, wg *sync.WaitGroup) {
 	a.BaseAgent.latestState = agentState
 	for m := range a.BaseAgent.communication.receipt {
 		a.handleMessage(&view, &log, m)

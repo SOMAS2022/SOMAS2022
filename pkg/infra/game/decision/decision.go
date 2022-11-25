@@ -21,6 +21,22 @@ type ElectionParams struct {
 	numberOfPreferences uint
 }
 
+func NewElectionParams(candidateList []commons.ID, strategy VotingStrategy, numberOfPreferences uint) *ElectionParams {
+	return &ElectionParams{candidateList: candidateList, strategy: strategy, numberOfPreferences: numberOfPreferences}
+}
+
+func (e ElectionParams) CandidateList() []commons.ID {
+	return e.candidateList
+}
+
+func (e ElectionParams) Strategy() VotingStrategy {
+	return e.strategy
+}
+
+func (e ElectionParams) NumberOfPreferences() uint {
+	return e.numberOfPreferences
+}
+
 // Intent is used for polling.
 // Positive can mean true/agree/have confidence
 // Negative can mean false/disagree/don't have confidence
