@@ -40,22 +40,29 @@ func main() {
 
 	logging.InitLogger(*useJSONFormatter, *debug)
 
-	agentMap, globalState, gameConfig := init_game()
+	agentMap, globalState, gameConfig := initGame()
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
 func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
 	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
+	var termLeft uint
 	channelsMap = addCommsChannels(agentMap)
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		// Loop for each game level, exit if
 		// 1. #agents < required, i.e. lost game
 		// 2. defeat all monsters, i.e. win!
 		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
-			// leader election
-			electedAgent, percentage := election.HandleElection(&globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
-			logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
+			// leader election if term runs out
+			// todo: add condition on no-confidence vote trigger
+			if termLeft == 0 {
+				electedAgent, manifesto, percentage := election.HandleElection(&globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+				termLeft = manifesto.TermLength()
+				globalState.LeaderManifesto = manifesto
+				globalState.CurrentLeader = electedAgent
+				logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
+			}
 
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 			// Loop for battle rounds, exit if
@@ -117,12 +124,13 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			newGlobalState := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
 			// TODO: Add verification if needed
 			globalState = newGlobalState
+			termLeft--
 		}
 		logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	}
 }
 
-func init_game() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
+func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	err := godotenv.Load()
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")

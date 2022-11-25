@@ -16,6 +16,11 @@ type RandomAgent struct {
 	bravery int
 }
 
+func (r RandomAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(true, false, 20, 10)
+	return manifesto
+}
+
 func (r RandomAgent) HandleIntentPoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
 	switch rand.Intn(2) {
 	case 0:

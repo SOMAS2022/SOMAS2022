@@ -15,6 +15,7 @@ type Strategy interface {
 	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
+	CreateManifesto(view *state.View, baseAgent BaseAgent) *decision.Manifesto
 	HandleIntentPoll(view *state.View, baseAgent BaseAgent) decision.Intent
 	HandleElectionBallot(view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 }
@@ -22,6 +23,11 @@ type Strategy interface {
 type Agent struct {
 	BaseAgent BaseAgent
 	Strategy  Strategy
+}
+
+func (a *Agent) SubmitManifesto(agentState state.AgentState, view *state.View, baseAgent BaseAgent) *decision.Manifesto {
+	a.BaseAgent.latestState = agentState
+	return a.Strategy.CreateManifesto(view, baseAgent)
 }
 
 // HandleNoConfidenceVote todo: do we need to send the baseAgent here? I.e. is communication necessary at this point?

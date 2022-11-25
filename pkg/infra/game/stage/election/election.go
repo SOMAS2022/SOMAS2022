@@ -8,20 +8,29 @@ import (
 	"sync"
 )
 
-func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (commons.ID, uint) {
+func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (commons.ID, decision.Manifesto, uint) {
+	// Get manifestos from agents
+	agentManifestos := make(map[commons.ID]decision.Manifesto)
+
+	for id, a := range agents {
+		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id], state.ToView(), a.BaseAgent)
+	}
+
 	ballots := make([]decision.Ballot, len(agents))
 
 	// Make immutable view of current state
 	view := state.ToView()
-	candidateList := make([]commons.ID, len(agents))
 	ballotChan := make(chan decision.Ballot)
-	i := 0
-	for id := range agents {
-		candidateList[i] = id
-		i++
-	}
 
-	params := decision.NewElectionParams(candidateList, strategy, numberOfPreferences)
+	//candidateList := make([]commons.ID, len(agents))
+	//i := 0
+	//for id := range agents {
+	//	candidateList[i] = id
+	//	i++
+	//}
+
+	params := decision.NewElectionParams(agentManifestos, strategy, numberOfPreferences)
+
 	var wg sync.WaitGroup
 	for id, a := range agents {
 		wg.Add(1)
@@ -39,9 +48,13 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 
 	switch strategy {
 	case decision.VotingStrategy(decision.SingleChoicePlurality):
-		return singleChoicePlurality(ballots)
+		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningManifesto := agentManifestos[winningID]
+		return winningID, winningManifesto, winningPercentage
 	default:
-		return singleChoicePlurality(ballots)
+		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningManifesto := agentManifestos[winningID]
+		return winningID, winningManifesto, winningPercentage
 	}
 }
 
