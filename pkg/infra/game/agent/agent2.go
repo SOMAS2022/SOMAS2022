@@ -38,6 +38,11 @@ func (a Agent2) HandleFightMessage(m message.TaggedMessage, view *state.View, ag
 			// drink health potion
 		}
 
+		=====================TASKS=======================
+		!!!FUNCTIONS TO IMPLEMENT!!!
+========================
+		Tim:
+		
 		// assume the following function that estimates if the amount of other agents is enough to kill the monsters (so we can cower if we're low)
 		func enoughOtherAgentsFighting(...)
 		input args : global state map
@@ -46,14 +51,26 @@ func (a Agent2) HandleFightMessage(m message.TaggedMessage, view *state.View, ag
 		for example, remember the amount of agents that fought last round and how many damage was dealt, to get a mean damage/agent
 		then estimate this round's damage based on the number of fighting agents WITH HEALTH NOT LOW (otherwise assume they'll be cowering to survive instead)
 
-
+		
 		// cower if low health and not critically needed
 		if agentState.Hp < 15 {
 			if enoughOtherAgentsFighting(...) {
 				return decision.Cower
 			}
 		}
+========================
+		
+========================
+		Giorgos:
+		
+		1. Overleaf Document
+		2. func History() {}
+		3. func FreuencyOfDecisions() {}
+=========================
 
+=========================
+		Vasos:
+		
 		// drink potions if attacking or defending
 		if decision != decision.Cower {
 			if hasAttackPotion && decision == decision.Attack {
@@ -63,6 +80,9 @@ func (a Agent2) HandleFightMessage(m message.TaggedMessage, view *state.View, ag
 				// drink it
 			}
 		}
+==========================
+		
+		
 	*/
 
 	/*
@@ -81,3 +101,5 @@ func (a Agent2) HandleFightMessage(m message.TaggedMessage, view *state.View, ag
 		return decision.Attack
 	}
 }
+
+
