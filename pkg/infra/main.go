@@ -54,7 +54,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 		// 2. defeat all monsters, i.e. win!
 		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 			// leader election
-			electedAgent, percentage := election.HandleElection(&globalState, agentMap)
+			electedAgent, percentage := election.HandleElection(&globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
 			logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
 
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?

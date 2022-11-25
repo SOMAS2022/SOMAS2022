@@ -36,7 +36,7 @@ func (r RandomAgent) CurrentAction() decision.FightAction {
 	}
 }
 
-func (r RandomAgent) HandleElection(view *state.View, _ agent.BaseAgent, decisionC chan<- decision.Ballot) {
+func (r RandomAgent) HandleElection(view *state.View, baseAgent agent.BaseAgent, decisionC chan<- decision.Ballot, candidateList []commons.ID, strategy decision.VotingStrategy, qtyPreferences uint) {
 	// Extract ID of alive agents
 	agentState := view.AgentState()
 	aliveAgentIds := make([]string, agentState.Len())

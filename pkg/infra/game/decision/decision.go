@@ -19,3 +19,18 @@ const (
 	Cower
 	Undecided
 )
+
+type VotingManifesto struct {
+	Running         bool
+	FightImposition bool
+	LootImposition  bool
+	ResignThreshold uint
+	TermLength      uint
+}
+
+type VotingStrategy uint
+
+const (
+	ConfidenceVote uint = iota
+	SingleChoicePlurality
+)
