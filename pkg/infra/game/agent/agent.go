@@ -16,7 +16,7 @@ type Strategy interface {
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
 	CreateManifesto(view *state.View, baseAgent BaseAgent) *decision.Manifesto
-	HandleIntentPoll(view *state.View, baseAgent BaseAgent) decision.Intent
+	HandleConfidencePoll(view *state.View, baseAgent BaseAgent) decision.Intent
 	HandleElectionBallot(view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 }
 
@@ -33,7 +33,7 @@ func (a *Agent) SubmitManifesto(agentState state.AgentState, view *state.View, b
 // HandleNoConfidenceVote todo: do we need to send the baseAgent here? I.e. is communication necessary at this point?
 func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState, view *state.View, baseAgent BaseAgent) decision.Intent {
 	a.BaseAgent.latestState = agentState
-	return a.Strategy.HandleIntentPoll(view, baseAgent)
+	return a.Strategy.HandleConfidencePoll(view, baseAgent)
 }
 
 func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot {

@@ -18,6 +18,8 @@ import (
 	"math"
 	"math/rand"
 
+	"golang.org/x/exp/constraints"
+
 	"github.com/benbjohnson/immutable"
 	"github.com/joho/godotenv"
 )
@@ -57,11 +59,24 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			// leader election if term runs out
 			// todo: add condition on no-confidence vote trigger
 			if termLeft == 0 {
-				electedAgent, manifesto, percentage := election.HandleElection(&globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
-				termLeft = manifesto.TermLength()
-				globalState.LeaderManifesto = manifesto
-				globalState.CurrentLeader = electedAgent
-				logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
+				termLeft = runElection(&globalState, agentMap, gameConfig, termLeft)
+			} else {
+				votes := make(map[decision.Intent]uint)
+				view := globalState.ToView()
+				for _, a := range agentMap {
+					votes[a.Strategy.HandleConfidencePoll(view, a.BaseAgent)]++
+				}
+				logging.Log(logging.Info, logging.LogField{
+					"positive":  votes[decision.Positive],
+					"negative":  votes[decision.Negative],
+					"abstain":   votes[decision.Abstain],
+					"threshold": globalState.LeaderManifesto.OverthrowThreshold(),
+					"agent":     globalState.CurrentLeader,
+				}, "Confidence Vote")
+				if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
+					logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
+					termLeft = runElection(&globalState, agentMap, gameConfig, termLeft)
+				}
 			}
 
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -130,6 +145,15 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	}
 }
 
+func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
+	electedAgent, manifesto, percentage := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+	termLeft = manifesto.TermLength()
+	globalState.LeaderManifesto = manifesto
+	globalState.CurrentLeader = electedAgent
+	logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
+	return termLeft
+}
+
 func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	err := godotenv.Load()
 	if err != nil {
@@ -164,7 +188,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	for _, key := range keys {
 		res[key] = make(chan message.TaggedMessage, 100)
 	}
-	immutableMap := createImmutableMap(res)
+	immutableMap := createImmutableMapForChannels(res)
 	for id, a := range agentMap {
 		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name())
 		agentMap[id] = a
@@ -172,8 +196,8 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	return
 }
 
-func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) immutable.Map[commons.ID, chan<- message.TaggedMessage] {
-	builder := immutable.NewMapBuilder[commons.ID, chan<- message.TaggedMessage](nil)
+func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels map[K]chan V) immutable.Map[K, chan<- V] {
+	builder := immutable.NewMapBuilder[K, chan<- V](nil)
 	for pId, channel := range peerChannels {
 		builder.Set(pId, channel)
 	}

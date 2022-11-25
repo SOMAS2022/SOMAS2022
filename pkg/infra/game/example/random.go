@@ -17,13 +17,15 @@ type RandomAgent struct {
 }
 
 func (r RandomAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(true, false, 20, 10)
+	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
-func (r RandomAgent) HandleIntentPoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
-	switch rand.Intn(2) {
+func (r RandomAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
 	case 0:
+		return decision.Abstain
+	case 1:
 		return decision.Negative
 	default:
 		return decision.Positive
