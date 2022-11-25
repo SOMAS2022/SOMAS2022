@@ -59,7 +59,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			// leader election if term runs out
 			// todo: add condition on no-confidence vote trigger
 			if termLeft == 0 {
-				termLeft = runElection(&globalState, agentMap, gameConfig, termLeft)
+				termLeft = runElection(&globalState, agentMap, gameConfig)
 			} else {
 				votes := make(map[decision.Intent]uint)
 				view := globalState.ToView()
@@ -75,7 +75,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				}, "Confidence Vote")
 				if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 					logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
-					termLeft = runElection(&globalState, agentMap, gameConfig, termLeft)
+					termLeft = runElection(&globalState, agentMap, gameConfig)
 				}
 			}
 
@@ -145,9 +145,9 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	}
 }
 
-func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
+func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) uint {
 	electedAgent, manifesto, percentage := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
-	termLeft = manifesto.TermLength()
+	termLeft := manifesto.TermLength()
 	globalState.LeaderManifesto = manifesto
 	globalState.CurrentLeader = electedAgent
 	logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))

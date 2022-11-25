@@ -57,7 +57,6 @@ func (e ElectionParams) CandidateList() *immutable.Map[commons.ID, Manifesto] {
 }
 
 func NewElectionParams(candidateList map[commons.ID]Manifesto, strategy VotingStrategy, numberOfPreferences uint) *ElectionParams {
-
 	builder := immutable.NewMapBuilder[commons.ID, Manifesto](nil)
 	for id, manifesto := range candidateList {
 		builder.Set(id, manifesto)
