@@ -11,9 +11,12 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/state"
 	"infra/game/tally"
-	t0 "infra/teams/team0"
 
 	"github.com/benbjohnson/immutable"
+
+	//? Add you team folder like this:
+	t0 "infra/teams/team0"
+	t1 "infra/teams/team1"
 )
 
 // Mode ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
@@ -23,6 +26,8 @@ func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Str
 	switch Mode {
 	case "0":
 		return t0.InitAgentMap
+	case "1":
+		return t1.InitAgentMap
 	default:
 		return defaultStrategyMap
 	}

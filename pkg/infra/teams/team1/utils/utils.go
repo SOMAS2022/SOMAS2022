@@ -12,7 +12,11 @@ var Config config.GameConfig
  *
  * Calculated based on a(curr)
  */
-func AgentBattleUtility(state state.State) uint {
-	// Agents are limited 
-	agent.
+func AgentBattleUtility(agentState state.AgentState) float32 {
+	attackPortion := float32(agentState.TotalAttack() / Config.StartingAttackStrength)
+	defensePortion := float32(agentState.TotalDefense() / Config.StartingShieldStrength)
+	healthPortion := float32(agentState.Hp / Config.StartingHealthPoints)
+	staminaPortion := float32(agentState.Stamina / Config.Stamina)
+
+	return 0.25*attackPortion + 0.25*defensePortion + 0.25*healthPortion + 0.25*staminaPortion
 }

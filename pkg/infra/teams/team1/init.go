@@ -1,4 +1,4 @@
-package team0
+package team1
 
 import (
 	"infra/config"
@@ -25,7 +25,7 @@ var InitAgentMap = map[commons.ID]agent.Strategy{
 }
 
 func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
-	utils.Config = gameConfig // TODO Can use global config when it becomes available
+	utils.Config = gameConfig // TODO: Not needed when confg is globally accessable
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 

@@ -1,4 +1,4 @@
-package team0
+package team1
 
 import (
 	"infra/game/agent"
@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/teams/team1/utils"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -13,6 +14,12 @@ import (
 
 type ProbabilisticAgent struct {
 	fightDecisionCDF []float32
+
+	// current fightDecision
+	currentDecision decision.FightAction
+
+	// Metadata
+	battleUtility float32
 }
 
 func (r ProbabilisticAgent) Default() decision.FightAction {
@@ -36,6 +43,15 @@ func NewProbabilisticAgent(pCower float32, pAttack float32, pDefend float32) *Pr
 }
 
 func (r ProbabilisticAgent) CurrentAction() decision.FightAction {
+	return r.currentDecision
+}
+
+func (r ProbabilisticAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+	return nil
+}
+
+func (r ProbabilisticAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+	r.UpdateMetadata(agent)
 	dice := rand.Float32()
 
 	fight := 0
@@ -44,18 +60,15 @@ func (r ProbabilisticAgent) CurrentAction() decision.FightAction {
 	}
 	switch fight {
 	case 0:
-		return decision.Cower
+		r.currentDecision = decision.Cower
 	case 1:
-		return decision.Attack
+		r.currentDecision = decision.Attack
 	default:
-		return decision.Defend
+		r.currentDecision = decision.Defend
 	}
-}
-
-func (r ProbabilisticAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
-	return nil
-}
-
-func (r ProbabilisticAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	return
+}
+
+func (r ProbabilisticAgent) UpdateMetadata(self agent.BaseAgent) {
+	r.battleUtility = utils.AgentBattleUtility(self.ViewState())
 }
