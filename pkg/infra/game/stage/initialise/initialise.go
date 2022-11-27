@@ -44,6 +44,8 @@ func InitGameConfig() config.GameConfig {
 		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
+		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 1),
+		VotingPreferences:      config.EnvToUint("VOTING_PREFERENCES", 1),
 	}
 
 	return gameConfig

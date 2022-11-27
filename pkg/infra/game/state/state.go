@@ -2,6 +2,7 @@ package state
 
 import (
 	"infra/game/commons"
+	"infra/game/decision"
 )
 
 type AgentState struct {
@@ -22,9 +23,11 @@ func (a AgentState) TotalDefense() uint {
 }
 
 type State struct {
-	CurrentLevel  uint
-	HpPool        uint
-	MonsterHealth uint
-	MonsterAttack uint
-	AgentState    map[commons.ID]AgentState
+	CurrentLevel    uint
+	HpPool          uint
+	MonsterHealth   uint
+	MonsterAttack   uint
+	AgentState      map[commons.ID]AgentState
+	CurrentLeader   commons.ID
+	LeaderManifesto decision.Manifesto
 }
