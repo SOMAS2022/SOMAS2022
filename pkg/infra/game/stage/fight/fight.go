@@ -47,7 +47,7 @@ func AgentFightDecisions(state *state.State, agents map[commons.ID]agent.Agent, 
 		a := a
 		wg.Add(1)
 		agentState := state.AgentState[a.BaseAgent.Id()]
-		startAgentFightHandlers(agentState, *state.ToView(), &a, previousDecisions, channel, &wg)
+		startAgentFightHandlers(agentState, &a, previousDecisions, channel, &wg)
 	}
 
 	for _, messages := range channelsMap {
@@ -115,6 +115,6 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 	fightResult.ShieldSum = shieldSum
 }
 
-func startAgentFightHandlers(agentState state.AgentState, view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(agentState, view, decisionLog, channel, wg)
+func startAgentFightHandlers(agentState state.AgentState, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
+	go a.HandleFight(agentState, decisionLog, channel, wg)
 }

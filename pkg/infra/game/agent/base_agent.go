@@ -15,6 +15,11 @@ type BaseAgent struct {
 	id            commons.ID
 	name          string
 	latestState   state.AgentState
+	view          *state.View
+}
+
+func (ba *BaseAgent) View() state.View {
+	return *ba.view
 }
 
 func (ba *BaseAgent) Id() commons.ID {
@@ -25,8 +30,8 @@ func (ba *BaseAgent) Name() string {
 	return ba.name
 }
 
-func NewBaseAgent(communication *Communication, id commons.ID, agentName string) BaseAgent {
-	return BaseAgent{communication: communication, id: id, name: agentName}
+func NewBaseAgent(communication *Communication, id commons.ID, agentName string, ptr *state.View) BaseAgent {
+	return BaseAgent{communication: communication, id: id, name: agentName, view: ptr}
 }
 
 func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
@@ -50,7 +55,9 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
 		}
 	}()
+	if m.MType() == message.Proposal && (ba.view.CurrentLeader() == ba.id || ba.view.CurrentLeader() == id) {
 
+	}
 	channel, ok := ba.communication.peer.Get(id)
 	if ok {
 		mId, _ := uuid.NewUUID()
@@ -70,6 +77,6 @@ func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string)
 	logging.Log(lvl, logging.CombineFields(agentFields, fields), msg)
 }
 
-func (ba *BaseAgent) ViewState() state.AgentState {
+func (ba *BaseAgent) AgentState() state.AgentState {
 	return ba.latestState
 }

@@ -17,6 +17,8 @@ const (
 	Close Type = iota
 	Request
 	Inform
+	Proposal
+	ProposalResponse
 )
 
 type Message struct {

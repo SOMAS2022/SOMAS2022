@@ -15,12 +15,13 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	quantity uint,
 	strategyConstructor func() S,
 	agentName string,
+	viewPtr *state.View,
 ) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.NewBaseAgent(nil, agentId, agentName),
+			BaseAgent: agent.NewBaseAgent(nil, agentId, agentName, viewPtr),
 			Strategy:  strategyConstructor(),
 		}
 
@@ -51,7 +52,7 @@ func InitGameConfig() config.GameConfig {
 	return gameConfig
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 
@@ -62,7 +63,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 		quantity := config.EnvToUint(expectedEnvName, 100)
 
 		numAgents += quantity
-		InstantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
+		InstantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName, ptr)
 	}
 
 	return

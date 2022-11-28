@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 	"infra/logging"
 	"math/rand"
 
@@ -16,12 +15,12 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+func (r *RandomAgent) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
-func (r *RandomAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -32,11 +31,11 @@ func (r *RandomAgent) HandleConfidencePoll(view *state.View, baseAgent agent.Bas
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	agent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": agent.ViewState().Hp}, "Cowering")
+func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+	agent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": agent.AgentState().Hp}, "Cowering")
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
 	return nil
 }
 
@@ -52,8 +51,9 @@ func (r *RandomAgent) CurrentAction() decision.FightAction {
 	}
 }
 
-func (r *RandomAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
+	view := b.View()
 	agentState := view.AgentState()
 	aliveAgentIds := make([]string, agentState.Len())
 	i := 0
@@ -77,6 +77,15 @@ func (r *RandomAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, 
 	}
 
 	return ballot
+}
+
+func (r *RandomAgent) HandleFightProposal(proposal *message.FightProposalMessage, baseAgent agent.BaseAgent) decision.Intent {
+	intent := rand.Intn(2)
+	if intent == 0 {
+		return decision.Positive
+	} else {
+		return decision.Negative
+	}
 }
 
 func NewRandomAgent() agent.Strategy {
