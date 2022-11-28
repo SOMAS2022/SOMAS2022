@@ -156,7 +156,6 @@ func (r ProbabilisticAgent) utilityValue(action decision.FightAction, _ *state.V
 
 // Called any time a message is received, initialises or updates the socialCapital map
 func (r ProbabilisticAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
@@ -184,7 +183,6 @@ func (r ProbabilisticAgent) updateSocialCapital(_ message.TaggedMessage, view *s
 		r.lastLevelUpdated = view.CurrentLevel()
 	} else if r.lastLevelUpdated < view.CurrentLevel() { // socialCapital variable already exists
 		for key := range r.socialCapital {
-
 			// Remove any agents that have died from socialCapital map (Might be unnecessary as it adds a lot of computation)
 			_, exists := agentState.Get(key)
 			if !exists {
