@@ -14,7 +14,17 @@ import (
 type Strategy interface {
 	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
+
+	HandleLootInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.LootDecision])
+	HandleLootRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.LootDecision]) message.Payload
+
+	HandleHpInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.HpPoolDecision])
+	HandleHpRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.HpPoolDecision]) message.Payload
+
 	CurrentAction() decision.FightAction
+	CurrentLootDescion() decision.LootDecision
+	CurrentHpDecision() decision.HpPoolDecision
+
 	CreateManifesto(view *state.View, baseAgent BaseAgent) *decision.Manifesto
 	HandleConfidencePoll(view *state.View, baseAgent BaseAgent) decision.Intent
 	HandleElectionBallot(view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
@@ -44,7 +54,7 @@ func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, ba
 func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan<- message.ActionMessage, wg *sync.WaitGroup) {
 	a.BaseAgent.latestState = agentState
 	for m := range a.BaseAgent.communication.receipt {
-		a.handleMessage(&view, &log, m)
+		a.handleFightActionMessage(&view, &log, m)
 		action := a.Strategy.CurrentAction()
 		if action != decision.Undecided {
 			go func() {
@@ -58,7 +68,7 @@ func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log im
 	decisionChan <- message.ActionMessage{Action: a.Strategy.CurrentAction(), Sender: a.BaseAgent.id}
 }
 
-func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
+func (a *Agent) handleFightActionMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
 	switch m.Message().MType() {
 	case message.Close:
 	case message.Request:
@@ -71,4 +81,34 @@ func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, d
 		a.Strategy.HandleFightInformation(m, view, a.BaseAgent, log)
 	}
 	return a.Strategy.CurrentAction()
+}
+
+func (a *Agent) handleLootDecisionMessage(view *state.View, log *immutable.Map[commons.ID, decision.LootDecision], m message.TaggedMessage) decision.LootDecision {
+	switch m.Message().MType() {
+	case message.Close:
+	case message.Request:
+		payload := a.Strategy.HandleLootRequest(m, view, log)
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
+		logging.Log(logging.Error, nil, err.Error())
+	case message.Inform:
+		a.Strategy.HandleLootInformation(m, view, a.BaseAgent, log)
+	default:
+		a.Strategy.HandleLootInformation(m, view, a.BaseAgent, log)
+	}
+	return a.Strategy.CurrentLootDescion()
+}
+
+func (a *Agent) handleHpDecisionMessage(view *state.View, log *immutable.Map[commons.ID, decision.HpPoolDecision], m message.TaggedMessage) decision.HpPoolDecision {
+	switch m.Message().MType() {
+	case message.Close:
+	case message.Request:
+		payload := a.Strategy.HandleHpRequest(m, view, log)
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
+		logging.Log(logging.Error, nil, err.Error())
+	case message.Inform:
+		a.Strategy.HandleHpInformation(m, view, a.BaseAgent, log)
+	default:
+		a.Strategy.HandleHpInformation(m, view, a.BaseAgent, log)
+	}
+	return a.Strategy.CurrentHpDecision()
 }

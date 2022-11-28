@@ -8,7 +8,7 @@ import (
 
 type LootDecision struct{}
 
-type HPPoolDecision struct{}
+type HpPoolDecision struct{}
 
 type FightAction int64
 

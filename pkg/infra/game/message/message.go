@@ -58,3 +58,13 @@ type ActionMessage struct {
 	Action decision.FightAction
 	Sender commons.ID
 }
+
+type HpMessage struct {
+	Action decision.HpPoolDecision
+	Sender commons.ID
+}
+
+type LootMessage struct {
+	Action decision.LootDecision
+	Sender commons.ID
+}

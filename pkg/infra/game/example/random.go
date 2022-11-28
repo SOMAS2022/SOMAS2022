@@ -39,7 +39,20 @@ func (r RandomAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.Vi
 func (r RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
 	return nil
 }
+func (r RandomAgent) HandleLootInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.LootDecision]) {
+	return
+}
 
+func (r RandomAgent) HandleLootRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.LootDecision]) message.Payload {
+	return nil
+}
+func (r RandomAgent) HandleHpInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.HpPoolDecision]) {
+	return
+}
+
+func (r RandomAgent) HandleHpRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.HpPoolDecision]) message.Payload {
+	return nil
+}
 func (r RandomAgent) CurrentAction() decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
@@ -50,6 +63,14 @@ func (r RandomAgent) CurrentAction() decision.FightAction {
 	default:
 		return decision.Defend
 	}
+}
+
+func (r RandomAgent) CurrentLootDescion() decision.LootDecision {
+	return decision.LootDecision{}
+}
+
+func (r RandomAgent) CurrentHpDecision() decision.HpPoolDecision {
+	return decision.HpPoolDecision{}
 }
 
 func (r RandomAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
