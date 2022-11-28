@@ -215,3 +215,46 @@ func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *s
 	}
 
 }
+
+func (r ProbabilisticAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(true, false, 10, 50)
+	return manifesto
+}
+
+func (r ProbabilisticAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Abstain
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Positive
+	}
+}
+
+func (r ProbabilisticAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	// Extract ID of alive agents
+	agentState := view.AgentState()
+	aliveAgentIds := make([]string, agentState.Len())
+	i := 0
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			aliveAgentIds[i] = id
+			i++
+		}
+	}
+
+	// Randomly fill the ballot
+	var ballot decision.Ballot
+	numAliveAgents := len(aliveAgentIds)
+	numCandidate := 2
+	for i := 0; i < numCandidate; i++ {
+		randomIdx := rand.Intn(numAliveAgents)
+		randomCandidate := aliveAgentIds[uint(randomIdx)]
+		ballot = append(ballot, randomCandidate)
+	}
+
+	return ballot
+}
