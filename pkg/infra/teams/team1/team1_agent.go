@@ -158,13 +158,15 @@ func (r ProbabilisticAgent) utilityValue(action decision.FightAction, view *stat
 func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 
 	// Ensure that socialCapital map is initialised
-	if len(r.socialCapital) == 0 && view.AgentState().Len() > 1 {
+	agentState := view.AgentState()
+	agentStateLength := agentState.Len()
+	if len(r.socialCapital) == 0 && agentStateLength > 1 {
 
 		// Create empty map
 		r.socialCapital = map[string][4]float64{}
 
 		// Populate map with every currently living agent, and calculate socialCapital based on log
-		itr := view.AgentState().Iterator()
+		itr := agentState.Iterator()
 		for !itr.Done() {
 			key, _, _ := itr.Next()
 
@@ -187,7 +189,7 @@ func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *s
 		for key := range r.socialCapital {
 
 			// Remove any agents that have died from socialCapital map (Might be unnecessary as it adds a lot of computation)
-			_, exists := view.AgentState().Get(key)
+			_, exists := agentState.Get(key)
 			if !exists {
 				delete(r.socialCapital, key)
 			}
