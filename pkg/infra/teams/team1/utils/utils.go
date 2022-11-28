@@ -116,7 +116,6 @@ func Softmax(inputArray [3]float64) [3]float64 {
 }
 
 func MakeIncremental(inputArray [3]float64) [3]float64 {
-
 	var outputArray [3]float64
 
 	outputArray[0] = inputArray[0]

@@ -34,7 +34,7 @@ var InitAgentMap = map[commons.ID]agent.Strategy{
 }
 
 func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
-	utils.Config = gameConfig // TODO: Not needed when confg is globally accessable
+	utils.Config = gameConfig // TODO: Not needed when confg is globally accessible
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 

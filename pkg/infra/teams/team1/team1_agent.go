@@ -134,7 +134,7 @@ func (r ProbabilisticAgent) UpdateMetadata(self agent.BaseAgent) {
 }
 
 // Calculate utility value of different decisions
-func (r ProbabilisticAgent) utilityValue(action decision.FightAction, view *state.View, agent agent.BaseAgent) float64 {
+func (r ProbabilisticAgent) utilityValue(action decision.FightAction, _ *state.View, agent agent.BaseAgent) float64 {
 	// Utility of each action is dependent on relationship with others. If agent hates all other agents, then
 	// will only act in its own interest.
 
@@ -155,13 +155,12 @@ func (r ProbabilisticAgent) utilityValue(action decision.FightAction, view *stat
 }
 
 // Called any time a message is received, initialises or updates the socialCapital map
-func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r ProbabilisticAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
 	if len(r.socialCapital) == 0 && agentStateLength > 1 {
-
 		// Create empty map
 		r.socialCapital = map[string][4]float64{}
 
@@ -183,9 +182,7 @@ func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *s
 
 		// Set the lastLevelUpdated variable
 		r.lastLevelUpdated = view.CurrentLevel()
-
 	} else if r.lastLevelUpdated < view.CurrentLevel() { // socialCapital variable already exists
-
 		for key := range r.socialCapital {
 
 			// Remove any agents that have died from socialCapital map (Might be unnecessary as it adds a lot of computation)
@@ -213,7 +210,6 @@ func (r ProbabilisticAgent) updateSocialCapital(m message.TaggedMessage, view *s
 	for key := range r.socialCapital {
 		r.socialCapital[key] = utils.BoundArray(r.socialCapital[key])
 	}
-
 }
 
 func (r ProbabilisticAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
