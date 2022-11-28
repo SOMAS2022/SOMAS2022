@@ -41,16 +41,27 @@ func main() {
 	flag.Parse()
 
 	logging.InitLogger(*useJSONFormatter, *debug)
-
-	agentMap, globalState, gameConfig := initGame()
-	gameLoop(globalState, agentMap, gameConfig)
+	viewPtr := initViews()
+	agentMap, globalState, gameConfig := initGame(viewPtr)
+	gameLoop(globalState, agentMap, gameConfig, viewPtr)
 }
 
-func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
+func initViews() *state.View {
+	view := &state.View{}
+	return view
+}
+
+func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, ptr *state.View) {
 	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
 	var termLeft uint
-	channelsMap = addCommsChannels(agentMap)
+	channelsMap = addCommsChannels(agentMap, ptr)
+	*ptr = globalState.ToView()
+
+	updateView := func() {
+		*ptr = globalState.ToView()
+	}
+
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		// Loop for each game level, exit if
 		// 1. #agents < required, i.e. lost game
@@ -58,12 +69,13 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
 			// leader election if term runs out
 			// todo: add condition on no-confidence vote trigger
+			updateView()
 			if termLeft == 0 {
 				termLeft = runElection(&globalState, agentMap, gameConfig)
 			} else {
-				termLeft = runConfidenceVote(globalState, agentMap, gameConfig, termLeft)
+				termLeft = runConfidenceVote(&globalState, agentMap, gameConfig, termLeft)
 			}
-
+			// Fight Discussion
 			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 			// Loop for battle rounds, exit if
 			// 1. #agents < required, i.e. lost game
@@ -74,7 +86,9 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 					decisionMapView.Set(u, action)
 				}
 				fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(&globalState, agentMap, *decisionMapView.Map(), channelsMap)}
+				updateView()
 				fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
+				updateView()
 
 				logging.Log(logging.Info, logging.LogField{
 					"currLevel":     globalState.CurrentLevel,
@@ -87,8 +101,9 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				}, "Battle Summary")
 
 				damageCalculation(&globalState, agentMap, fightRoundResult)
+				updateView()
 
-				channelsMap = addCommsChannels(agentMap)
+				channelsMap = addCommsChannels(agentMap, ptr)
 
 				if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
 					logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
@@ -111,6 +126,8 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 			}
 
 			newGlobalState := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
+			updateView()
+
 			// TODO: Add verification if needed
 			globalState = newGlobalState
 			termLeft--
@@ -134,11 +151,10 @@ func damageCalculation(globalState *state.State, agentMap map[commons.ID]agent.A
 	}
 }
 
-func runConfidenceVote(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
+func runConfidenceVote(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
 	votes := make(map[decision.Intent]uint)
-	view := globalState.ToView()
 	for _, a := range agentMap {
-		votes[a.Strategy.HandleConfidencePoll(view, a.BaseAgent)]++
+		votes[a.Strategy.HandleConfidencePoll(a.BaseAgent)]++
 	}
 	logging.Log(logging.Info, logging.LogField{
 		"positive":  votes[decision.Positive],
@@ -149,7 +165,7 @@ func runConfidenceVote(globalState state.State, agentMap map[commons.ID]agent.Ag
 	}, "Confidence Vote")
 	if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
-		termLeft = runElection(&globalState, agentMap, gameConfig)
+		termLeft = runElection(globalState, agentMap, gameConfig)
 	}
 	return termLeft
 }
@@ -163,7 +179,7 @@ func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, 
 	return termLeft
 }
 
-func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
+func initGame(vPtr *state.View) (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	err := godotenv.Load()
 	if err != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
@@ -173,7 +189,7 @@ func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 
 	gameConfig := stages.InitGameConfig()
 	defStrategyMap := stages.ChooseDefaultStrategyMap(InitAgentMap)
-	numAgents, agentMap, agentStateMap := stages.InitAgents(defStrategyMap, gameConfig)
+	numAgents, agentMap, agentStateMap := stages.InitAgents(defStrategyMap, gameConfig, vPtr)
 	gameConfig.InitialNumAgents = numAgents
 
 	globalState := state.State{
@@ -185,7 +201,7 @@ func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	return agentMap, globalState, gameConfig
 }
 
-func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]chan message.TaggedMessage) {
+func addCommsChannels(agentMap map[commons.ID]agent.Agent, viewPtr *state.View) (res map[commons.ID]chan message.TaggedMessage) {
 	keys := make([]commons.ID, len(agentMap))
 	res = make(map[commons.ID]chan message.TaggedMessage)
 	i := 0
@@ -199,7 +215,7 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	}
 	immutableMap := createImmutableMapForChannels(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name())
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name(), viewPtr)
 		agentMap[id] = a
 	}
 	return

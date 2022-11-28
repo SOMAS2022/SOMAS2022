@@ -10,15 +10,6 @@ type LootDecision struct{}
 
 type HPPoolDecision struct{}
 
-type FightAction int64
-
-const (
-	Undecided FightAction = iota
-	Defend
-	Cower
-	Attack
-)
-
 type Manifesto struct {
 	fightImposition    bool
 	lootImposition     bool
