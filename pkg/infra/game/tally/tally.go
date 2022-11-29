@@ -8,7 +8,7 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type AcceptedProposal[A decision.ProposalAction] struct {
+type Proposal[A decision.ProposalAction] struct {
 	proposalId commons.ProposalID
 	proposal   immutable.Map[commons.ID, A]
 }
@@ -18,6 +18,7 @@ type Tally[A decision.ProposalAction] struct {
 	proposalMap   map[commons.ProposalID]immutable.Map[commons.ID, A]
 	currMax       internal.VoteCount
 	vote          <-chan commons.ProposalID
+	proposals     <-chan Proposal[A]
 }
 
 func NewTally[A decision.ProposalAction](vote <-chan commons.ProposalID) *Tally[A] {
@@ -25,10 +26,6 @@ func NewTally[A decision.ProposalAction](vote <-chan commons.ProposalID) *Tally[
 		proposalTally: *immutable.NewMapBuilder[commons.ProposalID, uint](nil).Map(),
 		proposalMap:   make(map[commons.ProposalID]immutable.Map[commons.ID, A]),
 		vote:          vote}
-}
-
-func (t *Tally[A]) getProposal(id commons.ProposalID) {
-
 }
 
 //func newTally() *tally {
