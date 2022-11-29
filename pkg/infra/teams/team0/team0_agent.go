@@ -13,11 +13,25 @@ import (
 
 type ProbabilisticAgent struct {
 	fightDecisionCDF []float32
+	fightAction      decision.FightAction
 }
 
-func (r ProbabilisticAgent) Default() decision.FightAction {
+func (r *ProbabilisticAgent) Default() decision.FightAction {
 	//TODO implement me
 	panic("implement me")
+}
+
+// Demonstrate creating a strategy with input parameters
+func CreateAggressiveAgent() agent.Strategy {
+	return NewProbabilisticAgent(0.1, 0.8, 0.1)
+}
+
+func CreateDefensiveAgent() agent.Strategy {
+	return NewProbabilisticAgent(0.1, 0.1, 0.8)
+}
+
+func CreateCoweringAgent() agent.Strategy {
+	return NewProbabilisticAgent(0.8, 0.1, 0.1)
 }
 
 /**
@@ -35,7 +49,23 @@ func NewProbabilisticAgent(pCower float32, pAttack float32, pDefend float32) *Pr
 	return &ProbabilisticAgent{fightDecisionCDF: cdf}
 }
 
-func (r ProbabilisticAgent) HandleFightMessage(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {
+func (r *ProbabilisticAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(true, false, 10, 50)
+	return manifesto
+}
+
+func (r *ProbabilisticAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Abstain
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Positive
+	}
+}
+
+func (r *ProbabilisticAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	dice := rand.Float32()
 
 	fight := 0
@@ -44,10 +74,45 @@ func (r ProbabilisticAgent) HandleFightMessage(m message.TaggedMessage, view *st
 	}
 	switch fight {
 	case 0:
-		return decision.Cower
+		r.fightAction = decision.Cower
 	case 1:
-		return decision.Attack
+		r.fightAction = decision.Attack
 	default:
-		return decision.Defend
+		r.fightAction = decision.Defend
 	}
+}
+
+func (r *ProbabilisticAgent) HandleFightRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+	return nil
+}
+
+func (r *ProbabilisticAgent) CurrentAction() decision.FightAction {
+	return r.fightAction
+}
+
+func (r *ProbabilisticAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	// Extract ID of alive agents
+	agentState := view.AgentState()
+	aliveAgentIds := make([]string, agentState.Len())
+	i := 0
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			aliveAgentIds[i] = id
+			i++
+		}
+	}
+
+	// Randomly fill the ballot
+	var ballot decision.Ballot
+	numAliveAgents := len(aliveAgentIds)
+	numCandidate := 2
+	for i := 0; i < numCandidate; i++ {
+		randomIdx := rand.Intn(numAliveAgents)
+		randomCandidate := aliveAgentIds[uint(randomIdx)]
+		ballot = append(ballot, randomCandidate)
+	}
+
+	return ballot
 }
