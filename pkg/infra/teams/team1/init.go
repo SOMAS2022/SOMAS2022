@@ -21,13 +21,13 @@ import (
 	"time"
 )
 
-var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM":          example.NewRandomAgent(),
-	"AggressiveAgent": CreateAggressiveAgent(),
-	"DefensiveAgent":  CreateDefensiveAgent(),
+var InitAgentMap = map[commons.ID]func() agent.Strategy{
+	"RANDOM":          example.NewRandomAgent,
+	"AggressiveAgent": CreateAggressiveAgent,
+	"DefensiveAgent":  CreateDefensiveAgent,
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func(), gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	// Initialise a random seed
 	rand.Seed(time.Now().UnixNano())
 	utils.Config = gameConfig // TODO: Not needed when confg is globally accessible
