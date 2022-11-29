@@ -9,6 +9,7 @@ import (
 	"infra/game/example"
 	gamemath "infra/game/math"
 	"infra/game/message"
+	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/logging"
@@ -57,8 +58,9 @@ func startGameLoop() {
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(*globalState, *agentMap, *decisionMapView.Map(), channelsMap)}
-			stateAfterFight := fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
+			//fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(*globalState, *agentMap, *decisionMapView.Map(), channelsMap)}
+			fightActions := discussion.ResolveFightDiscussion(agentMap, (*agentMap)[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
+			stateAfterFight := fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			globalState = &stateAfterFight
 			*viewPtr = globalState.ToView()
 
@@ -66,13 +68,13 @@ func startGameLoop() {
 				"currLevel":     globalState.CurrentLevel,
 				"monsterHealth": globalState.MonsterHealth,
 				"monsterDamage": globalState.MonsterAttack,
-				"numCoward":     len(fightRoundResult.CoweringAgents),
-				"attackSum":     fightRoundResult.AttackSum,
-				"shieldSum":     fightRoundResult.ShieldSum,
+				"numCoward":     len(fightActions.CoweringAgents),
+				"attackSum":     fightActions.AttackSum,
+				"shieldSum":     fightActions.ShieldSum,
 				"numAgents":     len(*agentMap),
 			}, "Battle Summary")
 
-			damageCalculation(fightRoundResult)
+			damageCalculation(fightActions)
 
 			channelsMap = addCommsChannels()
 

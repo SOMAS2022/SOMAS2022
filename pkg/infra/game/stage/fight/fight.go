@@ -1,15 +1,15 @@
 package fight
 
 import (
+	"github.com/google/uuid"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/game/tally"
 	"math"
-	"sync"
-
-	"github.com/google/uuid"
+	"time"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -39,35 +39,44 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 
 func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
 	decisionMap := make(map[commons.ID]decision.FightAction)
-	channel := make(chan message.ActionMessage, 100)
+	proposalVotes := make(chan commons.ProposalID)
+	proposalSubmission := make(chan tally.Proposal[decision.FightAction])
+	closure := make(chan struct{})
 
-	var wg sync.WaitGroup
+	propTally := tally.NewTally(proposalVotes, proposalSubmission, closure)
 
 	for _, a := range agents {
 		a := a
-		wg.Add(1)
 		agentState := state.AgentState[a.BaseAgent.Id()]
-		startAgentFightHandlers(agentState, &a, previousDecisions, channel, &wg)
+		if a.BaseAgent.Id() == state.CurrentLeader {
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, proposalSubmission)
+		} else {
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil)
+		}
 	}
+	mId, _ := uuid.NewUUID()
 
 	for _, messages := range channelsMap {
-		mId, _ := uuid.NewUUID()
 		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mId)
 	}
-
-	go func(group *sync.WaitGroup) {
-		group.Wait()
-		for _, messages := range channelsMap {
-			close(messages)
-		}
-		close(channel)
-	}(&wg)
-
-	for actionMessage := range channel {
-		decisionMap[actionMessage.Sender] = actionMessage.Action
+	time.Sleep(200 * time.Millisecond)
+	for id, c := range channelsMap {
+		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mId)
+		go func() {
+			for m := range c {
+				switch m.Message().MType() {
+				case message.Request:
+					//todo: respond with nil thing here as we're closing!
+				default:
+				}
+			}
+		}()
+		decisionMap[id] = agents[id].Strategy.CurrentAction()
 	}
 
-	wg.Wait()
+	for _, c := range channelsMap {
+		close(c)
+	}
 
 	return decisionMap
 }
@@ -114,8 +123,4 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 	fightResult.AttackSum = attackSum
 	fightResult.ShieldSum = shieldSum
 	return state
-}
-
-func startAgentFightHandlers(agentState state.AgentState, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(agentState, decisionLog, channel, wg)
 }

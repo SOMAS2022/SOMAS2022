@@ -3,8 +3,7 @@ package decision
 type FightAction int64
 
 const (
-	Undecided FightAction = iota
-	Defend
+	Defend FightAction = iota
 	Cower
 	Attack
 )

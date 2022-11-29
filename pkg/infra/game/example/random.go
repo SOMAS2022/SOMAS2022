@@ -5,6 +5,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/tally"
 	"infra/logging"
 	"math/rand"
 
@@ -13,6 +14,28 @@ import (
 
 type RandomAgent struct {
 	bravery int
+}
+
+func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[decision.FightAction] {
+	actions := make(map[commons.ID]decision.FightAction)
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, _, ok := itr.Next()
+		if !ok {
+			break
+		}
+		rNum := rand.Intn(3)
+		if rNum == 0 {
+			actions[id] = decision.Attack
+		} else if rNum == 1 {
+			actions[id] = decision.Defend
+		} else {
+			actions[id] = decision.Cower
+		}
+	}
+	return tally.NewProposal(actions)
 }
 
 func (r *RandomAgent) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {

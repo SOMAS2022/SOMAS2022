@@ -13,6 +13,10 @@ type FightProposalMessage struct {
 	proposalId commons.ProposalID
 }
 
+func (f FightProposalMessage) ProposalId() commons.ProposalID {
+	return f.proposalId
+}
+
 type ProposalPayload struct {
 	internalMap immutable.Map[commons.ID, decision.FightAction]
 }

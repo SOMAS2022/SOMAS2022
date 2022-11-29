@@ -84,14 +84,6 @@ const (
 // e.g. 1 candidate in choose-one voting and >1 candidates in ranked voting
 type Ballot []commons.ID
 
-type VotingManifesto struct {
-	Running         bool
-	FightImposition bool
-	LootImposition  bool
-	ResignThreshold uint
-	TermLength      uint
-}
-
 type VotingStrategy uint
 
 const (

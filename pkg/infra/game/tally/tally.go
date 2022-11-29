@@ -1,6 +1,7 @@
 package tally
 
 import (
+	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/tally/internal"
@@ -14,18 +15,50 @@ type Proposal[A decision.ProposalAction] struct {
 }
 
 type Tally[A decision.ProposalAction] struct {
-	proposalTally immutable.Map[commons.ProposalID, uint]
+	proposalTally map[commons.ProposalID]uint
 	proposalMap   map[commons.ProposalID]immutable.Map[commons.ID, A]
 	currMax       internal.VoteCount
-	vote          <-chan commons.ProposalID
+	votes         <-chan commons.ProposalID
 	proposals     <-chan Proposal[A]
+	closure       <-chan struct{}
 }
 
-func NewTally[A decision.ProposalAction](vote <-chan commons.ProposalID) *Tally[A] {
+func NewTally[A decision.ProposalAction](votes <-chan commons.ProposalID,
+	proposals <-chan Proposal[A],
+	closure <-chan struct{}) *Tally[A] {
 	return &Tally[A]{
-		proposalTally: *immutable.NewMapBuilder[commons.ProposalID, uint](nil).Map(),
+		proposalTally: make(map[commons.ProposalID]uint),
 		proposalMap:   make(map[commons.ProposalID]immutable.Map[commons.ID, A]),
-		vote:          vote}
+		votes:         votes,
+		proposals:     proposals,
+		closure:       closure,
+	}
+}
+
+func NewProposal[A decision.ProposalAction](proposalMap map[commons.ID]A) Proposal[A] {
+	builder := immutable.NewMapBuilder[commons.ID, A](nil)
+	for id, a := range proposalMap {
+		builder.Set(id, a)
+	}
+	return Proposal[A]{
+		proposalId: uuid.NewString(),
+		proposal:   *builder.Map(),
+	}
+}
+
+// call from goroutine
+func (t *Tally[A]) handleMessages() {
+	for {
+		select {
+		case proposal := <-t.proposals:
+			t.proposalMap[proposal.proposalId] = proposal.proposal
+			t.proposalTally[proposal.proposalId] = 0
+		case vote := <-t.votes:
+			t.proposalTally[vote]++
+		case <-t.closure:
+			return
+		}
+	}
 }
 
 //func newTally() *tally {
