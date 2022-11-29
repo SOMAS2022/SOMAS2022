@@ -1,6 +1,7 @@
 package game_math
 
 import (
+	"infra/config"
 	"math"
 	"math/rand"
 )
@@ -16,4 +17,8 @@ func CalculateMonsterDamage(N uint, HP uint, ST uint, TH float32, L uint, CL uin
 	N_fp := float64(N)
 	L_fp := float64(L)
 	return uint(delta * (N_fp / L_fp) * (float64(HP) + float64(ST)) * (2.0*float64(CL)/L_fp + 0.5) * (1.0 - M/N_fp))
+}
+
+func GetNextLevelMonsterValues(gameConfig config.GameConfig, currentLevel uint) (uint, uint) {
+	return CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, currentLevel+1), CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, currentLevel+1)
 }
