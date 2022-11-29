@@ -9,6 +9,8 @@
 package utils
 
 import (
+	"fmt"
+
 	"github.com/sajari/regression"
 )
 
@@ -25,10 +27,22 @@ Output:
 func FitLinReg(X [][]float64, y []float64) []float64 {
 
 	r := new(regression.Regression)
-	data := append(X, y)
-	r.Train(regression.MakeDataPoints(data, 0)...)
+
+	// Concatenate observation array
+	// var data [][]float64
+	// for i, row := range X {
+	// 	new_row := append(row, y[i])
+	// 	data = append(data, new_row)
+	// }
+
+	fmt.Println(X)
+	datapoints := make([]*regression.DataPoint, 0, len(a))
+	for i, row := range X {
+		datapoints = append(datapoints, regression.DataPoint(y[i], row))
+	}
+	r.Train(datapoints...)
 	r.Run()
 
-	// fmt.Printf("Regression formula:\n%v\n", r.Formula)
+	fmt.Printf("Regression formula:\n%v\n", r.Formula)
 	return r.GetCoeffs()
 }
