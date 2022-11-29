@@ -63,23 +63,15 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 	}
 
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
-		// Loop for each game level, exit if
-		// 1. #agents < required, i.e. lost game
-		// 2. defeat all monsters, i.e. win!
 		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
-			// leader election if term runs out
-			// todo: add condition on no-confidence vote trigger
 			updateView()
+
 			if termLeft == 0 {
 				termLeft = runElection(&globalState, agentMap, gameConfig)
 			} else {
 				termLeft = runConfidenceVote(&globalState, agentMap, gameConfig, termLeft)
 			}
-			// Fight Discussion
-			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
-			// Loop for battle rounds, exit if
-			// 1. #agents < required, i.e. lost game
-			// 2. defeat monster in this level
+
 			for globalState.MonsterHealth != 0 {
 				decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 				for u, action := range decisionMap {
@@ -110,7 +102,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 					return
 				}
 			}
-			logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
+
 			//todo: Results in infinite game run-through
 			globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, globalState.CurrentLevel+1)
 			globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel+1)
@@ -125,6 +117,7 @@ func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, game
 				shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 			}
 
+			logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
 			newGlobalState := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
 			updateView()
 

@@ -6,6 +6,10 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+type ProposalAction interface {
+	FightAction | LootDecision
+}
+
 type LootDecision struct{}
 
 type HPPoolDecision struct{}

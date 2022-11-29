@@ -37,3 +37,5 @@ func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) (keys
 }
 
 type ID = string
+
+type ProposalID = string
