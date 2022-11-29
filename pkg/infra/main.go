@@ -24,8 +24,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM": example.NewRandomAgent(),
+var InitAgentMap = map[commons.ID]func() agent.Strategy{
+	"RANDOM": example.NewRandomAgent,
 }
 
 /*
