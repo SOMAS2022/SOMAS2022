@@ -55,8 +55,15 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
 		}
 	}()
-	if m.MType() == message.Proposal && (ba.view.CurrentLeader() == ba.id || ba.view.CurrentLeader() == id) {
-
+	if m.MType() == message.Proposal {
+		switch ba.view.CurrentLeader() {
+		case ba.id:
+			fallthrough
+		case id:
+			break
+		default:
+			return fmt.Errorf("agent %s either is not leader or is attempting to send proposal to non-leader %s", ba.id, id)
+		}
 	}
 	channel, ok := ba.communication.peer.Get(id)
 	if ok {

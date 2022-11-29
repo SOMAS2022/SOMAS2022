@@ -5,13 +5,12 @@ import (
 	"infra/game/decision"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 type FightProposalMessage struct {
 	sender     commons.ID
 	proposal   immutable.Map[commons.ID, decision.FightAction]
-	proposalId uuid.UUID
+	proposalId commons.ProposalID
 }
 
 type ProposalPayload struct {
@@ -25,6 +24,6 @@ func NewFightProposalMessage(taggedMessage TaggedMessage) *FightProposalMessage 
 	return &FightProposalMessage{
 		sender:     taggedMessage.Sender(),
 		proposal:   taggedMessage.message.Payload().(ProposalPayload).internalMap,
-		proposalId: taggedMessage.mId,
+		proposalId: taggedMessage.mId.String(),
 	}
 }
