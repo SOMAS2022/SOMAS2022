@@ -13,7 +13,7 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	agentMap map[commons.ID]agent.Agent,
 	agentStateMap map[commons.ID]state.AgentState,
 	quantity uint,
-	strategy S,
+	strategyConstructor func() S,
 	agentName string,
 ) {
 	for i := uint(0); i < quantity; i++ {
@@ -21,7 +21,7 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 		agentId := uuid.New().String()
 		agentMap[agentId] = agent.Agent{
 			BaseAgent: agent.NewBaseAgent(nil, agentId, agentName),
-			Strategy:  strategy,
+			Strategy:  strategyConstructor(),
 		}
 
 		agentStateMap[agentId] = state.AgentState{
@@ -51,7 +51,7 @@ func InitGameConfig() config.GameConfig {
 	return gameConfig
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 

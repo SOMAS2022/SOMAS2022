@@ -20,7 +20,7 @@ import (
 // ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'
 var Mode string
 
-func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]agent.Strategy) map[commons.ID]agent.Strategy {
+func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Strategy) map[commons.ID]func() agent.Strategy {
 	switch Mode {
 	case "0":
 		return t0.InitAgentMap
@@ -38,7 +38,7 @@ func InitGameConfig() config.GameConfig {
 	}
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
 	switch Mode {
 	case "0":
 		return t0.InitAgents(defaultStrategyMap, gameConfig)
