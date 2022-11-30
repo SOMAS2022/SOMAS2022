@@ -15,10 +15,12 @@
 ```
 git clone git@github.com:SOMAS2022/SOMAS2022.git
 cd SOMAS2022
-make build
-make run
+make
 ```
-
+If running a team experiment, eg for team 0, set the `MODE` env variable in `.env`
+```
+MODE=0
+```
 ## Project Structure
 
 Following some Golang Standards [[1]](https://github.com/golang-standards/project-layout)
@@ -39,6 +41,8 @@ structures ([2021](https://github.com/SOMAS2021/SOMAS2021))
 │   │   └── (Teams Agents)
 │   └── infra
 │       └── (Infrastructure Implementation)
+|       └── teams
+|           └── (Individual Team Experiments)
 └── scripts
     └── (Automation/Execution scripts)
 ```

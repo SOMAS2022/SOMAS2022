@@ -8,4 +8,6 @@ type GameConfig struct {
 	ThresholdPercentage    float32
 	InitialNumAgents       uint
 	Stamina                uint
+	VotingStrategy         uint
+	VotingPreferences      uint
 }

@@ -2,26 +2,29 @@ package main
 
 import (
 	"flag"
-	"github.com/benbjohnson/immutable"
+	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	gamemath "infra/game/math"
 	"infra/game/message"
+	"infra/game/stage/election"
 	"infra/game/stage/fight"
+	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
 	"math"
 	"math/rand"
 
-	"github.com/google/uuid"
+	"golang.org/x/exp/constraints"
+
+	"github.com/benbjohnson/immutable"
 	"github.com/joho/godotenv"
 )
 
-var InitAgentMap = map[commons.ID]agent.Strategy{
-	"RANDOM": agent.NewRandomAgent(),
-    "AGENT2": agent.NewAgent2(),
+var InitAgentMap = map[commons.ID]func() agent.Strategy{
+	"AGENT2": agent.NewAgent2,
 }
 
 /*
@@ -32,119 +35,152 @@ Enables peers to send and receive messages with broadcasting possible via non-bl
 
 func main() {
 	// define flags
-	useJSONFormatter := flag.Bool("j", false, "whether to use JSONFormatter for logging")
+	useJSONFormatter := flag.Bool("j", false, "Whether to output logs in JSON")
+	debug := flag.Bool("d", false, "Whether to run in debug mode. If false, only logs with level info or above will be shown")
 	flag.Parse()
 
-	logging.InitLogger(*useJSONFormatter)
+	logging.InitLogger(*useJSONFormatter, *debug)
 
-	agentMap, globalState, gameConfig := initialise()
+	agentMap, globalState, gameConfig := initGame()
 	gameLoop(globalState, agentMap, gameConfig)
 }
 
 func gameLoop(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) {
-	var decisionMap map[string]decision.FightAction
+	var decisionMap map[commons.ID]decision.FightAction
 	var channelsMap map[commons.ID]chan message.TaggedMessage
+	var termLeft uint
 	channelsMap = addCommsChannels(agentMap)
-	for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
-		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
-		for globalState.MonsterHealth != 0 {
-			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-			for u, action := range decisionMap {
-				decisionMapView.Set(u, action)
-			}
-			coweringAgents, attackSum, shieldSum, dMap := fight.HandleFightRound(globalState, agentMap, gameConfig.StartingHealthPoints, *decisionMapView.Map(), channelsMap)
-			decisionMap = dMap
-
-			logging.Log.WithFields(logging.LogField{
-				"currLevel":     globalState.CurrentLevel,
-				"monsterHealth": globalState.MonsterHealth,
-				"monsterDamage": globalState.MonsterAttack,
-				"numCoward":     coweringAgents,
-				"attackSum":     attackSum,
-				"shieldSum":     shieldSum,
-				"numAgents":     len(agentMap),
-			}).Info("Battle summary")
-			if coweringAgents == uint(len(agentMap)) {
-				attack := globalState.MonsterAttack
-				fight.DealDamage(attack, agentMap, &globalState)
+	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
+		// Loop for each game level, exit if
+		// 1. #agents < required, i.e. lost game
+		// 2. defeat all monsters, i.e. win!
+		for globalState.CurrentLevel = 0; globalState.CurrentLevel < gameConfig.NumLevels; globalState.CurrentLevel++ {
+			// leader election if term runs out
+			// todo: add condition on no-confidence vote trigger
+			if termLeft == 0 {
+				termLeft = runElection(&globalState, agentMap, gameConfig)
 			} else {
-				globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, attackSum)
-				if globalState.MonsterHealth > 0 {
-					damageTaken := globalState.MonsterAttack - shieldSum
-					fight.DealDamage(damageTaken, agentMap, &globalState)
-					// TODO: Monster disruptive ability
+				termLeft = runConfidenceVote(globalState, agentMap, gameConfig, termLeft)
+			}
+
+			// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
+			// Loop for battle rounds, exit if
+			// 1. #agents < required, i.e. lost game
+			// 2. defeat monster in this level
+			for globalState.MonsterHealth != 0 {
+				decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+				for u, action := range decisionMap {
+					decisionMapView.Set(u, action)
+				}
+				fightRoundResult := decision.FightResult{Choices: stages.AgentFightDecisions(&globalState, agentMap, *decisionMapView.Map(), channelsMap)}
+				fight.HandleFightRound(&globalState, gameConfig.StartingHealthPoints, &fightRoundResult)
+
+				logging.Log(logging.Info, logging.LogField{
+					"currLevel":     globalState.CurrentLevel,
+					"monsterHealth": globalState.MonsterHealth,
+					"monsterDamage": globalState.MonsterAttack,
+					"numCoward":     len(fightRoundResult.CoweringAgents),
+					"attackSum":     fightRoundResult.AttackSum,
+					"shieldSum":     fightRoundResult.ShieldSum,
+					"numAgents":     len(agentMap),
+				}, "Battle Summary")
+
+				damageCalculation(&globalState, agentMap, fightRoundResult)
+
+				channelsMap = addCommsChannels(agentMap)
+
+				if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
+					logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
+					return
 				}
 			}
+			logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
+			//todo: Results in infinite game run-through
+			globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, globalState.CurrentLevel+1)
+			globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel+1)
 
-			channelsMap = addCommsChannels(agentMap)
+			// TODO: End of Level looting and trading
+			// FIXME: This loot allocation should not stay for long!
+			weaponLoot := make([]uint, len(agentMap))
+			shieldLoot := make([]uint, len(agentMap))
 
-			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				logging.Log.Infof("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap))
-				return
+			for i := range weaponLoot {
+				weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+				shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 			}
+
+			newGlobalState := stages.AgentLootDecisions(globalState, agentMap, weaponLoot, shieldLoot)
+			// TODO: Add verification if needed
+			globalState = newGlobalState
+			termLeft--
 		}
-		//todo: fix this
-		//todo: There is a weird bug due to the mathematics that agents gain more health from cowering than monster attack when all cower
-		//todo: Results in infinite game run-through
-		globalState.MonsterHealth = gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, globalState.CurrentLevel)
-		globalState.MonsterAttack = gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, globalState.CurrentLevel)
-
-		// TODO: End of Level looting and trading
-		// FIXME: This loot allocation should not stay for long!
-		weaponLoot := make([]uint, len(agentMap))
-		shieldLoot := make([]uint, len(agentMap))
-
-		for i := range weaponLoot {
-			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-		}
-
-		for i, agentState := range globalState.AgentState {
-			allocatedWeapon := rand.Intn(len(weaponLoot))
-			allocatedShield := rand.Intn(len(shieldLoot))
-
-			agentState.BonusAttack = weaponLoot[allocatedWeapon]
-			agentState.BonusDefense = shieldLoot[allocatedShield]
-			weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-			shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
-
-			globalState.AgentState[i] = agentState
-		}
+		logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	}
 }
 
-func initialise() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
-	agentMap := make(map[commons.ID]agent.Agent)
-	agentStateMap := make(map[commons.ID]state.AgentState)
+func damageCalculation(globalState *state.State, agentMap map[commons.ID]agent.Agent, fightRoundResult decision.FightResult) {
+	if len(fightRoundResult.CoweringAgents) != len(agentMap) {
+		globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
+		if globalState.MonsterHealth > 0 && fightRoundResult.ShieldSum < globalState.MonsterAttack {
+			agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
+			damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
+			fight.DealDamage(damageTaken, agentsFighting, agentMap, globalState)
+			// TODO: Monster disruptive ability
+		}
+	} else {
+		damageTaken := globalState.MonsterAttack
+		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
+	}
+}
 
+func runConfidenceVote(globalState state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig, termLeft uint) uint {
+	votes := make(map[decision.Intent]uint)
+	view := globalState.ToView()
+	for _, a := range agentMap {
+		votes[a.Strategy.HandleConfidencePoll(view, a.BaseAgent)]++
+	}
+	logging.Log(logging.Info, logging.LogField{
+		"positive":  votes[decision.Positive],
+		"negative":  votes[decision.Negative],
+		"abstain":   votes[decision.Abstain],
+		"threshold": globalState.LeaderManifesto.OverthrowThreshold(),
+		"agent":     globalState.CurrentLeader,
+	}, "Confidence Vote")
+	if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
+		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
+		termLeft = runElection(&globalState, agentMap, gameConfig)
+	}
+	return termLeft
+}
+
+func runElection(globalState *state.State, agentMap map[commons.ID]agent.Agent, gameConfig config.GameConfig) uint {
+	electedAgent, manifesto, percentage := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+	termLeft := manifesto.TermLength()
+	globalState.LeaderManifesto = manifesto
+	globalState.CurrentLeader = electedAgent
+	logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote", globalState.CurrentLevel, electedAgent, percentage))
+	return termLeft
+}
+
+func initGame() (map[commons.ID]agent.Agent, state.State, config.GameConfig) {
 	err := godotenv.Load()
 	if err != nil {
-		logging.Log.Warnln("No .env file located, using defaults")
+		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
 
-	gameConfig := config.GameConfig{
-		NumLevels:              config.EnvToUint("LEVELS", 60),
-		StartingHealthPoints:   config.EnvToUint("STARTING_HP", 1000),
-		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 1000),
-		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 1000),
-		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
-		InitialNumAgents:       uint(0),
-		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
-	}
+	stages.Mode = config.EnvToString("MODE", "default")
 
-	for agentName, strategy := range InitAgentMap {
-		expectedEnvName := "AGENT_" + agentName + "_QUANTITY"
-		quantity := config.EnvToUint(expectedEnvName, 0)
-
-		gameConfig.InitialNumAgents += quantity
-		instantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy)
-	}
+	gameConfig := stages.InitGameConfig()
+	defStrategyMap := stages.ChooseDefaultStrategyMap(InitAgentMap)
+	numAgents, agentMap, agentStateMap := stages.InitAgents(defStrategyMap, gameConfig)
+	gameConfig.InitialNumAgents = numAgents
 
 	globalState := state.State{
-		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.StartingAttackStrength, 0.8, gameConfig.NumLevels, 0),
-		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.StartingShieldStrength, 0.8, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 0),
+		MonsterHealth: gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, 1),
+		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 1),
 		AgentState:    agentStateMap,
 	}
+
 	return agentMap, globalState, gameConfig
 }
 
@@ -160,42 +196,18 @@ func addCommsChannels(agentMap map[commons.ID]agent.Agent) (res map[commons.ID]c
 	for _, key := range keys {
 		res[key] = make(chan message.TaggedMessage, 100)
 	}
-	immutableMap := createImmutableMap(res)
+	immutableMap := createImmutableMapForChannels(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id)
+		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name())
 		agentMap[id] = a
 	}
 	return
 }
 
-func createImmutableMap(peerChannels map[commons.ID]chan message.TaggedMessage) immutable.Map[commons.ID, chan<- message.TaggedMessage] {
-	builder := immutable.NewMapBuilder[commons.ID, chan<- message.TaggedMessage](nil)
+func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels map[K]chan V) immutable.Map[K, chan<- V] {
+	builder := immutable.NewMapBuilder[K, chan<- V](nil)
 	for pId, channel := range peerChannels {
 		builder.Set(pId, channel)
 	}
 	return *builder.Map()
-}
-
-func instantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
-	agentMap map[commons.ID]agent.Agent,
-	agentStateMap map[commons.ID]state.AgentState,
-	quantity uint,
-	strategy S) {
-	for i := uint(0); i < quantity; i++ {
-		// TODO: add peer channels
-		agentId := uuid.New().String()
-		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.BaseAgent{},
-			Strategy:  strategy,
-		}
-
-		agentStateMap[agentId] = state.AgentState{
-			Hp:           gameConfig.StartingHealthPoints,
-			Stamina:      gameConfig.Stamina,
-			Attack:       gameConfig.StartingAttackStrength,
-			Defense:      gameConfig.StartingShieldStrength,
-			BonusAttack:  0,
-			BonusDefense: 0,
-		}
-	}
 }

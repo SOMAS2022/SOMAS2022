@@ -1,18 +1,43 @@
-BINARY_NAME=cmd/main.out
+BINARY_NAME?=cmd/main.out
 SOURCE_DIR=pkg/infra
+TEAM?=default
+LDFLAGS=-ldflags="-X 'infra/game/stages.mode=${TEAM}'"
+
+PACKAGES=$(shell go list ./pkg/infra | grep -v 'tests')
 
 all: run
 
 build:
 		cd ${SOURCE_DIR}; go mod tidy
-		go build -o ${BINARY_NAME} infra
+		go build $(LDFLAGS) -o ${BINARY_NAME} infra 
 
 run: build
 		${BINARY_NAME}
 
 runWithJSON: build
 		${BINARY_NAME} -j
- 
+
+runDebug: build
+		${BINARY_NAME} -d
 clean:
 		go clean
 		rm -rf ${BINARY_NAME}
+
+# formatting and linting
+fmt:
+	gofmt -s -w .
+# change to `run ./pkg/*` after agents are implemented
+# should just be `run`, but seems to be problems with go.work  
+# nb: using cd to /pkg/infra dosen't fix this (on wsl2)
+check:
+	golangci-lint -v run ./pkg/infra
+
+# for future testing
+unit_test:
+	go test $(PACKAGES)
+
+test:
+	go test ./pkg/infra -covermode=atomic
+
+test_race:
+	go test ./pkg/infra --race

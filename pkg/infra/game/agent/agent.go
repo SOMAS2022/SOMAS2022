@@ -1,18 +1,23 @@
 package agent
 
 import (
-	"fmt"
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/logging"
 	"sync"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type Strategy interface {
-	HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction
-	Default() decision.FightAction
+	HandleFightInformation(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
+	HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
+	CurrentAction() decision.FightAction
+	CreateManifesto(view *state.View, baseAgent BaseAgent) *decision.Manifesto
+	HandleConfidencePoll(view *state.View, baseAgent BaseAgent) decision.Intent
+	HandleElectionBallot(view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 }
 
 type Agent struct {
@@ -20,78 +25,50 @@ type Agent struct {
 	Strategy  Strategy
 }
 
-func (a *Agent) HandleFight(view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan message.ActionMessage, wg *sync.WaitGroup) {
+func (a *Agent) SubmitManifesto(agentState state.AgentState, view *state.View, baseAgent BaseAgent) *decision.Manifesto {
+	a.BaseAgent.latestState = agentState
+	return a.Strategy.CreateManifesto(view, baseAgent)
+}
+
+// HandleNoConfidenceVote todo: do we need to send the baseAgent here? I.e. is communication necessary at this point?
+func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState, view *state.View, baseAgent BaseAgent) decision.Intent {
+	a.BaseAgent.latestState = agentState
+	return a.Strategy.HandleConfidencePoll(view, baseAgent)
+}
+
+func (a *Agent) HandleElection(agentState state.AgentState, view *state.View, baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot {
+	a.BaseAgent.latestState = agentState
+	return a.Strategy.HandleElectionBallot(view, baseAgent, params)
+}
+
+func (a *Agent) HandleFight(agentState state.AgentState, view state.View, log immutable.Map[commons.ID, decision.FightAction], decisionChan chan<- message.ActionMessage, wg *sync.WaitGroup) {
+	a.BaseAgent.latestState = agentState
 	for m := range a.BaseAgent.communication.receipt {
-		action := a.handleMessage(&view, &log, m)
+		a.handleMessage(&view, &log, m)
+		action := a.Strategy.CurrentAction()
 		if action != decision.Undecided {
 			go func() {
 				<-a.BaseAgent.communication.receipt
 			}()
-			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.Id}
+			decisionChan <- message.ActionMessage{Action: action, Sender: a.BaseAgent.id}
 			wg.Done()
 			return
 		}
 	}
-	decisionChan <- message.ActionMessage{Action: a.Strategy.Default(), Sender: a.BaseAgent.Id}
+	decisionChan <- message.ActionMessage{Action: a.Strategy.CurrentAction(), Sender: a.BaseAgent.id}
 }
 
 func (a *Agent) handleMessage(view *state.View, log *immutable.Map[commons.ID, decision.FightAction], m message.TaggedMessage) decision.FightAction {
-	switch m.Message.MType() {
+	switch m.Message().MType() {
 	case message.Close:
+	case message.Request:
+		payload := a.Strategy.HandleFightRequest(m, view, log)
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
+		logging.Log(logging.Error, nil, err.Error())
+	case message.Inform:
+		a.Strategy.HandleFightInformation(m, view, a.BaseAgent, log)
 	default:
-		fightMessage := a.Strategy.HandleFightMessage(m, view, a.BaseAgent, log)
-		return fightMessage
+		a.Strategy.HandleFightInformation(m, view, a.BaseAgent, log)
 	}
-	return decision.Undecided
-}
-
-type BaseAgent struct {
-	communication Communication
-	Id            commons.ID
-}
-
-func NewBaseAgent(communication Communication, id commons.ID) BaseAgent {
-	return BaseAgent{communication: communication, Id: id}
-}
-
-type Communication struct {
-	receipt <-chan message.TaggedMessage
-	peer    immutable.Map[commons.ID, chan<- message.TaggedMessage]
-}
-
-func NewCommunication(receipt <-chan message.TaggedMessage, peer immutable.Map[commons.ID, chan<- message.TaggedMessage]) Communication {
-	return Communication{receipt: receipt, peer: peer}
-}
-
-func (b BaseAgent) broadcastBlockingMessage(m message.Message) {
-	iterator := b.communication.peer.Iterator()
-	tm := message.TaggedMessage{
-		Sender:  b.Id,
-		Message: m,
-	}
-	for !iterator.Done() {
-		_, c, ok := iterator.Next()
-		if ok {
-			c <- tm
-		}
-	}
-}
-
-func (b BaseAgent) sendBlockingMessage(id commons.ID, m message.Message) (e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			e = fmt.Errorf("agent %s not available for messaging, submitted", id)
-		}
-	}()
-
-	value, ok := b.communication.peer.Get(id)
-	if ok {
-		value <- message.TaggedMessage{
-			Sender:  b.Id,
-			Message: m,
-		}
-	} else {
-		e = fmt.Errorf("agent %s not available for messaging, dead", id)
-	}
-	return
+	return a.Strategy.CurrentAction()
 }

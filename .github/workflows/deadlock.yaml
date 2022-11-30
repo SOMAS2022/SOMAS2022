@@ -1,0 +1,28 @@
+name: Deadlock and data race detection
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the "main" branch
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  data-race:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+      - name: Test with data race detection
+        run: make test_race
+      - name: Replace sync.RWMutex with deadlock.RWMutex
+        run: find . -type f -name "*.go" -not -path '*/\.*' -exec sed -i -- 's/\t"sync"/\tsync "github.com\/sasha-s\/go-deadlock"/g' {} +
+      - name: Adding go-deadlock package
+        run: cd ./pkg/infra; go get github.com/sasha-s/go-deadlock/...
+      - name: Test with deadlock detection
+        run: make test

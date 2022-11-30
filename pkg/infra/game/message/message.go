@@ -3,6 +3,8 @@ package message
 import (
 	"infra/game/commons"
 	"infra/game/decision"
+
+	"github.com/google/uuid"
 )
 
 type Payload interface {
@@ -13,8 +15,8 @@ type Type int64
 
 const (
 	Close Type = iota
-	Something
-	SomethingElse
+	Request
+	Inform
 )
 
 type Message struct {
@@ -35,8 +37,21 @@ func (m Message) Payload() Payload {
 }
 
 type TaggedMessage struct {
-	Sender  commons.ID
-	Message Message
+	sender  commons.ID
+	message Message
+	mId     uuid.UUID
+}
+
+func NewTaggedMessage(sender commons.ID, message Message, mId uuid.UUID) *TaggedMessage {
+	return &TaggedMessage{sender: sender, message: message, mId: mId}
+}
+
+func (t TaggedMessage) Sender() commons.ID {
+	return t.Sender()
+}
+
+func (t TaggedMessage) Message() Message {
+	return t.message
 }
 
 type ActionMessage struct {

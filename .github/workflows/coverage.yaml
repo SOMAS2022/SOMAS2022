@@ -1,0 +1,22 @@
+name: Report test coverage
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the "main" branch
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  data-race:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+      - name: Test with coverage
+        run: go test -gcflags=-l -coverprofile=coverage.txt -covermode=atomic ./pkg/infra

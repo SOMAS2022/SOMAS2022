@@ -2,6 +2,7 @@ package commons
 
 import (
 	"fmt"
+
 	"github.com/benbjohnson/immutable"
 	"golang.org/x/exp/constraints"
 )
@@ -23,7 +24,6 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 	} else {
 		return s, fmt.Errorf("Out of bounds error, attempted to access index %d in slice %v\n", i, s)
 	}
-
 }
 
 func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) (keys []K) {
