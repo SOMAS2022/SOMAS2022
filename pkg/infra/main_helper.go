@@ -23,9 +23,9 @@ import (
 	Package Variables
 */
 
-var viewPtr *state.View = &state.View{}
+var viewPtr = &state.View{}
 var globalState *state.State
-var agentMap *map[commons.ID]agent.Agent
+var agentMap map[commons.ID]agent.Agent
 var gameConfig *config.GameConfig
 
 /*
@@ -44,10 +44,10 @@ func initGame() {
 
 	stages.Mode = config.EnvToString("MODE", "default")
 
-	config := stages.InitGameConfig()
-	gameConfig = &config
+	initGameConfig := stages.InitGameConfig()
+	gameConfig = &initGameConfig
 	defStrategyMap := stages.ChooseDefaultStrategyMap(InitAgentMap)
-	numAgents, agents, agentStateMap := stages.InitAgents(defStrategyMap, config, viewPtr)
+	numAgents, agents, agentStateMap := stages.InitAgents(defStrategyMap, initGameConfig, viewPtr)
 	gameConfig.InitialNumAgents = numAgents
 
 	globalState = &state.State{
@@ -55,7 +55,7 @@ func initGame() {
 		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 1),
 		AgentState:    agentStateMap,
 	}
-	agentMap = &agents
+	agentMap = agents
 }
 
 /*
@@ -63,10 +63,10 @@ func initGame() {
 */
 
 func addCommsChannels() (res map[commons.ID]chan message.TaggedMessage) {
-	keys := make([]commons.ID, len(*agentMap))
+	keys := make([]commons.ID, len(agentMap))
 	res = make(map[commons.ID]chan message.TaggedMessage)
 	i := 0
-	for k := range *agentMap {
+	for k := range agentMap {
 		keys[i] = k
 		i++
 	}
@@ -75,9 +75,9 @@ func addCommsChannels() (res map[commons.ID]chan message.TaggedMessage) {
 		res[key] = make(chan message.TaggedMessage, 100)
 	}
 	immutableMap := createImmutableMapForChannels(res)
-	for id, a := range *agentMap {
+	for id, a := range agentMap {
 		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name(), viewPtr)
-		(*agentMap)[id] = a
+		(agentMap)[id] = a
 	}
 	return
 }
@@ -95,7 +95,7 @@ func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels ma
 */
 
 func runElection() uint {
-	electedAgent, manifesto, percentage := election.HandleElection(globalState, *agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+	electedAgent, manifesto, percentage := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
 	termLeft := manifesto.TermLength()
 	globalState.LeaderManifesto = manifesto
 	globalState.CurrentLeader = electedAgent
@@ -106,10 +106,10 @@ func runElection() uint {
 
 func runConfidenceVote(termLeft uint) uint {
 	votes := make(map[decision.Intent]uint)
-	for _, a := range *agentMap {
+	for _, a := range agentMap {
 		votes[a.Strategy.HandleConfidencePoll(a.BaseAgent)]++
 	}
-	leader := (*agentMap)[globalState.CurrentLeader]
+	leader := agentMap[globalState.CurrentLeader]
 	leaderName := leader.BaseAgent.Name()
 	logging.Log(logging.Info, logging.LogField{
 		"positive":  votes[decision.Positive],
@@ -131,17 +131,17 @@ func runConfidenceVote(termLeft uint) uint {
 */
 
 func damageCalculation(fightRoundResult decision.FightResult) {
-	if len(fightRoundResult.CoweringAgents) != len(*agentMap) {
+	if len(fightRoundResult.CoweringAgents) != len(agentMap) {
 		globalState.MonsterHealth = commons.SaturatingSub(globalState.MonsterHealth, fightRoundResult.AttackSum)
 		if globalState.MonsterHealth > 0 && fightRoundResult.ShieldSum < globalState.MonsterAttack {
 			agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
 			damageTaken := globalState.MonsterAttack - fightRoundResult.ShieldSum
-			fight.DealDamage(damageTaken, agentsFighting, *agentMap, globalState)
+			fight.DealDamage(damageTaken, agentsFighting, agentMap, globalState)
 			// TODO: Monster disruptive ability
 		}
 	} else {
 		damageTaken := globalState.MonsterAttack
-		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, *agentMap, globalState)
+		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
 	}
 	*viewPtr = globalState.ToView()
 }

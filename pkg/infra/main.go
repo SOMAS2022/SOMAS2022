@@ -43,7 +43,8 @@ func startGameLoop() {
 
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		// Election Stage
-		if termLeft == 0 {
+		_, alive := agentMap[globalState.CurrentLeader]
+		if termLeft == 0 || !alive {
 			termLeft = runElection()
 		} else {
 			termLeft = runConfidenceVote(termLeft)
@@ -58,8 +59,8 @@ func startGameLoop() {
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			tally := stages.AgentFightDecisions(*globalState, *agentMap, *decisionMapView.Map(), channelsMap)
-			fightActions := discussion.ResolveFightDiscussion(agentMap, (*agentMap)[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
+			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
+			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
 			stateAfterFight := fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			globalState = &stateAfterFight
 			*viewPtr = globalState.ToView()
@@ -71,28 +72,28 @@ func startGameLoop() {
 				"numCoward":     len(fightActions.CoweringAgents),
 				"attackSum":     fightActions.AttackSum,
 				"shieldSum":     fightActions.ShieldSum,
-				"numAgents":     len(*agentMap),
+				"numAgents":     len(agentMap),
 			}, "Battle Summary")
 
 			damageCalculation(fightActions)
 
 			channelsMap = addCommsChannels()
 
-			if float64(len(*agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
-				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(*agentMap)))
+			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
+				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
 		}
 
 		// TODO: Loot Discussion Stage
-		weaponLoot, shieldLoot := make([]uint, len(*agentMap)), make([]uint, len(*agentMap))
+		weaponLoot, shieldLoot := make([]uint, len(agentMap)), make([]uint, len(agentMap))
 
 		for i := range weaponLoot {
 			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		newGlobalState := stages.AgentLootDecisions(*globalState, *agentMap, weaponLoot, shieldLoot)
+		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot)
 		globalState = &newGlobalState
 
 		// TODO: End of level Updates
@@ -101,5 +102,5 @@ func startGameLoop() {
 		*viewPtr = globalState.ToView()
 		logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
 	}
-	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(*agentMap)))
+	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }
