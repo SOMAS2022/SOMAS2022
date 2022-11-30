@@ -47,7 +47,7 @@ func NewTaggedMessage(sender commons.ID, message Message, mId uuid.UUID) *Tagged
 }
 
 func (t TaggedMessage) Sender() commons.ID {
-	return t.Sender()
+	return t.sender
 }
 
 func (t TaggedMessage) Message() Message {
