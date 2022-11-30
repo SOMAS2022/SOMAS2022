@@ -1,17 +1,18 @@
 package agent
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type Strategy interface {
-	HandleFightInformation(m message.TaggedMessage, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
+	HandleFightInformation(m message.TaggedMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedMessage, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
 	CurrentAction() decision.FightAction
 	CreateManifesto(baseAgent BaseAgent) *decision.Manifesto
@@ -19,6 +20,8 @@ type Strategy interface {
 	HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 	HandleFightProposal(proposal *message.FightProposalMessage, baseAgent BaseAgent) decision.Intent
 	FightResolution(agent BaseAgent) tally.Proposal[decision.FightAction]
+	// HandleFightProposalRequest only called as leader
+	HandleFightProposalRequest(proposal *message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
 }
 
 type Agent struct {
@@ -55,6 +58,10 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 	}
 }
 
+func (a *Agent) isLeader() bool {
+	return a.BaseAgent.Id() == a.BaseAgent.view.CurrentLeader()
+}
+
 func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightAction],
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
@@ -71,6 +78,12 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 		//todo: if I am the leader then decide whether to broadcast
 		// todo: if broadcast then send and send to tally
 		proposalMessage := message.NewFightProposalMessage(m)
+		if a.isLeader() {
+			if a.Strategy.HandleFightProposalRequest(proposalMessage, a.BaseAgent, log) {
+				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalId(), proposalMessage.Proposal())
+			}
+		}
+
 		switch a.Strategy.HandleFightProposal(proposalMessage, a.BaseAgent) {
 		case decision.Positive:
 			votes <- proposalMessage.ProposalId()

@@ -9,6 +9,8 @@ import (
 	"infra/logging"
 	"math/rand"
 
+	"github.com/google/uuid"
+
 	"github.com/benbjohnson/immutable"
 )
 
@@ -35,15 +37,17 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[
 			actions[id] = decision.Cower
 		}
 	}
-	return tally.NewProposal(actions)
+	newUUID, _ := uuid.NewUUID()
+	prop := tally.NewProposal[decision.FightAction](newUUID.String(), commons.MapToImmutable(actions))
+	return *prop
 }
 
-func (r *RandomAgent) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
+func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
-func (r *RandomAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -102,12 +106,21 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (r *RandomAgent) HandleFightProposal(proposal *message.FightProposalMessage, baseAgent agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleFightProposal(_ *message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
 	} else {
 		return decision.Negative
+	}
+}
+
+func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
 	}
 }
 

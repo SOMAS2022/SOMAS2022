@@ -1,7 +1,6 @@
 package fight
 
 import (
-	"github.com/google/uuid"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -10,6 +9,8 @@ import (
 	"infra/game/tally"
 	"math"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -37,13 +38,13 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 	}
 }
 
-func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
-	decisionMap := make(map[commons.ID]decision.FightAction)
+func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.FightAction] {
 	proposalVotes := make(chan commons.ProposalID)
 	proposalSubmission := make(chan tally.Proposal[decision.FightAction])
 	closure := make(chan struct{})
 
 	propTally := tally.NewTally(proposalVotes, proposalSubmission, closure)
+	go propTally.HandleMessages()
 
 	for _, a := range agents {
 		a := a
@@ -60,25 +61,26 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mId)
 	}
 	time.Sleep(200 * time.Millisecond)
-	for id, c := range channelsMap {
+	for _, c := range channelsMap {
 		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mId)
-		go func() {
-			for m := range c {
+		go func(recv <-chan message.TaggedMessage) {
+			for m := range recv {
 				switch m.Message().MType() {
 				case message.Request:
-					//todo: respond with nil thing here as we're closing!
+					//todo: respond with nil thing here as we're closing! Or do we need to?
+					// maybe because we're closing there's no point...
 				default:
 				}
 			}
-		}()
-		decisionMap[id] = agents[id].Strategy.CurrentAction()
+		}(c)
 	}
 
 	for _, c := range channelsMap {
 		close(c)
 	}
 
-	return decisionMap
+	closure <- struct{}{}
+	return propTally
 }
 
 func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) state.State {

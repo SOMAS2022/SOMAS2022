@@ -36,6 +36,14 @@ func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) (keys
 	return
 }
 
+func MapToImmutable[K constraints.Ordered, V any](m map[K]V) immutable.Map[K, V] {
+	builder := immutable.NewMapBuilder[K, V](nil)
+	for k, v := range m {
+		builder.Set(k, v)
+	}
+	return *builder.Map()
+}
+
 type ID = string
 
 type ProposalID = string

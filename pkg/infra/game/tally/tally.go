@@ -1,7 +1,6 @@
 package tally
 
 import (
-	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/tally/internal"
@@ -14,6 +13,10 @@ type Proposal[A decision.ProposalAction] struct {
 	proposal   immutable.Map[commons.ID, A]
 }
 
+func (p Proposal[A]) Proposal() immutable.Map[commons.ID, A] {
+	return p.proposal
+}
+
 type Tally[A decision.ProposalAction] struct {
 	proposalTally map[commons.ProposalID]uint
 	proposalMap   map[commons.ProposalID]immutable.Map[commons.ID, A]
@@ -21,6 +24,14 @@ type Tally[A decision.ProposalAction] struct {
 	votes         <-chan commons.ProposalID
 	proposals     <-chan Proposal[A]
 	closure       <-chan struct{}
+}
+
+func (t *Tally[A]) ProposalTally() map[commons.ProposalID]uint {
+	return t.proposalTally
+}
+
+func (t *Tally[A]) ProposalMap() map[commons.ProposalID]immutable.Map[commons.ID, A] {
+	return t.proposalMap
 }
 
 func NewTally[A decision.ProposalAction](votes <-chan commons.ProposalID,
@@ -35,19 +46,15 @@ func NewTally[A decision.ProposalAction](votes <-chan commons.ProposalID,
 	}
 }
 
-func NewProposal[A decision.ProposalAction](proposalMap map[commons.ID]A) Proposal[A] {
-	builder := immutable.NewMapBuilder[commons.ID, A](nil)
-	for id, a := range proposalMap {
-		builder.Set(id, a)
-	}
-	return Proposal[A]{
-		proposalId: uuid.NewString(),
-		proposal:   *builder.Map(),
+func NewProposal[A decision.ProposalAction](proposalId commons.ProposalID, proposalMap immutable.Map[commons.ID, A]) *Proposal[A] {
+	return &Proposal[A]{
+		proposalId: proposalId,
+		proposal:   proposalMap,
 	}
 }
 
-// call from goroutine
-func (t *Tally[A]) handleMessages() {
+// HandleMessages call from goroutine
+func (t *Tally[A]) HandleMessages() {
 	for {
 		select {
 		case proposal := <-t.proposals:
@@ -55,18 +62,17 @@ func (t *Tally[A]) handleMessages() {
 			t.proposalTally[proposal.proposalId] = 0
 		case vote := <-t.votes:
 			t.proposalTally[vote]++
+			if t.currMax.Count < t.proposalTally[vote] {
+				t.currMax.Id = vote
+				t.currMax.Count = t.proposalTally[vote]
+			}
 		case <-t.closure:
 			return
 		}
 	}
 }
 
-//func newTally() *tally {
-//	return &tally{proposalTally: make(map[commons.ProposalID]uint)}
-//}
-//
-//func (t *tally) addProposal() {
-//}
-//
-//func (t *tally) handleVote() {
-//}
+// GetMax call from thread after goroutine closes
+func (t *Tally[A]) GetMax() Proposal[A] {
+	return *NewProposal[A](t.currMax.Id, t.proposalMap[t.currMax.Id])
+}

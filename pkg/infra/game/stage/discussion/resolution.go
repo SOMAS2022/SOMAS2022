@@ -1,22 +1,22 @@
 package discussion
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/tally"
 )
 
-func ResolveFightDiscussion(agentMap *map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, proposals immutable.Map[commons.ProposalID, uint]) decision.FightResult {
+func ResolveFightDiscussion(agentMap *map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	var fightActions map[commons.ID]decision.FightAction
 
 	if manifesto.FightImposition() {
 		currentLeader.Strategy.FightResolution(currentLeader.BaseAgent)
 	} else {
 		// get proposal with most votes
-		var winningProposal immutable.Map[commons.ID, decision.FightAction]
+		winningProp := tally.GetMax().Proposal()
 		for id, a := range *agentMap {
-			if val, ok := winningProposal.Get(id); ok {
+			if val, ok := winningProp.Get(id); ok {
 				fightActions[id] = val
 			} else {
 				fightActions[id] = a.Strategy.CurrentAction()
