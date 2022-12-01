@@ -14,7 +14,7 @@ import (
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
-	"infra/game/stage/updateItems"
+	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
 
@@ -53,7 +53,7 @@ func startGameLoop() {
 		}
 
 		// allow agents to change the weapon and the shield in use
-		updatedGlobalState := updateItems.UpdateItems(*globalState, agentMap)
+		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
 		globalState = &updatedGlobalState
 
 		// TODO: Fight Discussion Stage

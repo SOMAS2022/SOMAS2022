@@ -41,12 +41,11 @@ func (a AgentState) TotalDefense(state State) uint {
 }
 
 func (s *AgentState) AddWeapon(weapon InventoryItem) {
-	// TODO: sort weapons according to their value
-	s.Weapons = *s.Weapons.Append(weapon)
+	s.Weapons = updateInventory(s.Weapons, weapon)
 }
 
 func (s *AgentState) AddShield(shield InventoryItem) {
-	s.Shields = *s.Shields.Append(shield)
+	s.Shields = updateInventory(s.Shields, shield)
 }
 
 func (s *AgentState) ChangeWeaponInUse(weaponIdx decision.ItemIdx) {
