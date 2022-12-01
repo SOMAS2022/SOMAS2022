@@ -1,23 +1,22 @@
-package game_math
+package math
 
 import (
+	"infra/config"
 	"math"
 	"math/rand"
-
-	"infra/config"
 )
 
-func CalculateMonsterHealth(N uint, ST uint, L uint, CL uint) uint {
+func CalculateMonsterHealth(n uint, st uint, l uint, cl uint) uint {
 	delta := ((float64(rand.Intn(40))) + float64(80)) / float64(100)
-	return uint(math.Ceil((float64(N) * float64(ST) / float64(L)) * delta * (2.0*float64(CL)/float64(L) + float64(0.5))))
+	return uint(math.Ceil((float64(n) * float64(st) / float64(l)) * delta * (2.0*float64(cl)/float64(l) + float64(0.5))))
 }
 
-func CalculateMonsterDamage(N uint, HP uint, ST uint, TH float32, L uint, CL uint) uint {
+func CalculateMonsterDamage(n uint, hp uint, st uint, th float32, l uint, cl uint) uint {
 	delta := ((float64(rand.Intn(40))) + float64(80)) / float64(100)
-	M := math.Ceil(float64(N) * float64(TH))
-	N_fp := float64(N)
-	L_fp := float64(L)
-	return uint(delta * (N_fp / L_fp) * (float64(HP) + float64(ST)) * (2.0*float64(CL)/L_fp + 0.5) * (1.0 - M/N_fp))
+	M := math.Ceil(float64(n) * float64(th))
+	NFp := float64(n)
+	LFp := float64(l)
+	return uint(delta * (NFp / LFp) * (float64(hp) + float64(st)) * (2.0*float64(cl)/LFp + 0.5) * (1.0 - M/NFp))
 }
 
 func GetNextLevelMonsterValues(gameConfig config.GameConfig, currentLevel uint) (uint, uint) {

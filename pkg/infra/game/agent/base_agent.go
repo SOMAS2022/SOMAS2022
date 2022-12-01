@@ -4,12 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/logging"
-
-	"github.com/google/uuid"
 )
 
 var errCommunication = errors.New("communicationError")
@@ -46,6 +45,7 @@ func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
 	iterator := ba.communication.peer.Iterator()
 	mID, _ := uuid.NewUUID()
 	tm := message.NewTaggedMessage(ba.id, m, mID)
+
 	for !iterator.Done() {
 		_, c, ok := iterator.Next()
 		if ok {
@@ -60,6 +60,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 			e = communicationError(fmt.Sprintf("agent %s not available for messaging, submitted", id))
 		}
 	}()
+
 	if m.MType() == message.Proposal {
 		switch ba.view.CurrentLeader() {
 		case ba.id:
@@ -70,14 +71,17 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 			return communicationError(fmt.Sprintf("agent %s either is not leader or is attempting to send proposal to non-leader %s", ba.id, id))
 		}
 	}
+
 	channel, ok := ba.communication.peer.Get(id)
+
 	if ok {
 		mID, _ := uuid.NewUUID()
 		channel <- *message.NewTaggedMessage(ba.id, m, mID)
 	} else {
 		e = communicationError(fmt.Sprintf("agent %s not available for messaging, dead", id))
 	}
-	return
+
+	return nil
 }
 
 func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string) {

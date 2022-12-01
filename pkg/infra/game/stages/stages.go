@@ -1,6 +1,7 @@
 package stages
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -12,13 +13,10 @@ import (
 	"infra/game/state"
 	"infra/game/tally"
 
-	"github.com/benbjohnson/immutable"
-
-	//? Add you team folder like this:
 	t0 "infra/teams/team0"
 )
 
-// ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'
+// ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
 var Mode string
 
 func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Strategy) map[commons.ID]func() agent.Strategy {
@@ -33,7 +31,7 @@ func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Str
 func InitGameConfig() config.GameConfig {
 	switch Mode {
 	case "0":
-		return initialise.InitGameConfig() //? Can choose to just call the default function
+		return initialise.InitGameConfig() // ? Can choose to just call the default function
 	default:
 		return initialise.InitGameConfig()
 	}
@@ -48,7 +46,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	}
 }
 
-// TODO: Change to using views
+// TODO: Change to using views.
 func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Agent, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {
 	switch Mode {
 	case "0":

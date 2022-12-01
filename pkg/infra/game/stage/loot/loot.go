@@ -1,10 +1,9 @@
 package loot
 
 import (
-	"math/rand"
-
 	"infra/game/commons"
 	"infra/game/state"
+	"math/rand"
 )
 
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) (allocatedState state.State) {

@@ -1,8 +1,9 @@
 package commons_test
 
 import (
-	"infra/game/commons"
 	"testing"
+
+	"infra/game/commons"
 )
 
 func TestSaturatingSub(t *testing.T) {

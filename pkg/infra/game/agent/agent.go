@@ -1,14 +1,13 @@
 package agent
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
-
-	"github.com/benbjohnson/immutable"
 )
 
 type Strategy interface {
@@ -58,6 +57,7 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 		if m.Message().MType() == message.Close {
 			break
 		}
+
 		a.handleMessage(&log, m, votes, submission)
 	}
 }

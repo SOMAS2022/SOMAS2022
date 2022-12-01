@@ -1,18 +1,14 @@
 package fight
 
 import (
-	"math"
-	"time"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
-
-	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
+	"math"
+	"time"
 )
 
 func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {

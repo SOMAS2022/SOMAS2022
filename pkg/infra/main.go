@@ -3,21 +3,20 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
-	"math/rand"
-
+	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/example"
-	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/logging"
+	"math"
+	"math/rand"
 
-	"github.com/benbjohnson/immutable"
+	gamemath "infra/game/math"
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{

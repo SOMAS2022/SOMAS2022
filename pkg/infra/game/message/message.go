@@ -1,10 +1,9 @@
 package message
 
 import (
+	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/decision"
-
-	"github.com/google/uuid"
 )
 
 type Payload interface {

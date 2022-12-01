@@ -1,15 +1,13 @@
 package team0
 
 import (
-	"math/rand"
-
+	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-
-	"github.com/benbjohnson/immutable"
+	"math/rand"
 )
 
 type ProbabilisticAgent struct {
@@ -22,7 +20,7 @@ func (r ProbabilisticAgent) Default() decision.FightAction {
 }
 
 /**
- * Create agent with given probability of cowering, attacking, defending
+ * Create agent with given probability of cowering, attacking, defending.
  */
 func NewProbabilisticAgent(pCower float32, pAttack float32, pDefend float32) *ProbabilisticAgent {
 	// Ref: https://stackoverflow.com/questions/50507513/golang-choice-number-from-slice-array-with-given-probability

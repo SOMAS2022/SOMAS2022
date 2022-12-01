@@ -1,12 +1,11 @@
 package initialise
 
 import (
+	"github.com/google/uuid"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/state"
-
-	"github.com/google/uuid"
 )
 
 func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,

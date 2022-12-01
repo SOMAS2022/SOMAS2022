@@ -1,9 +1,8 @@
 package decision
 
 import (
-	"infra/game/commons"
-
 	"github.com/benbjohnson/immutable"
+	"infra/game/commons"
 )
 
 type ProposalAction interface {
@@ -70,7 +69,7 @@ func (e ElectionParams) NumberOfPreferences() uint {
 // Intent is used for polling.
 // Positive can mean true/agree/have confidence
 // Negative can mean false/disagree/don't have confidence
-// Abstain means ambivalenc
+// Abstain means ambivalenc.
 type Intent uint
 
 const (
@@ -81,7 +80,7 @@ const (
 
 // Ballot used for leader election
 // It is defined as an array of string so that it can work with different voting methods.
-// e.g. 1 candidate in choose-one voting and >1 candidates in ranked voting
+// e.g. 1 candidate in choose-one voting and >1 candidates in ranked voting.
 type Ballot []commons.ID
 
 type VotingStrategy uint

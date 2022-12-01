@@ -1,11 +1,10 @@
 package tally
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/tally/internal"
-
-	"github.com/benbjohnson/immutable"
 )
 
 type Tally[A decision.ProposalAction] struct {
