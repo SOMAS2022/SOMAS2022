@@ -89,3 +89,5 @@ type VotingStrategy uint
 const (
 	SingleChoicePlurality = iota
 )
+
+type ItemIdx uint

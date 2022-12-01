@@ -14,6 +14,7 @@ import (
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
+	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
 
@@ -51,11 +52,23 @@ func startGameLoop() {
 			termLeft = runConfidenceVote(termLeft)
 		}
 
+		// allow agents to change the weapon and the shield in use
+		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
+		globalState = &updatedGlobalState
+
 		// TODO: Fight Discussion Stage
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
 		for globalState.MonsterHealth != 0 {
+			// find out the maximum attack from alive agents
+			var maxAttack uint = 0
+			for _, agentState := range globalState.AgentState {
+				if agentState.Hp > 0 {
+					maxAttack = maxAttack + agentState.TotalAttack(*globalState)
+				}
+			}
+
 			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
@@ -74,8 +87,10 @@ func startGameLoop() {
 				"attackSum":     fightActions.AttackSum,
 				"shieldSum":     fightActions.ShieldSum,
 				"numAgents":     len(agentMap),
+				"maxAttack":     maxAttack,
 			}, "Battle Summary")
 
+			// NOTE: update the following function when you change AgentState
 			damageCalculation(fightActions)
 
 			channelsMap = addCommsChannels()
