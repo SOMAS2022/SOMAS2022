@@ -11,10 +11,9 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/state"
 	"infra/game/tally"
+	t0 "infra/teams/team0"
 
 	"github.com/benbjohnson/immutable"
-
-	t0 "infra/teams/team0"
 )
 
 // ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.

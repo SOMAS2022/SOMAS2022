@@ -29,9 +29,11 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) []K {
 	keys := make([]K, p.Len())
 	iterator := p.Iterator()
+	idx := 0
 	for !iterator.Done() {
 		key, _, _ := iterator.Next()
-		keys = append(keys, key)
+		keys[idx] = key
+		idx++
 	}
 
 	return keys

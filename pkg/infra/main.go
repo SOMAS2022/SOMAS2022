@@ -10,6 +10,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/example"
+	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
@@ -17,8 +18,6 @@ import (
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
-
-	gamemath "infra/game/math"
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
