@@ -26,12 +26,14 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 		}
 
 		agentStateMap[agentID] = state.AgentState{
-			Hp:           gameConfig.StartingHealthPoints,
-			Stamina:      gameConfig.Stamina,
-			Attack:       gameConfig.StartingAttackStrength,
-			Defense:      gameConfig.StartingShieldStrength,
-			BonusAttack:  0,
-			BonusDefense: 0,
+			Hp:          gameConfig.StartingHealthPoints,
+			Stamina:     gameConfig.Stamina,
+			Attack:      gameConfig.StartingAttackStrength,
+			Defense:     gameConfig.StartingShieldStrength,
+			Weapons:     []commons.ItemID{},
+			Shields:     []commons.ItemID{},
+			WeaponInUse: uuid.Nil.String(),
+			ShieldInUse: uuid.Nil.String(),
 		}
 	}
 }
@@ -52,9 +54,13 @@ func InitGameConfig() config.GameConfig {
 	return gameConfig
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState, inventoryMap state.InventoryMap) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
+	inventoryMap = state.InventoryMap{
+		Weapons: make(map[commons.ItemID]uint),
+		Shields: make(map[commons.ItemID]uint),
+	}
 
 	numAgents = 0
 

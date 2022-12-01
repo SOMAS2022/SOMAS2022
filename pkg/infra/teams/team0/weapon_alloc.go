@@ -5,6 +5,8 @@ import (
 
 	"infra/game/commons"
 	"infra/game/state"
+
+	"github.com/google/uuid"
 )
 
 // AllocateLoot
@@ -18,8 +20,14 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint)
 		allocatedWeapon := rand.Intn(len(weaponLoot))
 		allocatedShield := rand.Intn(len(shieldLoot))
 
-		agentState.BonusAttack = weaponLoot[allocatedWeapon]
-		agentState.BonusDefense = shieldLoot[allocatedShield]
+		wid := uuid.New().String()
+		globalState.InventoryMap.Weapons[wid] = weaponLoot[allocatedWeapon]
+		agentState.Weapons = append(agentState.Weapons, wid)
+
+		sid := uuid.New().String()
+		globalState.InventoryMap.Shields[sid] = shieldLoot[allocatedShield]
+		agentState.Shields = append(agentState.Shields, sid)
+
 		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
 		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
 	}

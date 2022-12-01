@@ -23,9 +23,13 @@ var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	// "CowardlyAgent": NewProbabilisticAgent(0.9, 0.05, 0.05),
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState, inventoryMap state.InventoryMap) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
+	inventoryMap = state.InventoryMap{
+		Weapons: make(map[commons.ItemID]uint),
+		Shields: make(map[commons.ItemID]uint),
+	}
 
 	numAgents = 0
 

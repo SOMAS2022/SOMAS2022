@@ -7,6 +7,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
 
@@ -130,6 +131,14 @@ func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage
 	default:
 		return false
 	}
+}
+
+func (r *RandomAgent) HandleUpdateWeapon(view *state.View, _ agent.BaseAgent) decision.ItemIdx {
+	return decision.ItemIdx(rand.Intn(20))
+}
+
+func (r *RandomAgent) HandleUpdateShield(view *state.View, _ agent.BaseAgent) decision.ItemIdx {
+	return decision.ItemIdx(rand.Intn(20))
 }
 
 func NewRandomAgent() agent.Strategy {

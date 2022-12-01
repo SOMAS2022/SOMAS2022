@@ -22,11 +22,21 @@ type Strategy interface {
 	FightResolution(agent BaseAgent) tally.Proposal[decision.FightAction]
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal *message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
+	HandleUpdateWeapon(view *state.View, baseAgent BaseAgent) decision.ItemIdx
+	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
 }
 
 type Agent struct {
 	BaseAgent BaseAgent
 	Strategy  Strategy
+}
+
+func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
+	return a.Strategy.HandleUpdateWeapon(&view, a.BaseAgent)
+}
+
+func (a *Agent) HandleUpdateShield(agentState state.AgentState, view state.View) decision.ItemIdx {
+	return a.Strategy.HandleUpdateShield(&view, a.BaseAgent)
 }
 
 func (a *Agent) SubmitManifesto(agentState state.AgentState) *decision.Manifesto {

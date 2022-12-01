@@ -27,12 +27,14 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 			delete(agentMap, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
-				Hp:           newHP,
-				Attack:       agentState.Attack,
-				Defense:      agentState.Defense,
-				BonusAttack:  agentState.BonusAttack,
-				BonusDefense: agentState.BonusDefense,
-				Stamina:      agentState.Stamina,
+				Hp:          newHP,
+				Attack:      agentState.Attack,
+				Defense:     agentState.Defense,
+				Stamina:     agentState.Stamina,
+				Weapons:     agentState.Weapons,
+				Shields:     agentState.Shields,
+				WeaponInUse: agentState.WeaponInUse,
+				ShieldInUse: agentState.ShieldInUse,
 			}
 		}
 	}
@@ -95,10 +97,10 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 		const scalingFactor = 0.01
 		switch d {
 		case decision.Attack:
-			if agentState.Stamina > agentState.BonusAttack {
+			if agentState.Stamina > agentState.BonusAttack(state) {
 				fightResult.AttackingAgents = append(fightResult.AttackingAgents, agentID)
-				attackSum += agentState.TotalAttack()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
+				attackSum += agentState.TotalAttack(state)
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack(state))
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
@@ -106,10 +108,10 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
-			if agentState.Stamina > agentState.BonusDefense {
+			if agentState.Stamina > agentState.BonusDefense(state) {
 				fightResult.ShieldingAgents = append(fightResult.ShieldingAgents, agentID)
-				shieldSum += agentState.TotalDefense()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
+				shieldSum += agentState.TotalDefense(state)
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense(state))
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
