@@ -16,12 +16,14 @@ import (
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/logging"
+	"infra/teams/team6"
 
 	"github.com/benbjohnson/immutable"
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
+	"TEAM6":  team6.NewTeam6Agent,
 }
 
 func main() {
