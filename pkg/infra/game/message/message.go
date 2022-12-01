@@ -17,7 +17,6 @@ const (
 	Inform Type = iota
 	Request
 	Proposal
-	ProposalResponse
 )
 
 type Message struct {

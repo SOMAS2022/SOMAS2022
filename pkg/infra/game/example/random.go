@@ -28,8 +28,8 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[
 		if !ok {
 			break
 		}
-		rNum := rand.Intn(3)
-		switch rNum {
+
+		switch rand.Intn(3) {
 		case 0:
 			actions[id] = decision.Attack
 		case 1:
