@@ -122,7 +122,10 @@ func runConfidenceVote(termLeft uint) uint {
 		"leader":    globalState.CurrentLeader,
 		"team":      leaderName,
 	}, "Confidence Vote")
-	if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
+
+	if votes[decision.Negative]+votes[decision.Positive] == 0 {
+		return termLeft
+	} else if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
 		termLeft = runElection()
 	}
