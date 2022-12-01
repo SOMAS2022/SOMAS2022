@@ -60,7 +60,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	for _, messages := range channelsMap {
 		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mID)
 	}
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	for _, c := range channelsMap {
 		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mID)
 		go func(recv <-chan message.TaggedMessage) {

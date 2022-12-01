@@ -25,6 +25,10 @@ type ProposalPayload struct {
 	internalMap immutable.Map[commons.ID, decision.FightAction]
 }
 
+func NewProposalPayload(internalMap immutable.Map[commons.ID, decision.FightAction]) *ProposalPayload {
+	return &ProposalPayload{internalMap: internalMap}
+}
+
 func (p ProposalPayload) isPayload() {
 }
 

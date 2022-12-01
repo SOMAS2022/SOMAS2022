@@ -87,6 +87,7 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 		if a.isLeader() {
 			if a.Strategy.HandleFightProposalRequest(proposalMessage, a.BaseAgent, log) {
 				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalID(), proposalMessage.Proposal())
+				a.BaseAgent.BroadcastBlockingMessage(m.Message())
 			}
 		}
 
