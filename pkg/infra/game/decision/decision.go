@@ -1,8 +1,9 @@
 package decision
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type ProposalAction interface {

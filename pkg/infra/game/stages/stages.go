@@ -1,7 +1,6 @@
 package stages
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -12,6 +11,8 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/state"
 	"infra/game/tally"
+
+	"github.com/benbjohnson/immutable"
 
 	t0 "infra/teams/team0"
 )

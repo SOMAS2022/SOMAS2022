@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/message"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type Communication struct {

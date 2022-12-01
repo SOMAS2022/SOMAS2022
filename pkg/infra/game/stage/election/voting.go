@@ -1,10 +1,11 @@
 package election
 
 import (
+	"math/rand"
+
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
-	"math/rand"
 )
 
 /*

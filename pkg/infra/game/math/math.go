@@ -1,9 +1,10 @@
 package math
 
 import (
-	"infra/config"
 	"math"
 	"math/rand"
+
+	"infra/config"
 )
 
 func CalculateMonsterHealth(n uint, st uint, l uint, cl uint) uint {

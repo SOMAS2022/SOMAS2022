@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	"infra/game/commons"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/logging"
+
+	"github.com/google/uuid"
 )
 
 var errCommunication = errors.New("communicationError")

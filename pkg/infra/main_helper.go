@@ -3,9 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/benbjohnson/immutable"
-	"github.com/joho/godotenv"
-	"golang.org/x/exp/constraints"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -16,6 +13,10 @@ import (
 	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
+
+	"github.com/benbjohnson/immutable"
+	"github.com/joho/godotenv"
+	"golang.org/x/exp/constraints"
 
 	gamemath "infra/game/math"
 )

@@ -1,13 +1,17 @@
 package example
 
 import (
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/tally"
 	"infra/logging"
-	"math/rand"
+
+	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type RandomAgent struct {

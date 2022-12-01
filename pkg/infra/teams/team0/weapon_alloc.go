@@ -1,9 +1,10 @@
 package team0
 
 import (
+	"math/rand"
+
 	"infra/game/commons"
 	"infra/game/state"
-	"math/rand"
 )
 
 // AllocateLoot

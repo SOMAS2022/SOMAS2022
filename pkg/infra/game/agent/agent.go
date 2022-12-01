@@ -1,13 +1,14 @@
 package agent
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type Strategy interface {

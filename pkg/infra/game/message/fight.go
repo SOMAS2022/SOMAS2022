@@ -1,9 +1,10 @@
 package message
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type FightProposalMessage struct {
