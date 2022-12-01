@@ -41,6 +41,8 @@ func (a *AgentThree) UpdateUtility(baseAgent agent.BaseAgent) {
 // Create proposal for fight decisions
 func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[decision.FightAction] {
 
+	a.UpdateUtility(baseAgent)
+
 	actions := make(map[commons.ID]decision.FightAction)
 	view := baseAgent.View()
 	agentState := view.AgentState()
