@@ -38,13 +38,6 @@ func NewTally[A decision.ProposalAction](votes <-chan commons.ProposalID,
 	}
 }
 
-func NewProposal[A decision.ProposalAction](proposalID commons.ProposalID, proposalMap immutable.Map[commons.ID, A]) *Proposal[A] {
-	return &Proposal[A]{
-		proposalID: proposalID,
-		proposal:   proposalMap,
-	}
-}
-
 // HandleMessages call from goroutine.
 func (t *Tally[A]) HandleMessages() {
 	for {

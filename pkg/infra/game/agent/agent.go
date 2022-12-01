@@ -82,13 +82,16 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	case message.Inform:
 		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
 	case message.Proposal:
-		// todo: if I am the leader then decide whether to broadcast
-		// todo: if broadcast then send and send to tally
+		// todo: make this generic for all future proposals
 		proposalMessage := message.NewFightProposalMessage(m)
 		if a.isLeader() {
 			if a.Strategy.HandleFightProposalRequest(proposalMessage, a.BaseAgent, log) {
 				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalID(), proposalMessage.Proposal())
-				a.BaseAgent.BroadcastBlockingMessage(m.Message())
+				iterator := a.BaseAgent.communication.peer.Iterator()
+				for !iterator.Done() {
+					_, value, _ := iterator.Next()
+					value <- m
+				}
 			}
 		}
 		switch a.Strategy.HandleFightProposal(proposalMessage, a.BaseAgent) {
@@ -99,4 +102,8 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	default:
 		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
 	}
+}
+
+func (a *Agent) broadcastProposal() {
+
 }
