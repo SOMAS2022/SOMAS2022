@@ -3,6 +3,8 @@ package state
 import (
 	"infra/game/commons"
 	"infra/game/decision"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type AgentState struct {
@@ -12,8 +14,8 @@ type AgentState struct {
 	Defense     uint
 	WeaponInUse commons.ItemID
 	ShieldInUse commons.ItemID
-	Weapons     []commons.ItemID
-	Shields     []commons.ItemID
+	Weapons     immutable.List[InventoryItem]
+	Shields     immutable.List[InventoryItem]
 }
 
 func (a AgentState) BonusAttack(state State) uint {
@@ -38,23 +40,24 @@ func (a AgentState) TotalDefense(state State) uint {
 	return a.Defense + a.BonusDefense(state)
 }
 
-func (s *AgentState) AddWeapon(weaponID commons.ItemID) {
-	s.Weapons = append(s.Weapons, weaponID)
+func (s *AgentState) AddWeapon(weapon InventoryItem) {
+	// TODO: sort weapons accoring to their value
+	s.Weapons = *s.Weapons.Append(weapon)
 }
 
-func (s *AgentState) AddShield(shieldID commons.ItemID) {
-	s.Shields = append(s.Shields, shieldID)
+func (s *AgentState) AddShield(shield InventoryItem) {
+	s.Shields = *s.Shields.Append(shield)
 }
 
 func (s *AgentState) ChangeWeaponInUse(weaponIdx decision.ItemIdx) {
-	if int(weaponIdx) < len(s.Weapons) {
-		s.WeaponInUse = s.Weapons[weaponIdx]
+	if int(weaponIdx) < s.Weapons.Len() {
+		s.WeaponInUse = s.Weapons.Get(int(weaponIdx)).ID
 	}
 }
 
 func (s *AgentState) ChangeShieldInUse(shieldIdx decision.ItemIdx) {
-	if int(shieldIdx) < len(s.Shields) {
-		s.ShieldInUse = s.Shields[shieldIdx]
+	if int(shieldIdx) < s.Shields.Len() {
+		s.ShieldInUse = s.Shields.Get(int(shieldIdx)).ID
 	}
 }
 

@@ -65,7 +65,7 @@ func startGameLoop() {
 			var maxAttack uint = 0
 			for _, agentState := range globalState.AgentState {
 				if agentState.Hp > 0 {
-					maxAttack = maxAttack + agentState.BonusAttack(*globalState)
+					maxAttack = maxAttack + agentState.TotalAttack(*globalState)
 				}
 			}
 

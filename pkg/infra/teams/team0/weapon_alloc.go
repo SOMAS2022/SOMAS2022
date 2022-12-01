@@ -16,20 +16,30 @@ import (
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
 	allocatedState := globalState
 
-	for _, agentState := range allocatedState.AgentState {
-		allocatedWeapon := rand.Intn(len(weaponLoot))
-		allocatedShield := rand.Intn(len(shieldLoot))
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
+		allocatedShieldIdx := rand.Intn(len(shieldLoot))
 
+		// add W to global InentoryMap and this agent's inventory
 		wid := uuid.New().String()
-		globalState.InventoryMap.Weapons[wid] = weaponLoot[allocatedWeapon]
-		agentState.Weapons = append(agentState.Weapons, wid)
+		weaponValue := weaponLoot[allocatedWeaponIdx]
+		allocatedState.InventoryMap.Weapons[wid] = weaponValue
+		allocatedWeapon := state.InventoryItem{ID: wid, Value: weaponValue}
+		agentState.AddWeapon(allocatedWeapon)
 
+		// add S to global InentoryMap and this agent's inventory
 		sid := uuid.New().String()
-		globalState.InventoryMap.Shields[sid] = shieldLoot[allocatedShield]
-		agentState.Shields = append(agentState.Shields, sid)
+		shieldValue := shieldLoot[allocatedShieldIdx]
+		allocatedState.InventoryMap.Shields[sid] = shieldValue
+		allocatedShield := state.InventoryItem{ID: sid, Value: shieldValue}
+		agentState.AddShield(allocatedShield)
 
-		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
+		allocatedState.AgentState[agentID] = agentState
+
+		// remove W and S from unallocated loot
+
+		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeaponIdx)
+		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShieldIdx)
 	}
 
 	return allocatedState

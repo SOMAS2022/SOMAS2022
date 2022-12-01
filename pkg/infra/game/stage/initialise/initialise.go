@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/state"
 
+	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 )
 
@@ -30,8 +31,8 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 			Stamina:     gameConfig.Stamina,
 			Attack:      gameConfig.StartingAttackStrength,
 			Defense:     gameConfig.StartingShieldStrength,
-			Weapons:     []commons.ItemID{},
-			Shields:     []commons.ItemID{},
+			Weapons:     *immutable.NewList[state.InventoryItem](),
+			Shields:     *immutable.NewList[state.InventoryItem](),
 			WeaponInUse: uuid.Nil.String(),
 			ShieldInUse: uuid.Nil.String(),
 		}

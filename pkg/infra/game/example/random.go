@@ -134,11 +134,13 @@ func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage
 }
 
 func (r *RandomAgent) HandleUpdateWeapon(view *state.View, b agent.BaseAgent) decision.ItemIdx {
-	return decision.ItemIdx(rand.Intn(len(b.AgentState().Weapons) + 1))
+	weapons := b.AgentState().Weapons
+	return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 }
 
 func (r *RandomAgent) HandleUpdateShield(view *state.View, b agent.BaseAgent) decision.ItemIdx {
-	return decision.ItemIdx(rand.Intn(len(b.AgentState().Shields) + 1))
+	shields := b.AgentState().Shields
+	return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 }
 
 func NewRandomAgent() agent.Strategy {
