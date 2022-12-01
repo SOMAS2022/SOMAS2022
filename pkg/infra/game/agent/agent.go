@@ -52,14 +52,16 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 	log immutable.Map[commons.ID, decision.FightAction],
 	votes chan commons.ProposalID,
 	submission chan tally.Proposal[decision.FightAction],
+	closure <-chan struct{},
 ) {
 	a.BaseAgent.latestState = agentState
-	for m := range a.BaseAgent.communication.receipt {
-		if m.Message().MType() == message.Close {
-			break
+	for {
+		select {
+		case taggedMessage := <-a.BaseAgent.communication.receipt:
+			a.handleMessage(&log, taggedMessage, votes, submission)
+		case _ = <-closure:
+			return
 		}
-
-		a.handleMessage(&log, m, votes, submission)
 	}
 }
 
@@ -73,7 +75,6 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	submission chan tally.Proposal[decision.FightAction],
 ) {
 	switch m.Message().MType() {
-	case message.Close:
 	case message.Request:
 		payload := a.Strategy.HandleFightRequest(m, log)
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
@@ -90,7 +91,6 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 				a.BaseAgent.BroadcastBlockingMessage(m.Message())
 			}
 		}
-
 		switch a.Strategy.HandleFightProposal(proposalMessage, a.BaseAgent) {
 		case decision.Positive:
 			votes <- proposalMessage.ProposalID()

@@ -14,9 +14,8 @@ type Payload interface {
 type Type int64
 
 const (
-	Close Type = iota
+	Inform Type = iota
 	Request
-	Inform
 	Proposal
 	ProposalResponse
 )

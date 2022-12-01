@@ -41,18 +41,20 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.FightAction] {
 	proposalVotes := make(chan commons.ProposalID)
 	proposalSubmission := make(chan tally.Proposal[decision.FightAction])
-	closure := make(chan struct{})
+	tallyClosure := make(chan struct{})
 
-	propTally := tally.NewTally(proposalVotes, proposalSubmission, closure)
+	propTally := tally.NewTally(proposalVotes, proposalSubmission, tallyClosure)
 	go propTally.HandleMessages()
-
-	for _, a := range agents {
+	closures := make(map[commons.ID]chan<- struct{})
+	for id, a := range agents {
 		a := a
+		closure := make(chan struct{})
+		closures[id] = closure
 		agentState := state.AgentState[a.BaseAgent.ID()]
 		if a.BaseAgent.ID() == state.CurrentLeader {
-			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, proposalSubmission)
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, proposalSubmission, closure)
 		} else {
-			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil)
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil, closure)
 		}
 	}
 	mID, _ := uuid.NewUUID()
@@ -61,8 +63,8 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mID)
 	}
 	time.Sleep(100 * time.Millisecond)
-	for _, c := range channelsMap {
-		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mID)
+	for id, c := range channelsMap {
+		closures[id] <- struct{}{}
 		go func(recv <-chan message.TaggedMessage) {
 			for m := range recv {
 				switch m.Message().MType() {
@@ -79,7 +81,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 		close(c)
 	}
 
-	closure <- struct{}{}
+	tallyClosure <- struct{}{}
 	return propTally
 }
 
