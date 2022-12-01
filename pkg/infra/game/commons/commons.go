@@ -26,14 +26,27 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 	}
 }
 
-func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) (keys []K) {
-	keys = make([]K, p.Len())
+func ImmutableMapKeys[K constraints.Ordered, V any](p immutable.Map[K, V]) []K {
+	keys := make([]K, p.Len())
 	iterator := p.Iterator()
+	idx := 0
 	for !iterator.Done() {
 		key, _, _ := iterator.Next()
-		keys = append(keys, key)
+		keys[idx] = key
+		idx++
 	}
-	return
+
+	return keys
+}
+
+func MapToImmutable[K constraints.Ordered, V any](m map[K]V) immutable.Map[K, V] {
+	builder := immutable.NewMapBuilder[K, V](nil)
+	for k, v := range m {
+		builder.Set(k, v)
+	}
+	return *builder.Map()
 }
 
 type ID = string
+
+type ProposalID = string

@@ -1,27 +1,54 @@
 package example
 
 import (
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
+	"infra/game/tally"
 	"infra/logging"
-	"math/rand"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[decision.FightAction] {
+	actions := make(map[commons.ID]decision.FightAction)
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, _, ok := itr.Next()
+		if !ok {
+			break
+		}
+		rNum := rand.Intn(3)
+		switch rNum {
+		case 0:
+			actions[id] = decision.Attack
+		case 1:
+			actions[id] = decision.Defend
+		default:
+			actions[id] = decision.Cower
+		}
+	}
+	newUUID, _ := uuid.NewUUID()
+	prop := tally.NewProposal[decision.FightAction](newUUID.String(), commons.MapToImmutable(actions))
+	return *prop
+}
+
+func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
-func (r *RandomAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -32,11 +59,18 @@ func (r *RandomAgent) HandleConfidencePoll(view *state.View, baseAgent agent.Bas
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, _ *state.View, agent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	agent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": agent.ViewState().Hp}, "Cowering")
+func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+	baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
+	makesProposal := rand.Intn(100)
+
+	if makesProposal > 80 {
+		prop := r.FightResolution(baseAgent)
+		view := baseAgent.View()
+		_ = baseAgent.SendBlockingMessage(view.CurrentLeader(), *message.NewMessage(message.Proposal, *message.NewProposalPayload(prop.Proposal())))
+	}
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *state.View, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
 	return nil
 }
 
@@ -52,31 +86,50 @@ func (r *RandomAgent) CurrentAction() decision.FightAction {
 	}
 }
 
-func (r *RandomAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
+	view := b.View()
 	agentState := view.AgentState()
-	aliveAgentIds := make([]string, agentState.Len())
+	aliveAgentIDs := make([]string, agentState.Len())
 	i := 0
 	itr := agentState.Iterator()
 	for !itr.Done() {
 		id, a, ok := itr.Next()
 		if ok && a.Hp > 0 {
-			aliveAgentIds[i] = id
+			aliveAgentIDs[i] = id
 			i++
 		}
 	}
 
 	// Randomly fill the ballot
 	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIds)
+	numAliveAgents := len(aliveAgentIDs)
 	numCandidate := 2
 	for i := 0; i < numCandidate; i++ {
 		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIds[uint(randomIdx)]
+		randomCandidate := aliveAgentIDs[uint(randomIdx)]
 		ballot = append(ballot, randomCandidate)
 	}
 
 	return ballot
+}
+
+func (r *RandomAgent) HandleFightProposal(_ *message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
+	intent := rand.Intn(2)
+	if intent == 0 {
+		return decision.Positive
+	} else {
+		return decision.Negative
+	}
+}
+
+func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
 }
 
 func NewRandomAgent() agent.Strategy {

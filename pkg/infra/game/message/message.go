@@ -17,6 +17,8 @@ const (
 	Close Type = iota
 	Request
 	Inform
+	Proposal
+	ProposalResponse
 )
 
 type Message struct {
@@ -39,11 +41,11 @@ func (m Message) Payload() Payload {
 type TaggedMessage struct {
 	sender  commons.ID
 	message Message
-	mId     uuid.UUID
+	mID     uuid.UUID
 }
 
-func NewTaggedMessage(sender commons.ID, message Message, mId uuid.UUID) *TaggedMessage {
-	return &TaggedMessage{sender: sender, message: message, mId: mId}
+func NewTaggedMessage(sender commons.ID, message Message, mID uuid.UUID) *TaggedMessage {
+	return &TaggedMessage{sender: sender, message: message, mID: mID}
 }
 
 func (t TaggedMessage) Sender() commons.ID {

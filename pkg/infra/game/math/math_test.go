@@ -1,10 +1,14 @@
-package game_math
+package math_test
 
 import (
 	"testing"
+
+	"infra/game/math"
 )
 
 func TestCalculateMonsterHealth(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		N  uint
 		ST uint
@@ -27,7 +31,9 @@ func TestCalculateMonsterHealth(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CalculateMonsterHealth(tt.args.N, tt.args.ST, tt.args.L, tt.args.CL); !(tt.wantmin <= got && got <= tt.wantmax) {
+			t.Parallel()
+
+			if got := math.CalculateMonsterHealth(tt.args.N, tt.args.ST, tt.args.L, tt.args.CL); !(tt.wantmin <= got && got <= tt.wantmax) {
 				t.Errorf("CalculateMonsterHealth() = %v, wanted between %v and %v", got, tt.wantmin, tt.wantmax)
 			}
 		})
@@ -35,6 +41,8 @@ func TestCalculateMonsterHealth(t *testing.T) {
 }
 
 func TestCalculateMonsterDamage(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		N  uint
 		HP uint
@@ -59,7 +67,9 @@ func TestCalculateMonsterDamage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CalculateMonsterDamage(tt.args.N, tt.args.HP, tt.args.ST, tt.args.TH, tt.args.L, tt.args.CL); !(tt.wantmin <= got && got <= tt.wantmax) {
+			t.Parallel()
+
+			if got := math.CalculateMonsterDamage(tt.args.N, tt.args.HP, tt.args.ST, tt.args.TH, tt.args.L, tt.args.CL); !(tt.wantmin <= got && got <= tt.wantmax) {
 				t.Errorf("CalculateMonsterDamage() = %v,  wanted between %v and %v", got, tt.wantmin, tt.wantmax)
 			}
 		})

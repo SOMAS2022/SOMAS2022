@@ -1,14 +1,15 @@
 package team0
 
 import (
+	"math/rand"
+
 	"infra/game/commons"
 	"infra/game/state"
-	"math/rand"
 )
 
 // AllocateLoot
 /**
-* This default function allocates loot randomly
+* This default function allocates loot randomly.
  */
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
 	allocatedState := globalState
