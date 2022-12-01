@@ -1,17 +1,17 @@
 package example
 
 import (
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/tally"
 	"infra/logging"
-	"math/rand"
-
-	"github.com/google/uuid"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type RandomAgent struct {
@@ -29,11 +29,12 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[
 			break
 		}
 		rNum := rand.Intn(3)
-		if rNum == 0 {
+		switch rNum {
+		case 0:
 			actions[id] = decision.Attack
-		} else if rNum == 1 {
+		case 1:
 			actions[id] = decision.Defend
-		} else {
+		default:
 			actions[id] = decision.Cower
 		}
 	}
@@ -82,24 +83,24 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	// Extract ID of alive agents
 	view := b.View()
 	agentState := view.AgentState()
-	aliveAgentIds := make([]string, agentState.Len())
+	aliveAgentIDs := make([]string, agentState.Len())
 	i := 0
 	itr := agentState.Iterator()
 	for !itr.Done() {
 		id, a, ok := itr.Next()
 		if ok && a.Hp > 0 {
-			aliveAgentIds[i] = id
+			aliveAgentIDs[i] = id
 			i++
 		}
 	}
 
 	// Randomly fill the ballot
 	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIds)
+	numAliveAgents := len(aliveAgentIDs)
 	numCandidate := 2
 	for i := 0; i < numCandidate; i++ {
 		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIds[uint(randomIdx)]
+		randomCandidate := aliveAgentIDs[uint(randomIdx)]
 		ballot = append(ballot, randomCandidate)
 	}
 

@@ -3,6 +3,6 @@ package internal
 import "infra/game/commons"
 
 type VoteCount struct {
-	Id    commons.ProposalID
+	ID    commons.ProposalID
 	Count uint
 }

@@ -1,10 +1,11 @@
 package election
 
 import (
+	"math/rand"
+
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
-	"math/rand"
 )
 
 /*
@@ -26,6 +27,7 @@ import (
 func singleChoicePlurality(ballots []decision.Ballot) (commons.ID, uint) {
 	// Count number of votes collected for each candidate
 	votes := make(map[commons.ID]uint)
+
 	for _, ballot := range ballots {
 		if len(ballot) > 0 {
 			votes[ballot[0]]++
@@ -34,13 +36,14 @@ func singleChoicePlurality(ballots []decision.Ballot) (commons.ID, uint) {
 
 	// Find the candidate(s) with max number of votes
 	var maxNumVotes uint
-	var winners []commons.ID
-	for agentId, numVotes := range votes {
+	winners := make([]commons.ID, 0)
+
+	for agentID, numVotes := range votes {
 		if numVotes > maxNumVotes {
 			maxNumVotes = numVotes
-			winners = []commons.ID{agentId}
+			winners = []commons.ID{agentID}
 		} else if numVotes == maxNumVotes {
-			winners = append(winners, agentId)
+			winners = append(winners, agentID)
 		}
 	}
 

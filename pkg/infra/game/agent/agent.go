@@ -31,24 +31,28 @@ type Agent struct {
 
 func (a *Agent) SubmitManifesto(agentState state.AgentState) *decision.Manifesto {
 	a.BaseAgent.latestState = agentState
+
 	return a.Strategy.CreateManifesto(a.BaseAgent)
 }
 
 // HandleNoConfidenceVote todo: do we need to send the baseAgent here? I.e. is communication necessary at this point?
 func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState) decision.Intent {
 	a.BaseAgent.latestState = agentState
+
 	return a.Strategy.HandleConfidencePoll(a.BaseAgent)
 }
 
 func (a *Agent) HandleElection(agentState state.AgentState, params *decision.ElectionParams) decision.Ballot {
 	a.BaseAgent.latestState = agentState
+
 	return a.Strategy.HandleElectionBallot(a.BaseAgent, params)
 }
 
 func (a *Agent) HandleFight(agentState state.AgentState,
 	log immutable.Map[commons.ID, decision.FightAction],
 	votes chan commons.ProposalID,
-	submission chan tally.Proposal[decision.FightAction]) {
+	submission chan tally.Proposal[decision.FightAction],
+) {
 	a.BaseAgent.latestState = agentState
 	for m := range a.BaseAgent.communication.receipt {
 		if m.Message().MType() == message.Close {
@@ -59,13 +63,14 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 }
 
 func (a *Agent) isLeader() bool {
-	return a.BaseAgent.Id() == a.BaseAgent.view.CurrentLeader()
+	return a.BaseAgent.ID() == a.BaseAgent.view.CurrentLeader()
 }
 
 func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightAction],
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
-	submission chan tally.Proposal[decision.FightAction]) {
+	submission chan tally.Proposal[decision.FightAction],
+) {
 	switch m.Message().MType() {
 	case message.Close:
 	case message.Request:
@@ -75,18 +80,18 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	case message.Inform:
 		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
 	case message.Proposal:
-		//todo: if I am the leader then decide whether to broadcast
+		// todo: if I am the leader then decide whether to broadcast
 		// todo: if broadcast then send and send to tally
 		proposalMessage := message.NewFightProposalMessage(m)
 		if a.isLeader() {
 			if a.Strategy.HandleFightProposalRequest(proposalMessage, a.BaseAgent, log) {
-				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalId(), proposalMessage.Proposal())
+				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalID(), proposalMessage.Proposal())
 			}
 		}
 
 		switch a.Strategy.HandleFightProposal(proposalMessage, a.BaseAgent) {
 		case decision.Positive:
-			votes <- proposalMessage.ProposalId()
+			votes <- proposalMessage.ProposalID()
 		default:
 		}
 	default:

@@ -1,18 +1,18 @@
 package fight
 
 import (
+	"math"
+	"time"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
-	"math"
-	"time"
-
-	"github.com/google/uuid"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
@@ -48,26 +48,26 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 
 	for _, a := range agents {
 		a := a
-		agentState := state.AgentState[a.BaseAgent.Id()]
-		if a.BaseAgent.Id() == state.CurrentLeader {
+		agentState := state.AgentState[a.BaseAgent.ID()]
+		if a.BaseAgent.ID() == state.CurrentLeader {
 			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, proposalSubmission)
 		} else {
 			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil)
 		}
 	}
-	mId, _ := uuid.NewUUID()
+	mID, _ := uuid.NewUUID()
 
 	for _, messages := range channelsMap {
-		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mId)
+		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mID)
 	}
 	time.Sleep(1 * time.Millisecond)
 	for _, c := range channelsMap {
-		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mId)
+		c <- *message.NewTaggedMessage("server", *message.NewMessage(message.Close, nil), mID)
 		go func(recv <-chan message.TaggedMessage) {
 			for m := range recv {
 				switch m.Message().MType() {
 				case message.Request:
-					//todo: respond with nil thing here as we're closing! Or do we need to?
+					// todo: respond with nil thing here as we're closing! Or do we need to?
 					// maybe because we're closing there's no point...
 				default:
 				}

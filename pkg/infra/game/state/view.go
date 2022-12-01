@@ -17,8 +17,10 @@ type View struct {
 	leaderManifesto decision.Manifesto
 }
 
-type HealthRange uint
-type StaminaRange uint
+type (
+	HealthRange  uint
+	StaminaRange uint
+)
 
 const (
 	LowHealth  uint = 250 // 25% starting HP
@@ -71,6 +73,7 @@ func (v *View) LeaderManifesto() decision.Manifesto {
 
 func (s *State) ToView() View {
 	b := immutable.NewMapBuilder[commons.ID, HiddenAgentState](nil)
+
 	for uuid, state := range s.AgentState {
 		healthRange := MidHealth
 
@@ -81,10 +84,11 @@ func (s *State) ToView() View {
 		}
 
 		staminaRange := MidStamina
+
 		if state.Stamina < LowStamina {
-			healthRange = LowHealth
+			staminaRange = LowHealth
 		} else if state.Stamina > HighStamina {
-			healthRange = HighHealth
+			staminaRange = HighHealth
 		}
 
 		b.Set(uuid, HiddenAgentState{

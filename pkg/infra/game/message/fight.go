@@ -10,15 +10,15 @@ import (
 type FightProposalMessage struct {
 	sender     commons.ID
 	proposal   immutable.Map[commons.ID, decision.FightAction]
-	proposalId commons.ProposalID
+	proposalID commons.ProposalID
 }
 
 func (f FightProposalMessage) Proposal() immutable.Map[commons.ID, decision.FightAction] {
 	return f.proposal
 }
 
-func (f FightProposalMessage) ProposalId() commons.ProposalID {
-	return f.proposalId
+func (f FightProposalMessage) ProposalID() commons.ProposalID {
+	return f.proposalID
 }
 
 type ProposalPayload struct {
@@ -32,6 +32,6 @@ func NewFightProposalMessage(taggedMessage TaggedMessage) *FightProposalMessage 
 	return &FightProposalMessage{
 		sender:     taggedMessage.Sender(),
 		proposal:   taggedMessage.message.Payload().(ProposalPayload).internalMap,
-		proposalId: taggedMessage.mId.String(),
+		proposalID: taggedMessage.mID.String(),
 	}
 }

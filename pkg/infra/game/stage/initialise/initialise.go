@@ -19,13 +19,13 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 ) {
 	for i := uint(0); i < quantity; i++ {
 		// TODO: add peer channels
-		agentId := uuid.New().String()
-		agentMap[agentId] = agent.Agent{
-			BaseAgent: agent.NewBaseAgent(nil, agentId, agentName, viewPtr),
+		agentID := uuid.New().String()
+		agentMap[agentID] = agent.Agent{
+			BaseAgent: agent.NewBaseAgent(nil, agentID, agentName, viewPtr),
 			Strategy:  strategyConstructor(),
 		}
 
-		agentStateMap[agentId] = state.AgentState{
+		agentStateMap[agentID] = state.AgentState{
 			Hp:           gameConfig.StartingHealthPoints,
 			Stamina:      gameConfig.Stamina,
 			Attack:       gameConfig.StartingAttackStrength,

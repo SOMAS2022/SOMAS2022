@@ -9,7 +9,8 @@ import (
 
 func ResolveFightDiscussion(agentMap map[commons.ID]agent.Agent,
 	currentLeader agent.Agent,
-	manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
+	manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction],
+) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
 	// todo: cleanup the nil check that acts to check if the leader died in combat
 	if manifesto.FightImposition() && currentLeader.Strategy != nil {

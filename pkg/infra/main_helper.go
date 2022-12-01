@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -23,10 +24,12 @@ import (
 	Package Variables
 */
 
-var viewPtr = &state.View{}
-var globalState *state.State
-var agentMap map[commons.ID]agent.Agent
-var gameConfig *config.GameConfig
+var (
+	viewPtr     = &state.View{}
+	globalState *state.State
+	agentMap    map[commons.ID]agent.Agent
+	gameConfig  *config.GameConfig
+)
 
 /*
 	Init Helpers
@@ -37,8 +40,7 @@ func updateView(ptr *state.View, globalState *state.State) {
 }
 
 func initGame() {
-	err := godotenv.Load()
-	if err != nil {
+	if godotenv.Load() != nil {
 		logging.Log(logging.Error, nil, "No .env file located, using defaults")
 	}
 
@@ -62,9 +64,9 @@ func initGame() {
 	Communication Helpers
 */
 
-func addCommsChannels() (res map[commons.ID]chan message.TaggedMessage) {
+func addCommsChannels() map[commons.ID]chan message.TaggedMessage {
 	keys := make([]commons.ID, len(agentMap))
-	res = make(map[commons.ID]chan message.TaggedMessage)
+	res := make(map[commons.ID]chan message.TaggedMessage)
 	i := 0
 	for k := range agentMap {
 		keys[i] = k
@@ -79,13 +81,13 @@ func addCommsChannels() (res map[commons.ID]chan message.TaggedMessage) {
 		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name(), viewPtr)
 		(agentMap)[id] = a
 	}
-	return
+	return res
 }
 
 func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels map[K]chan V) immutable.Map[K, chan<- V] {
 	builder := immutable.NewMapBuilder[K, chan<- V](nil)
-	for pId, channel := range peerChannels {
-		builder.Set(pId, channel)
+	for pID, channel := range peerChannels {
+		builder.Set(pID, channel)
 	}
 	return *builder.Map()
 }
@@ -111,6 +113,7 @@ func runConfidenceVote(termLeft uint) uint {
 	}
 	leader := agentMap[globalState.CurrentLeader]
 	leaderName := leader.BaseAgent.Name()
+
 	logging.Log(logging.Info, logging.LogField{
 		"positive":  votes[decision.Positive],
 		"negative":  votes[decision.Negative],
