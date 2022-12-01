@@ -32,10 +32,14 @@ type Agent struct {
 }
 
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
+	a.BaseAgent.latestState = agentState
+
 	return a.Strategy.HandleUpdateWeapon(&view, a.BaseAgent)
 }
 
 func (a *Agent) HandleUpdateShield(agentState state.AgentState, view state.View) decision.ItemIdx {
+	a.BaseAgent.latestState = agentState
+
 	return a.Strategy.HandleUpdateShield(&view, a.BaseAgent)
 }
 
