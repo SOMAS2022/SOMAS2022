@@ -41,7 +41,7 @@ func (a AgentState) TotalDefense(state State) uint {
 }
 
 func (s *AgentState) AddWeapon(weapon InventoryItem) {
-	// TODO: sort weapons accoring to their value
+	// TODO: sort weapons according to their value
 	s.Weapons = *s.Weapons.Append(weapon)
 }
 
