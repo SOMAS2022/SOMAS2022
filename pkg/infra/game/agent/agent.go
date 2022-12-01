@@ -22,7 +22,9 @@ type Strategy interface {
 	FightResolution(agent BaseAgent) tally.Proposal[decision.FightAction]
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal *message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
+	// return the index of the weapon you want to use in AgentState.Weapons
 	HandleUpdateWeapon(view *state.View, baseAgent BaseAgent) decision.ItemIdx
+	// return the index of the shield you want to use in AgentState.Shields
 	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
 }
 
