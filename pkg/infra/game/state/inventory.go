@@ -17,14 +17,15 @@ type InventoryItem struct {
 	Value uint
 }
 
-// return a sorted immutable.List with 0th InventoryItem has greatest value
-func updateInventory(items immutable.List[InventoryItem], item InventoryItem) (newItems immutable.List[InventoryItem]) {
+// Add an InventoryItem to an immutable list of InventoryItem.
+// return a sorted immutable.List with 0th InventoryItem has greatest value.
+func Add2Inventory(items immutable.List[InventoryItem], item InventoryItem) (newItems immutable.List[InventoryItem]) {
 	// convert immutable.List to slice
 	itemList := []InventoryItem{item}
 	itr := items.Iterator()
 	for !itr.Done() {
-		_, value := itr.Next()
-		itemList = append(itemList, value)
+		_, inventoryItem := itr.Next()
+		itemList = append(itemList, inventoryItem)
 	}
 
 	// sort slice
@@ -36,6 +37,23 @@ func updateInventory(items immutable.List[InventoryItem], item InventoryItem) (n
 	b := immutable.NewListBuilder[InventoryItem]()
 	for _, w := range itemList {
 		b.Append(w)
+	}
+
+	return *b.List()
+}
+
+// Remove an InventoryItem from an immutable list of InventoryItem.
+// return a sorted immutable.List with 0th InventoryItem has greatest value.
+func RemoveFromInventory(items immutable.List[InventoryItem], itemID commons.ItemID) (newItems immutable.List[InventoryItem]) {
+	b := immutable.NewListBuilder[InventoryItem]()
+
+	// filter inventoryItem with ID == itemID
+	itr := items.Iterator()
+	for !itr.Done() {
+		_, item := itr.Next()
+		if item.ID != itemID {
+			b.Append(item)
+		}
 	}
 
 	return *b.List()
