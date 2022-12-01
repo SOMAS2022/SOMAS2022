@@ -106,5 +106,18 @@ func (a *Agent2) HandleElectionBallot(view *state.View, baseAgent BaseAgent, par
 // Default TODO: Add Default logic to be taken by agent
 // Description: Default action of agent
 func (a *Agent2) Default() decision.FightAction {
-	return decision.Undecided
+	/*
+	   - Agent attacks by default (50% of the time)
+	   - Agent defends 40% of the time
+	   - Agent cowers 10% of time
+	*/
+	fight := rand.Intn(10)
+	switch {
+	case fight == 0:
+		return decision.Cower
+	case (fight <= 4) && (fight > 0):
+		return decision.Defend
+	default:
+		return decision.Attack
+	}
 }
