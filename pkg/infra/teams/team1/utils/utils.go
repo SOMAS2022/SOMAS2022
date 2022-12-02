@@ -23,11 +23,11 @@ var Config config.GameConfig
  *
  * Calculated based on a(curr)
  */
-func AgentBattleUtility(agentState state.AgentState) float32 {
-	attackPortion := float32(agentState.TotalAttack() / Config.StartingAttackStrength)
-	defensePortion := float32(agentState.TotalDefense() / Config.StartingShieldStrength)
-	healthPortion := float32(agentState.Hp / Config.StartingHealthPoints)
-	staminaPortion := float32(agentState.Stamina / Config.Stamina)
+func AgentBattleUtility(agentState state.AgentState) float64 {
+	attackPortion := float64(agentState.TotalAttack() / Config.StartingAttackStrength)
+	defensePortion := float64(agentState.TotalDefense() / Config.StartingShieldStrength)
+	healthPortion := float64(agentState.Hp / Config.StartingHealthPoints)
+	staminaPortion := float64(agentState.Stamina / Config.Stamina)
 
 	return 0.25*attackPortion + 0.25*defensePortion + 0.25*healthPortion + 0.25*staminaPortion
 }
@@ -100,7 +100,6 @@ func Softmax(inputArray [3]float64) [3]float64 {
 		math.Exp(inputArray[1]),
 		math.Exp(inputArray[2]),
 	}
-
 	// Sum exponential array
 	sum := 0.0
 	for i := 0; i < 3; i++ {

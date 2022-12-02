@@ -17,22 +17,35 @@ import (
 	"infra/game/state"
 	"infra/teams/team1/utils"
 	"math/rand"
+	"sort"
 
 	"github.com/benbjohnson/immutable"
 )
 
+type SocialCapInfo struct {
+	ID  string
+	arr [4]float64
+}
+
 type SocialAgent struct {
 	// probability of chosing collaborative strategy. p(selfish_strat) is 1 - this
-	pCollaborate float32
+	pCollaborate float64
 
 	// current fightDecision
 	currentDecision decision.FightAction
 
 	// Metadata
-	battleUtility float32
+	battleUtility float64
 
-	socialCapital    map[string][4]float64
+	socialCapital    map[string]SocialCapInfo
 	lastLevelUpdated uint // The level at which the socialCapital was last updated
+
+	// Will gosip to all agents who's network value is above this
+	gossipThreshold float64
+	// Proportion of agents to talk badly about
+	propHate float64
+	// Proportion of agents to talk well about
+	propAdmire float64
 
 	// Four metrics for each agent's perception of other agents. Three metrics are borrowed from Ostrom-Ahn
 	// social capital model: (The ordering below is the same as the ordering in the array)
@@ -66,8 +79,8 @@ func (r *SocialAgent) Default() decision.FightAction {
 /**
  * Create agent with given probability of collaborating
  */
-func NewSocialAgent(pCollaborate float32) *SocialAgent {
-	return &SocialAgent{pCollaborate: pCollaborate}
+func NewSocialAgent(pCollaborate float64) *SocialAgent {
+	return &SocialAgent{pCollaborate: pCollaborate, gossipThreshold: 0.8, propHate: 0.1, propAdmire: 0.1}
 }
 
 func (r *SocialAgent) CurrentAction() decision.FightAction {
@@ -83,8 +96,42 @@ func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.Vi
  */
 func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	r.UpdateMetadata(agent)
-
 	r.updateSocialCapital(m, view, agent, log)
+
+	selfID := agent.Id()
+
+	// Tell other trusted agents above a threshold T about the A agents they admire the most,
+	// and the H agents they hate the most.
+
+	// Sort based on network value, and sort based on trustworthiness
+	sortedSCNetwork := make([]SocialCapInfo, 0, len(r.socialCapital))
+	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
+	for _, sci := range r.socialCapital {
+		sortedSCNetwork = append(sortedSCNetwork, sci)
+	}
+	copy(sortedSCTrustworthiness, sortedSCNetwork)
+	sort.Slice(sortedSCNetwork, func(i int, j int) bool {
+		return sortedSCNetwork[i].arr[1] > sortedSCNetwork[j].arr[1]
+	})
+	sort.Slice(sortedSCTrustworthiness, func(i int, j int) bool {
+		return sortedSCTrustworthiness[i].arr[2] > sortedSCTrustworthiness[j].arr[2]
+	})
+
+	numAdmire := int(r.propAdmire * float64(len(sortedSCNetwork)))
+	numHate := int(r.propHate * float64(len(sortedSCNetwork)))
+	for _, sci := range sortedSCNetwork {
+		if sci.arr[1] < r.gossipThreshold {
+			break
+		}
+		if sci.ID == selfID {
+			continue
+		}
+
+		for i, scit := range sortedSCTrustworthiness {
+
+		}
+
+	}
 
 	// Calculate utility value of each action
 	// utilCower := r.utilityValue(decision.Cower, view, agent)
@@ -106,7 +153,7 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *stat
 		fmt.Println(probArray)
 	}*/
 
-	random := rand.Float32()
+	random := rand.Float64()
 	if random < r.pCollaborate {
 		r.currentDecision = utils.CollaborativeFightDecision()
 	} else {
@@ -146,9 +193,10 @@ func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.V
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
+	updatedSocCapInfo := SocialCapInfo{}
 	if len(r.socialCapital) == 0 && agentStateLength > 1 {
 		// Create empty map
-		r.socialCapital = map[string][4]float64{}
+		r.socialCapital = map[string]SocialCapInfo{}
 
 		// Populate map with every currently living agent, and calculate socialCapital based on log
 		itr := agentState.Iterator()
@@ -156,11 +204,13 @@ func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.V
 			key, _, _ := itr.Next()
 
 			action, exists := log.Get(key)
+			updatedSocCapInfo.ID = key
 			if exists { // If agent exists in log, calculate socialCapital
-				r.socialCapital[key] = utils.BoundArray(utils.ActionSentiment(action))
+				updatedSocCapInfo.arr = utils.BoundArray(utils.ActionSentiment(action))
 			} else { // Else initialize socialCapital to 0
-				r.socialCapital[key] = [4]float64{0.0, 0.0, 0.0, 0.0}
+				updatedSocCapInfo.arr = [4]float64{0.0, 0.0, 0.0, 0.0}
 			}
+			r.socialCapital[key] = updatedSocCapInfo
 		}
 
 		// Delete the agents own id from the socialCapital array
@@ -176,24 +226,22 @@ func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.V
 				delete(r.socialCapital, key)
 			}
 
+			updatedSocCapInfo.ID = key
 			// Decay socialCapital values
-			r.socialCapital[key] = utils.DecayArray(r.socialCapital[key])
+			updatedSocCapInfo.arr = utils.DecayArray(r.socialCapital[key].arr)
 
 			// TODO: Update of socialCaptial should be dependent on the agents own action (especially for favours)
 			// Update socialCapital based on log
 			action, exists := log.Get(key)
 			if exists {
-				r.socialCapital[key] = utils.AddArrays(r.socialCapital[key], utils.BoundArray(utils.ActionSentiment(action)))
+				updatedSocCapInfo.arr = utils.BoundArray(utils.AddArrays(updatedSocCapInfo.arr, utils.BoundArray(utils.ActionSentiment(action))))
 			}
+
+			r.socialCapital[key] = updatedSocCapInfo
 		}
 
 		// Set lastLevelUpdated to current level
 		r.lastLevelUpdated = view.CurrentLevel()
-	}
-
-	// Ensure all socialCapital values are between -1 and 1
-	for key := range r.socialCapital {
-		r.socialCapital[key] = utils.BoundArray(r.socialCapital[key])
 	}
 }
 
