@@ -28,7 +28,10 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) state.State {
 	allocatedState := globalState
 	hpPotionValue := allocatedState.PotionSlice.STpotion[HPi]
-	allocatedState.AgentState[agentID].Hp += hpPotionValue
+	v := allocatedState
+	a := allocatedState.AgentState[agentID]
+	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
+	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.HPpotion, HPi)
 	return allocatedState
 }
@@ -36,10 +39,14 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) stat
 func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) state.State {
 	allocatedState := globalState
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
-	allocatedState.AgentState[agentID].Stamina += stPotionValue
+	v := allocatedState
+	a := allocatedState.AgentState[agentID]
+	a.Stamina = v.AgentState[agentID].Hp + stPotionValue
+	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.STpotion, STi)
 	return allocatedState
 }
+
 //Use simple append function to append to the potion slice when generating new loot potions.
 
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
