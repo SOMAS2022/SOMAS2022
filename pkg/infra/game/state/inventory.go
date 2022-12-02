@@ -18,9 +18,6 @@ type InventoryItem struct {
 	Value uint
 }
 
-
-
-
 // Add an InventoryItem to an immutable list of InventoryItem.
 // return a sorted immutable.List with 0th InventoryItem has greatest value.
 func Add2Inventory(items immutable.List[InventoryItem], item InventoryItem) (newItems immutable.List[InventoryItem]) {
