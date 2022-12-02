@@ -22,7 +22,7 @@ import (
 )
 
 // Called any time a message is received, initialises or updates the socialCapital map
-func (r *SocialAgent) updateSocialCapital(view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *SocialAgent) updateSocialCapital(view state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
@@ -83,7 +83,7 @@ func (r *SocialAgent) utilityValue(action decision.FightAction, _ *state.View, a
 	// Utility of each action is dependent on relationship with others. If agent hates all other agents, then
 	// will only act in its own interest.
 
-	agentStats := agent.ViewState()
+	agentStats := agent.AgentState()
 
 	switch action {
 	case decision.Cower:

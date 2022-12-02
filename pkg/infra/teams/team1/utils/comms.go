@@ -11,7 +11,6 @@ package utils
 
 import (
 	"infra/game/agent"
-	"infra/game/message"
 )
 
 const (
@@ -24,21 +23,21 @@ type GossipInform struct {
 	agents []string
 }
 
-func (mc *MessageContent) sealedMessage() {
+func (mc *GossipInform) sealedMessage() {
 }
 
-func (mc *MessageContent) sealedInform() {
+func (mc *GossipInform) sealedInform() {
 }
 
-func newGossipInform(mtype int, agents []string) message.Message {
-	return GossipInform{mtype: mtype, agents: agents}
-}
+// func newGossipInform(mtype int, agents []string) message.Message {
+// 	return GossipInform{mtype: mtype, agents: agents}
+//}
 
 func Gossip(BA agent.BaseAgent, recepient string, mtype int, about []string) {
 
-	msg := MessageContent{mtype: mtype, agents: about}
-	message.NewFightProposalMessage()
+	// msg := MessageContent{mtype: mtype, agents: about}
+	// message.NewFightProposalMessage()
 
-	BA.SendBlockingMessage(recepient, newGossipInform(mtype, about))
+	// BA.SendBlockingMessage(recepient, newGossipInform(mtype, about))
 
 }

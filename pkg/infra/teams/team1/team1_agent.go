@@ -19,6 +19,7 @@ import (
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type SocialAgent struct {
@@ -79,29 +80,67 @@ func NewSocialAgent(pCollaborate float64) *SocialAgent {
 	return &SocialAgent{pCollaborate: pCollaborate, gossipThreshold: 0.8, propHate: 0.1, propAdmire: 0.1}
 }
 
-func (r *SocialAgent) CurrentAction() decision.FightAction {
-	return r.currentDecision
+// TODO: Currently default
+func (r *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 }
 
-func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
-	r.updateSocialCapital(view, log)
-	r.receiveGossip(m)
-	sender := m.Sender()
-	var msg utils.MessageContent // := m.Message()
-	switch msg.mtype {
-	case utils.Praise:
+// TODO: Currently default
+func (r *SocialAgent) UpdateInternalState(agent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+}
 
+// TODO: Currently default
+func (r *SocialAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
+	actions := make(map[commons.ID]decision.FightAction)
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, _, ok := itr.Next()
+		if !ok {
+			break
+		}
+
+		switch rand.Intn(3) {
+		case 0:
+			actions[id] = decision.Attack
+		case 1:
+			actions[id] = decision.Defend
+		default:
+			actions[id] = decision.Cower
+		}
+	}
+	newUUID, _ := uuid.NewUUID()
+	prop := message.NewProposal(newUUID.String(), commons.MapToImmutable(actions))
+	return *prop
+}
+
+// TODO: Currently default
+func (r *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(false, false, 10, 50)
+	return manifesto
+}
+
+// TODO: Currently default
+func (r *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Abstain
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Positive
 	}
 }
 
 /**
  * Agents dont talk to each other about fight decisions, they decide based on the Q-Table
  */
-func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	//r.battleUtility = utils.AgentBattleUtility(agent.ViewState(), view)
-	r.selfID = agent.ID()
-	r.updateSocialCapital(view, log)
-	r.sendGossip(agent)
+	r.selfID = baseAgent.ID()
+	r.updateSocialCapital(baseAgent.View(), log)
+	r.sendGossip(baseAgent)
 
 	// Calculate utility value of each action
 	// utilCower := r.utilityValue(decision.Cower, view, agent)
@@ -133,24 +172,19 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *stat
 	return
 }
 
-func (r *SocialAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(true, false, 10, 50)
-	return manifesto
+// TODO: Currently default
+func (r *SocialAgent) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+	return nil
 }
 
-func (r *SocialAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Abstain
-	case 1:
-		return decision.Negative
-	default:
-		return decision.Positive
-	}
+func (r *SocialAgent) CurrentAction() decision.FightAction {
+	return r.currentDecision
 }
 
-func (r *SocialAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+// TODO: Currently default
+func (r *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
+	view := b.View()
 	agentState := view.AgentState()
 	aliveAgentIds := make([]string, agentState.Len())
 	i := 0
@@ -174,4 +208,40 @@ func (r *SocialAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, 
 	}
 
 	return ballot
+}
+
+// TODO: Currently default
+func (r *SocialAgent) HandleFightProposal(_ message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
+	intent := rand.Intn(2)
+	if intent == 0 {
+		return decision.Positive
+	} else {
+		return decision.Negative
+	}
+}
+
+// TODO: Currently default
+func (r *SocialAgent) HandleFightProposalRequest(_ message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+// TODO: Currently default
+func (r *SocialAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+	// weapons := b.AgentState().Weapons
+	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
+
+	// 0th weapon has the greatest attack points
+	return decision.ItemIdx(0)
+}
+
+// TODO: Currently default
+func (r *SocialAgent) HandleUpdateShield(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+	// shields := b.AgentState().Shields
+	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
+	return decision.ItemIdx(0)
 }

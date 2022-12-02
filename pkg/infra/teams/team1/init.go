@@ -27,12 +27,16 @@ var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"SelfishAgent":       CreateSelfishAgent,
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {
+func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState, inventoryMap state.InventoryMap) {
 	// Initialise a random seed
 	rand.Seed(time.Now().UnixNano())
 	utils.Config = gameConfig // TODO: Not needed when confg is globally accessible
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
+	inventoryMap = state.InventoryMap{
+		Weapons: make(map[commons.ItemID]uint),
+		Shields: make(map[commons.ItemID]uint),
+	}
 
 	numAgents = 0
 
@@ -41,7 +45,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 		quantity := config.EnvToUint(expectedEnvName, 100)
 
 		numAgents += quantity
-		initialise.InstantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName)
+		initialise.InstantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName, ptr)
 	}
 
 	return
