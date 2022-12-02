@@ -56,7 +56,7 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 		return winningID, winningManifesto
 
 	case decision.VotingStrategy(decision.BordaCount):
-		winningID := BordaCount(ballots, aliveAgentIDs)
+		winningID := BordaCount(ballots, agentIDs)
 		winningManifesto := agentManifestos[winningID]
 
 		return winningID, winningManifesto
