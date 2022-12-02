@@ -24,8 +24,30 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 	return updatedState
 }
 
+// HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
+func AllocatePotion(globalState state.State, agentID uint, HPi int, STi int) state.State {
+	allocatedState := globalState
+	agent.Hp += allocatedState.PotionSlice.HPpotion[HPi]
+	agent.Stamina += allocatedState.PotionSlice.STpotion[STi]
+	allocatedState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.HPpotion, HPi)
+	allocatedState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.STpotion, STi)
+	return allocatedState
+}
+
+//Use simple append function to append to the potion slice when generating new loot potions.
+
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
 	allocatedState := globalState
+
+	//allocate potion
+	allocatedState.PotionSlice.HPpotion = nil
+	allocatedState.PotionSlice.STpotion = nil
+
+	for agentID, agentState := range allocatedState.AgentState {
+		agentState.H = AllocatePotion(allocatedState, agent state.AgentState, HPi int, STi int) state.State
+	}
+
+	
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
@@ -64,14 +86,3 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint)
 
 	return allocatedState
 }
-
-// HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
-func AllocatePotion(globalState state.State, Potion state.PotionSlice, agent state.AgentState, HPi int, STi int) state.State {
-	agent.Hp += globalState.PotionSlice.HPpotion[HPi]
-	agent.Stamina += globalState.PotionSlice.STpotion[STi]
-	globalState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(globalState.PotionSlice.HPpotion, HPi)
-	globalState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(globalState.PotionSlice.STpotion, STi)
-	return globalState
-}
-
-//Use simple append function to append to the potion slice when generating new loot potions.
