@@ -106,7 +106,7 @@ func runElection() uint {
 	return termLeft
 }
 
-func runConfidenceVote(termLeft uint) uint {
+func runConfidenceVote(termLeft uint) (uint, map[decision.Intent]uint) {
 	votes := make(map[decision.Intent]uint)
 	for _, a := range agentMap {
 		votes[a.Strategy.HandleConfidencePoll(a.BaseAgent)]++
@@ -124,12 +124,12 @@ func runConfidenceVote(termLeft uint) uint {
 	}, "Confidence Vote")
 
 	if votes[decision.Negative]+votes[decision.Positive] == 0 {
-		return termLeft
+		return termLeft, votes
 	} else if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
 		termLeft = runElection()
 	}
-	return termLeft
+	return termLeft, votes
 }
 
 /*

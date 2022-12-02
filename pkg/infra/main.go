@@ -47,10 +47,11 @@ func startGameLoop() {
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		// Election Stage
 		_, alive := agentMap[globalState.CurrentLeader]
+		var votes map[decision.Intent]uint
 		if termLeft == 0 || !alive {
 			termLeft = runElection()
 		} else {
-			termLeft = runConfidenceVote(termLeft)
+			termLeft, votes = runConfidenceVote(termLeft)
 		}
 
 		// allow agents to change the weapon and the shield in use
@@ -61,6 +62,8 @@ func startGameLoop() {
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
+		fightResultSlice := make([]decision.ImmutableFightResult, 0)
+		roundNum := uint(0)
 		for globalState.MonsterHealth != 0 {
 			// find out the maximum attack from alive agents
 			var maxAttack uint = 0
@@ -100,19 +103,9 @@ func startGameLoop() {
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
-
-			immutableFightResult := decision.NewImmutableFightResult(fightActions)
-
-			var wg sync.WaitGroup
-			for _, a := range agentMap {
-				a := a
-				wg.Add(1)
-				go func(wait *sync.WaitGroup) {
-					a.Strategy.UpdateInternalState(immutableFightResult)
-					wg.Done()
-				}(&wg)
-			}
-			wg.Wait()
+			// agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
+			fightResultSlice = append(fightResultSlice, *decision.NewImmutableFightResult(fightActions, roundNum))
+			roundNum++
 		}
 
 		// TODO: Loot Discussion Stage
@@ -131,6 +124,19 @@ func startGameLoop() {
 		globalState.MonsterHealth, globalState.MonsterAttack = gamemath.GetNextLevelMonsterValues(*gameConfig, globalState.CurrentLevel+1)
 		*viewPtr = globalState.ToView()
 		logging.Log(logging.Info, nil, fmt.Sprintf("------------------------------ Level %d Ended ----------------------------", globalState.CurrentLevel))
+
+		immutableFightRounds := commons.NewImmutableList(fightResultSlice)
+		votesResult := commons.MapToImmutable(votes)
+		var wg sync.WaitGroup
+		for _, a := range agentMap {
+			a := a
+			wg.Add(1)
+			go func(wait *sync.WaitGroup) {
+				a.Strategy.UpdateInternalState(immutableFightRounds, &votesResult)
+				wg.Done()
+			}(&wg)
+		}
+		wg.Wait()
 	}
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }

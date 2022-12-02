@@ -32,7 +32,7 @@ func (i *Iterator[A]) Next() (A, bool) {
 	}()
 
 	if i.index >= len(i.internal.internalList) {
-		return nil, false
+		return i.internal.internalList[0], false
 	}
 	return i.internal.internalList[i.index], true
 }

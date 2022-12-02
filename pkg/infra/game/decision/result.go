@@ -22,6 +22,7 @@ type ImmutableFightResult struct {
 	coweringAgents  immutable.List[commons.ID]
 	attackSum       uint
 	shieldSum       uint
+	round           uint
 }
 
 func (ifr *ImmutableFightResult) Choices() immutable.Map[commons.ID, FightAction] {
@@ -48,7 +49,11 @@ func (ifr *ImmutableFightResult) ShieldSum() uint {
 	return ifr.shieldSum
 }
 
-func NewImmutableFightResult(fightResult FightResult) *ImmutableFightResult {
+func (ifr *ImmutableFightResult) Round() uint {
+	return ifr.round
+}
+
+func NewImmutableFightResult(fightResult FightResult, round uint) *ImmutableFightResult {
 	return &ImmutableFightResult{
 		choices:         commons.MapToImmutable(fightResult.Choices),
 		attackingAgents: commons.ListToimmutable(fightResult.AttackingAgents),
@@ -56,5 +61,14 @@ func NewImmutableFightResult(fightResult FightResult) *ImmutableFightResult {
 		coweringAgents:  commons.ListToimmutable(fightResult.CoweringAgents),
 		attackSum:       fightResult.AttackSum,
 		shieldSum:       fightResult.ShieldSum,
+		round:           round,
+	}
+}
+
+func (a ImmutableFightResult) Compare(b ImmutableFightResult) int {
+	if a.round > b.round {
+		return 1
+	} else {
+		return -1
 	}
 }
