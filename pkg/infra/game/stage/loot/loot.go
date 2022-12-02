@@ -27,7 +27,7 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 // HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
 func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) state.State {
 	allocatedState := globalState
-	hpPotionValue := allocatedState.PotionSlice.STpotion[HPi]
+	hpPotionValue := allocatedState.PotionSlice.HPpotion[HPi]
 	v := allocatedState
 	a := allocatedState.AgentState[agentID]
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
@@ -53,16 +53,16 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 	allocatedState := globalState
 
 	//allocate potion
-	allocatedState.PotionSlice.HPpotion = nil
-	allocatedState.PotionSlice.STpotion = nil
-
 	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
-	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
+	allocatedState.PotionSlice.STpotion = make([]uint, len(STpotionloot))
+
+	idx := 0
 
 	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))
-		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)))
+		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
+		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
 		allocatedState.AgentState[agentID] = agentState
+		idx++
 	}
 
 	for agentID, agentState := range allocatedState.AgentState {

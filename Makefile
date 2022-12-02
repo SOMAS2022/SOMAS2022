@@ -7,7 +7,7 @@ all: run
 
 build:
 		cd ${SOURCE_DIR}; go mod tidy
-		go build -o ${BINARY_NAME} infra
+		go build -race -o ${BINARY_NAME} infra
 
 run: build
 		${BINARY_NAME}
