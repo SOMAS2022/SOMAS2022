@@ -9,12 +9,22 @@ import (
 	"infra/game/state"
 )
 
-func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (commons.ID, decision.Manifesto, uint) {
+func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (
+	commons.ID, decision.Manifesto,
+) {
 	// Get manifestos from agents
 	agentManifestos := make(map[commons.ID]decision.Manifesto)
 
 	for id, a := range agents {
 		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
+	}
+
+	agentIDs := make([]commons.ID, len(agents))
+
+	i := 0
+	for k := range agents {
+		agentIDs[i] = k
+		i++
 	}
 
 	ballots := make([]decision.Ballot, 0)
@@ -40,15 +50,21 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 
 	switch strategy {
 	case decision.VotingStrategy(decision.SingleChoicePlurality):
-		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningID := singleChoicePlurality(ballots)
 		winningManifesto := agentManifestos[winningID]
 
-		return winningID, winningManifesto, winningPercentage
+		return winningID, winningManifesto
+
+	case decision.VotingStrategy(decision.BordaCount):
+		winningID := BordaCount(ballots, agentIDs)
+		winningManifesto := agentManifestos[winningID]
+
+		return winningID, winningManifesto
 	default:
-		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningID := singleChoicePlurality(ballots)
 		winningManifesto := agentManifestos[winningID]
 
-		return winningID, winningManifesto, winningPercentage
+		return winningID, winningManifesto
 	}
 }
 
