@@ -22,7 +22,7 @@ import (
 )
 
 // Called any time a message is received, initialises or updates the socialCapital map
-func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *SocialAgent) updateSocialCapital(view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
@@ -47,7 +47,7 @@ func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.V
 		}
 
 		// Delete the agents own id from the socialCapital array
-		delete(r.socialCapital, agent.Name())
+		delete(r.socialCapital, r.selfID)
 
 		// Set the lastLevelUpdated variable
 		r.lastLevelUpdated = view.CurrentLevel()
@@ -104,7 +104,7 @@ func (r *SocialAgent) utilityValue(action decision.FightAction, _ *state.View, a
  * and the H agents they hate the most.
  * Currently messages may be sent to recepients praising or denouncing the recepient
  */
-func (r *SocialAgent) Gossip(agent agent.BaseAgent) {
+func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	selfID := agent.Name()
 
 	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
@@ -155,5 +155,9 @@ func (r *SocialAgent) Gossip(agent agent.BaseAgent) {
 		utils.Gossip(agent, sci.ID, utils.Denounce, hatedAgents)
 
 	}
+
+}
+
+func receiveGossip(m message.TaggedMessage) {
 
 }

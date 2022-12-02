@@ -41,6 +41,8 @@ type SocialAgent struct {
 	// Proportion of agents to talk well about
 	propAdmire float64
 
+	selfID string
+
 	// Four metrics for each agent's perception of other agents. Three metrics are borrowed from Ostrom-Ahn
 	// social capital model: (The ordering below is the same as the ordering in the array)
 	// 1. Institutions: Influenced by institutional actions such as voting. Also influenced by any elected
@@ -82,7 +84,14 @@ func (r *SocialAgent) CurrentAction() decision.FightAction {
 }
 
 func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
-	return nil
+	r.updateSocialCapital(view, log)
+	r.receiveGossip(m)
+	sender := m.Sender()
+	var msg utils.MessageContent // := m.Message()
+	switch msg.mtype {
+	case utils.Praise:
+
+	}
 }
 
 /**
@@ -90,7 +99,9 @@ func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.Vi
  */
 func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	//r.battleUtility = utils.AgentBattleUtility(agent.ViewState(), view)
-	r.updateSocialCapital(m, view, agent, log)
+	r.selfID = agent.ID()
+	r.updateSocialCapital(view, log)
+	r.sendGossip(agent)
 
 	// Calculate utility value of each action
 	// utilCower := r.utilityValue(decision.Cower, view, agent)
