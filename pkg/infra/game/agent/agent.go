@@ -12,7 +12,7 @@ import (
 
 type Agent struct {
 	BaseAgent
-	Strategy Strategy
+	Strategy
 }
 
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
