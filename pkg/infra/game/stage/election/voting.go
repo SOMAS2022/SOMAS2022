@@ -1,6 +1,7 @@
 package election
 
 import (
+	"fmt"
 	"math/rand"
 
 	"infra/game/commons"
@@ -24,7 +25,7 @@ import (
 	7. Copeland Scoring
 */
 
-func singleChoicePlurality(ballots []decision.Ballot) (commons.ID, uint) {
+func singleChoicePlurality(ballots []decision.Ballot) commons.ID {
 	// Count number of votes collected for each candidate
 	votes := make(map[commons.ID]uint)
 
@@ -61,14 +62,17 @@ func singleChoicePlurality(ballots []decision.Ballot) (commons.ID, uint) {
 		winner = winners[0]
 	}
 
-	return winner, 100 * maxNumVotes / uint(len(ballots))
+	pct := 100 * maxNumVotes / uint(len(ballots))
+	logging.Log(logging.Info, nil, fmt.Sprintf("New leader has been elected %s with %d of the vote", winner, pct))
+
+	return winner
 }
 
 // Borda count
 // 1. ignore empty ballots
 // 2. assume points shared if not shown in non-empty ballots
 // 3. randomly select one if multiple agents get the max score
-func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner commons.ID, maxScore float64) {
+func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) commons.ID {
 	N := len(aliveAgentIDs)
 	updated := make(map[commons.ID]bool)
 	scores := make(map[commons.ID]float64)
@@ -113,13 +117,16 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 		}
 	}
 
-	winner, maxScore = FindBordaCountWinner(scores)
+	winner, score := FindBordaCountWinner(scores)
+	logging.Log(logging.Info, nil, fmt.Sprintf("New leader has been elected %s with BC %f", winner, score))
 
-	return winner, maxScore
+	return winner
 }
 
-func FindBordaCountWinner(scores map[commons.ID]float64) (winner commons.ID, maxScore float64) {
+func FindBordaCountWinner(scores map[commons.ID]float64) (commons.ID, float64) {
 	// Find max score
+	winner := ""
+	maxScore := 0.0
 	for _, score := range scores {
 		if score > maxScore {
 			maxScore = score

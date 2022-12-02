@@ -98,11 +98,10 @@ func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels ma
 */
 
 func runElection() uint {
-	electedAgent, manifesto, percentage, score := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+	electedAgent, manifesto := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
 	termLeft := manifesto.TermLength()
 	globalState.LeaderManifesto = manifesto
 	globalState.CurrentLeader = electedAgent
-	logging.Log(logging.Info, nil, fmt.Sprintf("[%d] New leader has been elected %s with %d%% of the vote or %f scores", globalState.CurrentLevel, electedAgent, percentage, score))
 	updateView(viewPtr, globalState)
 	return termLeft
 }

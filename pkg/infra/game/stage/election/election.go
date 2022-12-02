@@ -10,10 +10,7 @@ import (
 )
 
 func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (
-	winnerID commons.ID,
-	winningManifesto decision.Manifesto,
-	winningPercentage uint,
-	maxScore float64,
+	commons.ID, decision.Manifesto,
 ) {
 	// Get manifestos from agents
 	agentManifestos := make(map[commons.ID]decision.Manifesto)
@@ -22,7 +19,7 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
 	}
 
-	aliveAgentIDs := []commons.ID{}
+	aliveAgentIDs := make([]commons.ID, 0)
 
 	for id, a := range state.AgentState {
 		if a.Hp > 0 {
@@ -53,24 +50,21 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 
 	switch strategy {
 	case decision.VotingStrategy(decision.SingleChoicePlurality):
-		maxScore = 0
-		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningID := singleChoicePlurality(ballots)
 		winningManifesto := agentManifestos[winningID]
 
-		return winningID, winningManifesto, winningPercentage, maxScore
+		return winningID, winningManifesto
 
 	case decision.VotingStrategy(decision.BordaCount):
-		winningPercentage = 0
-		winningID, maxScore := BordaCount(ballots, aliveAgentIDs)
+		winningID := BordaCount(ballots, aliveAgentIDs)
 		winningManifesto := agentManifestos[winningID]
 
-		return winningID, winningManifesto, winningPercentage, maxScore
+		return winningID, winningManifesto
 	default:
-		maxScore = 0
-		winningID, winningPercentage := singleChoicePlurality(ballots)
+		winningID := singleChoicePlurality(ballots)
 		winningManifesto := agentManifestos[winningID]
 
-		return winningID, winningManifesto, winningPercentage, maxScore
+		return winningID, winningManifesto
 	}
 }
 
