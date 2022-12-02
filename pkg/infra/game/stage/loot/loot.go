@@ -74,4 +74,4 @@ func AllocatePotion(globalState state.State, Potion state.PotionSlice, agent sta
 	return globalState
 }
 
-//Use simple append function to append to the postion slice when generating new loot potions.
+//Use simple append function to append to the potion slice when generating new loot potions.
