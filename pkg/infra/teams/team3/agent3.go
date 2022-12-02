@@ -7,6 +7,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
 
@@ -160,6 +161,20 @@ func (a *AgentThree) HandleFightProposal(m *message.FightProposalMessage, baseAg
 	} else {
 		return decision.Negative
 	}
+}
+
+func (a *AgentThree) HandleUpdateWeapon(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+	// weapons := b.AgentState().Weapons
+	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
+
+	// 0th weapon has greatest attack points
+	return decision.ItemIdx(0)
+}
+
+func (a *AgentThree) HandleUpdateShield(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+	// shields := b.AgentState().Shields
+	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
+	return decision.ItemIdx(0)
 }
 
 // Leader function to grant the floor
