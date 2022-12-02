@@ -96,10 +96,16 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 		// Assign score for agents not shown in ballot
 		remaining := 0
 		for _, isUpdated := range updated {
-			if isUpdated {
+			if !isUpdated {
 				remaining++
 			}
 		}
+
+		logging.Log(
+			logging.Trace,
+			logging.LogField{"remaining": remaining},
+			"remaining candidates",
+		)
 
 		sharedScore := (float64(N) - float64(K) + 1) / float64(remaining)
 		for candidateID := range updated {
@@ -107,6 +113,12 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 		}
 	}
 
+	winner, maxScore = FindBordaCountWinner(scores)
+
+	return winner, maxScore
+}
+
+func FindBordaCountWinner(scores map[commons.ID]float64) (winner commons.ID, maxScore float64) {
 	// Find max score
 	for _, score := range scores {
 		if score > maxScore {

@@ -105,7 +105,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	// Randomly fill the ballot
 	var ballot decision.Ballot
 	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := 2
+	numCandidate := rand.Intn(numAliveAgents)
 	for i := 0; i < numCandidate; i++ {
 		randomIdx := rand.Intn(numAliveAgents)
 		randomCandidate := aliveAgentIDs[uint(randomIdx)]
