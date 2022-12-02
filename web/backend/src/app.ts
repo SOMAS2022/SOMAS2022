@@ -92,7 +92,7 @@ app.get("/fetchSimResults", (_, res) => {
         .limit(20)
         .sort({ time_queued: -1 })
         .exec((err, docs) => {
-            console.log(err, docs);
+            // console.log(err, docs);
             if (err) {
                 return res.status(500).send("Error fetching from database");
             }
@@ -102,7 +102,7 @@ app.get("/fetchSimResults", (_, res) => {
 
 app.listen(PORT, async () => {
     console.log(`[server]: Server is running at https://localhost:${PORT}`);
-    await mongoose.connect("");
+    await mongoose.connect("mongodb+srv://root:SOMAS2022@sim-logs.pk5ldje.mongodb.net/?retryWrites=true&w=majority");
     console.log("[server]: Connected to MongoDB");
     return;
 });

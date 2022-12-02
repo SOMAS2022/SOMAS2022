@@ -1,4 +1,4 @@
-import { Box, TextField, Typography } from "@mui/material";
+import { Box, Select, Stack, TextField, Typography, InputLabel, MenuItem, SelectChangeEvent } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import Grid from "@mui/material/Unstable_Grid2/Grid2";
 import { useState, FormEvent } from "react";
@@ -11,7 +11,7 @@ export default function Schedule() {
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [loading, setLoading] = useState(false); 
     const [formInput, setFormInput] = useState<simulation_result>({
-        name: uuidv4(),
+        name: new Date(Date.now()).toLocaleString(),
         id: uuidv4(),
         onGITCommit: "",
         time_queued: new Date(Date.now()),
@@ -23,10 +23,10 @@ export default function Schedule() {
         config: {
             levels: 60,
             runs: 1,
-            startingHP: 10,
-            startingAT: 100,
-            startingSH: 100,
-            baseSTAM: 400,
+            startingHP: 1000,
+            startingAT: 20,
+            startingSH: 20,
+            baseSTAM: 2000,
             randomQty: 100,
             team1Qty: 0,
             team2Qty: 0,
@@ -37,6 +37,11 @@ export default function Schedule() {
         },
         logs: [],
     });
+    const [age, setAge] = useState(1);
+
+    const handleChange = (event: SelectChangeEvent) => {
+        setAge(Number(event.target.value.toString()));
+    };
 
     const toggleModal = () => {
         setLoading(false);
@@ -65,8 +70,9 @@ export default function Schedule() {
     };
 
     return (
-        <Box 
-            gap={12}
+        <Stack 
+            spacing={2}
+            justifyContent="space-between"
             component="form"
             autoComplete="off"
             onSubmit={handleSubmit}
@@ -80,7 +86,7 @@ export default function Schedule() {
             </Typography>
             <Grid sx={{display: "flex", flexDirection: "row", padding: "5px"}}>
                 <TextField id="nameField" label="Name" required variant="outlined" style={{ margin: "5px" }} defaultValue={formInput.name} onChange={(e) => setFormInput({...formInput, name: e.target.value})}/>
-                <TextField id="idField" label="ID" variant="outlined" disabled style={{ margin: "5px" }} defaultValue={formInput.name} />
+                <TextField id="idField" label="ID" variant="outlined" disabled style={{ margin: "5px" }} defaultValue={formInput.id} />
                 <TextField id="levelsField" label="Levels" variant="outlined" type="number" style={{ margin: "5px" }} defaultValue={formInput.config.levels} onChange={(e) => setFormInput({ ...formInput, config: {...formInput.config, levels: Number(e.target.value)} })} />
                 <TextField id="runsField" label="Runs" variant="outlined" type="number" disabled style={{ margin: "5px" }} defaultValue={formInput.config.runs} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, runs: Number(e.target.value) } })} />
             </Grid>
@@ -92,11 +98,29 @@ export default function Schedule() {
                 <TextField id="startATField" label="Starting Attack" variant="outlined" type="number" style={{ margin: "5px" }} defaultValue={formInput.config.startingAT} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, startingAT: Number(e.target.value) } })} />
                 <TextField id="startSHField" label="Starting Shield" variant="outlined" type="number" style={{ margin: "5px" }} defaultValue={formInput.config.startingSH} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, startingSH: Number(e.target.value) } })} />
                 <TextField id="startSTAMField" label="Base Stamina" variant="outlined" type="number" style={{ margin: "5px" }} defaultValue={formInput.config.baseSTAM} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, baseSTAM: Number(e.target.value) } })} />
+                <TextField id="thresholdPCT" label="Threshold Percentage" variant="outlined" type="number" style={{ margin: "5px" }} disabled defaultValue={0.6} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, baseSTAM: Number(e.target.value) } })} />
+            </Box>
+            <Typography variant={"h6"} style={{ marginBottom: "6px" }}>
+                Governance
+            </Typography>
+            <Box sx={{}}>
+                <InputLabel id="demo-simple-select-label">Voting Strategy</InputLabel>
+                <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    value={age.toString()}
+                    label="Age"
+                    onChange={handleChange}
+                    style={{width: "100%"}}
+                >
+                    <MenuItem value={1}>Single Choice Plurality</MenuItem>
+                    <MenuItem value={2}>Borda Count</MenuItem>
+                </Select>
             </Box>
             <Typography variant={"h6"} style={{ marginBottom: "6px" }}>
                 Agent Details:
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "row", padding: "5px" }}>
+            <Box sx={{ display: "flex", flexDirection: "row", padding: "5px"}}>
                 <TextField id="randomQty" label="Random Agent Qty" variant="outlined" type={"number"} style={{ margin: "5px" }} defaultValue={formInput.config.randomQty} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, randomQty: Number(e.target.value) } })} />
                 <TextField id="team1Qty" label="Team 1 Qty" variant="outlined" type={"number"} style={{ margin: "5px" }} defaultValue={formInput.config.team1Qty} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, team1Qty: Number(e.target.value) } })} />
                 <TextField id="team2Qty" label="Team 2 Qty" variant="outlined" type={"number"} style={{ margin: "5px" }} defaultValue={formInput.config.team2Qty} onChange={(e) => setFormInput({ ...formInput, config: { ...formInput.config, team2Qty: Number(e.target.value) } })} />
@@ -116,6 +140,6 @@ export default function Schedule() {
             >
                 Add To Queue
             </LoadingButton>
-        </Box>
+        </Stack>
     );
 }
