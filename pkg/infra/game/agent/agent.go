@@ -57,7 +57,7 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 		select {
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
 			a.handleMessage(&log, taggedMessage, votes, submission)
-		case _ = <-closure:
+		case <-closure:
 			return
 		}
 	}

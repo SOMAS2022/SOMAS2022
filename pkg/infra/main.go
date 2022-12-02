@@ -15,6 +15,7 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
+	"sync"
 
 	gamemath "infra/game/math"
 
@@ -99,6 +100,19 @@ func startGameLoop() {
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
+
+			immutableFightResult := decision.NewImmutableFightResult(fightActions)
+
+			var wg sync.WaitGroup
+			for _, a := range agentMap {
+				a := a
+				wg.Add(1)
+				go func(wait *sync.WaitGroup) {
+					a.Strategy.UpdateInternalState(immutableFightResult)
+					wg.Done()
+				}(&wg)
+			}
+			wg.Wait()
 		}
 
 		// TODO: Loot Discussion Stage
