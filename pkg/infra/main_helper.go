@@ -12,6 +12,7 @@ import (
 	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
+	"sync"
 
 	gamemath "infra/game/math"
 
@@ -150,4 +151,17 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
 	}
 	*viewPtr = globalState.ToView()
+}
+
+func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
+	var wg sync.WaitGroup
+	for _, a := range agentMap {
+		a := a
+		wg.Add(1)
+		go func(wait *sync.WaitGroup) {
+			a.Strategy.UpdateInternalState(immutableFightRounds, votesResult)
+			wait.Done()
+		}(&wg)
+	}
+	wg.Wait()
 }

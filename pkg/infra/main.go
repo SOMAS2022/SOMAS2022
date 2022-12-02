@@ -15,7 +15,6 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
-	"sync"
 
 	gamemath "infra/game/math"
 
@@ -127,16 +126,7 @@ func startGameLoop() {
 
 		immutableFightRounds := commons.NewImmutableList(fightResultSlice)
 		votesResult := commons.MapToImmutable(votes)
-		var wg sync.WaitGroup
-		for _, a := range agentMap {
-			a := a
-			wg.Add(1)
-			go func(wait *sync.WaitGroup) {
-				a.Strategy.UpdateInternalState(immutableFightRounds, &votesResult)
-				wg.Done()
-			}(&wg)
-		}
-		wg.Wait()
+		updateInternalStates(immutableFightRounds, &votesResult)
 	}
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }
