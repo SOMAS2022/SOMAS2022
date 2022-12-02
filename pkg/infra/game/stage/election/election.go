@@ -19,12 +19,12 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
 	}
 
-	aliveAgentIDs := make([]commons.ID, 0)
+	agentIDs := make([]commons.ID, len(agents))
 
-	for id, a := range state.AgentState {
-		if a.Hp > 0 {
-			aliveAgentIDs = append(aliveAgentIDs, id)
-		}
+	i := 0
+	for k := range agents {
+		agentIDs[i] = k
+		i++
 	}
 
 	ballots := make([]decision.Ballot, 0)
