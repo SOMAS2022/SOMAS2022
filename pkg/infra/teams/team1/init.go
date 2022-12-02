@@ -22,9 +22,9 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
-	"RANDOM":          example.NewRandomAgent,
-	"AggressiveAgent": CreateAggressiveAgent,
-	"DefensiveAgent":  CreateDefensiveAgent,
+	"RANDOM":             example.NewRandomAgent,
+	"CollaborativeAgent": CreateCollaborativeAgent,
+	"SelfishAgent":       CreateSelfishAgent,
 }
 
 func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState) {

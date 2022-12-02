@@ -21,8 +21,9 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type ProbabilisticAgent struct {
-	fightDecisionCDF []float32
+type SocialAgent struct {
+	// probability of chosing collaborative strategy. p(selfish_strat) is 1 - this
+	pCollaborate float32
 
 	// current fightDecision
 	currentDecision decision.FightAction
@@ -57,49 +58,44 @@ type ProbabilisticAgent struct {
 	// Messages we should have: Denounce and Praise
 }
 
-func (r *ProbabilisticAgent) Default() decision.FightAction {
+func (r *SocialAgent) Default() decision.FightAction {
 	//TODO implement me
 	panic("implement me")
 }
 
 /**
- * Create agent with given probability of cowering, attacking, defending
+ * Create agent with given probability of collaborating
  */
-func NewProbabilisticAgent(pCower float32, pAttack float32, pDefend float32) *ProbabilisticAgent {
-	// Ref: https://stackoverflow.com/questions/50507513/golang-choice-number-from-slice-array-with-given-probability
-	pdf := []float32{pCower, pAttack, pDefend}
-	// get cdf
-	cdf := []float32{0.0, 0.0, 0.0}
-	cdf[0] = pdf[0]
-	for i := 1; i < 3; i++ {
-		cdf[i] = cdf[i-1] + pdf[i]
-	}
-	return &ProbabilisticAgent{fightDecisionCDF: cdf}
+func NewSocialAgent(pCollaborate float32) *SocialAgent {
+	return &SocialAgent{pCollaborate: pCollaborate}
 }
 
-func (r *ProbabilisticAgent) CurrentAction() decision.FightAction {
+func (r *SocialAgent) CurrentAction() decision.FightAction {
 	return r.currentDecision
 }
 
-func (r *ProbabilisticAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.View, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
 	return nil
 }
 
-func (r *ProbabilisticAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+/**
+ * Agents dont talk to each other about fight decisions, they decide based on the Q-Table
+ */
+func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	r.UpdateMetadata(agent)
 
 	r.updateSocialCapital(m, view, agent, log)
 
 	// Calculate utility value of each action
-	utilCower := r.utilityValue(decision.Cower, view, agent)
-	utilAttack := r.utilityValue(decision.Attack, view, agent)
-	utilDefend := r.utilityValue(decision.Defend, view, agent)
+	// utilCower := r.utilityValue(decision.Cower, view, agent)
+	// utilAttack := r.utilityValue(decision.Attack, view, agent)
+	// utilDefend := r.utilityValue(decision.Defend, view, agent)
 
 	// Apply softmax to get probabilities
-	softArray := utils.Softmax([3]float64{utilCower, utilAttack, utilDefend})
+	//softArray := utils.Softmax([3]float64{utilCower, utilAttack, utilDefend})
 
 	// Make number representation incremental
-	probArray := utils.MakeIncremental(softArray)
+	//probArray := utils.MakeIncremental(softArray)
 
 	/*it := view.AgentState().Iterator()
 	nextId, _, _ := it.Next()
@@ -110,27 +106,22 @@ func (r *ProbabilisticAgent) HandleFightInformation(m message.TaggedMessage, vie
 		fmt.Println(probArray)
 	}*/
 
-	// Do action with probability based on utility value
-	switch random := rand.Float64(); {
-	case 0.0 < random && random < probArray[0]:
-		r.currentDecision = decision.Cower
-	case probArray[0] < random && random < probArray[1]:
-		r.currentDecision = decision.Attack
-	case probArray[1] < random && random < probArray[2]:
-		r.currentDecision = decision.Defend
-	default:
-		r.currentDecision = decision.Attack
+	random := rand.Float32()
+	if random < r.pCollaborate {
+		r.currentDecision = utils.CollaborativeFightDecision()
+	} else {
+		r.currentDecision = utils.SelfishFightDecision()
 	}
 
 	return
 }
 
-func (r *ProbabilisticAgent) UpdateMetadata(self agent.BaseAgent) {
+func (r *SocialAgent) UpdateMetadata(self agent.BaseAgent) {
 	r.battleUtility = utils.AgentBattleUtility(self.ViewState())
 }
 
 // Calculate utility value of different decisions
-func (r *ProbabilisticAgent) utilityValue(action decision.FightAction, _ *state.View, agent agent.BaseAgent) float64 {
+func (r *SocialAgent) utilityValue(action decision.FightAction, _ *state.View, agent agent.BaseAgent) float64 {
 	// Utility of each action is dependent on relationship with others. If agent hates all other agents, then
 	// will only act in its own interest.
 
@@ -151,7 +142,7 @@ func (r *ProbabilisticAgent) utilityValue(action decision.FightAction, _ *state.
 }
 
 // Called any time a message is received, initialises or updates the socialCapital map
-func (r *ProbabilisticAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
 	agentStateLength := agentState.Len()
@@ -206,12 +197,12 @@ func (r *ProbabilisticAgent) updateSocialCapital(_ message.TaggedMessage, view *
 	}
 }
 
-func (r *ProbabilisticAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
+func (r *SocialAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
-func (r *ProbabilisticAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
+func (r *SocialAgent) HandleConfidencePoll(view *state.View, baseAgent agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -222,7 +213,7 @@ func (r *ProbabilisticAgent) HandleConfidencePoll(view *state.View, baseAgent ag
 	}
 }
 
-func (r *ProbabilisticAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (r *SocialAgent) HandleElectionBallot(view *state.View, _ agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
 	agentState := view.AgentState()
 	aliveAgentIds := make([]string, agentState.Len())

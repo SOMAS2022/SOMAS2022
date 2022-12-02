@@ -7,17 +7,18 @@
 * without the express permission of Team 1, SOMAS2022
 *******************************************************/
 
-package team1
+package utils
 
 import (
-	"infra/game/agent"
+	"infra/game/decision"
 )
 
-// Demonstrate creating a strategy with input parameters
-func CreateCollaborativeAgent() agent.Strategy {
-	return NewSocialAgent(0.7)
+func CollaborativeFightDecision() decision.FightAction {
+	// TODO: Select from collaborative Q-Table
+	return decision.Attack
 }
 
-func CreateSelfishAgent() agent.Strategy {
-	return NewSocialAgent(0.3)
+func SelfishFightDecision() decision.FightAction {
+	// TODO: Select from selfish Q-Table
+	return decision.Cower
 }
