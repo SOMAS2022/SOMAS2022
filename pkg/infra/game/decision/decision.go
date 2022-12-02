@@ -88,6 +88,7 @@ type VotingStrategy uint
 
 const (
 	SingleChoicePlurality = iota
+	BordaCount
 )
 
 type ItemIdx uint
