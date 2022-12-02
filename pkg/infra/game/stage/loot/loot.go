@@ -70,6 +70,16 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 		idx++
 	}
 
+	//allocate potion
+	allocatedState.PotionSlice.HPpotion = nil
+	allocatedState.PotionSlice.STpotion = nil
+
+	for agentID, agentState := range allocatedState.AgentState {
+		agentState.H = AllocatePotion(allocatedState, agent state.AgentState, HPi int, STi int) state.State
+	}
+
+	
+
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
 		allocatedShieldIdx := rand.Intn(len(shieldLoot))
@@ -107,14 +117,3 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 
 	return allocatedState
 }
-
-// HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
-func AllocatePotion(globalState state.State, Potion state.PotionSlice, agent state.AgentState, HPi int, STi int) state.State {
-	agent.Hp += globalState.PotionSlice.HPpotion[HPi]
-	agent.Stamina += globalState.PotionSlice.STpotion[STi]
-	globalState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(globalState.PotionSlice.HPpotion, HPi)
-	globalState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(globalState.PotionSlice.STpotion, STi)
-	return globalState
-}
-
-//Use simple append function to append to the potion slice when generating new loot potions.
