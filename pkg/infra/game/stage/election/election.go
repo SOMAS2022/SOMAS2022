@@ -1,12 +1,11 @@
 package election
 
 import (
-	"sync"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+	"sync"
 )
 
 func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (

@@ -2,12 +2,11 @@ package loot
 
 import (
 	"fmt"
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/state"
 	"infra/logging"
+	"math/rand"
 
 	"github.com/google/uuid"
 )

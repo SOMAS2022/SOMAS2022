@@ -2,38 +2,37 @@ package message
 
 import (
 	"infra/game/commons"
-	"infra/game/decision"
 
 	"github.com/google/uuid"
 )
 
-type Payload interface {
-	isPayload()
+type Message interface {
+	sealedMessage()
 }
 
-type Type int64
+type Inform interface {
+	Message
+	sealedInform()
+}
 
-const (
-	Inform Type = iota
+type Request interface {
+	Message
+	sealedRequest()
+}
+
+type Proposal interface {
+	Message
+	sealedProposal()
+}
+
+type FightRequest interface {
 	Request
-	Proposal
-)
-
-type Message struct {
-	mType   Type
-	payload Payload
+	sealedFightRequest()
 }
 
-func NewMessage(mType Type, payload Payload) *Message {
-	return &Message{mType: mType, payload: payload}
-}
-
-func (m Message) MType() Type {
-	return m.mType
-}
-
-func (m Message) Payload() Payload {
-	return m.payload
+type FightInform interface {
+	Inform
+	sealedFightInform()
 }
 
 type TaggedMessage struct {
@@ -52,9 +51,4 @@ func (t TaggedMessage) Sender() commons.ID {
 
 func (t TaggedMessage) Message() Message {
 	return t.message
-}
-
-type ActionMessage struct {
-	Action decision.FightAction
-	Sender commons.ID
 }

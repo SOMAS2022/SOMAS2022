@@ -2,11 +2,10 @@ package election
 
 import (
 	"fmt"
-	"math/rand"
-
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
+	"math/rand"
 )
 
 /*
@@ -68,10 +67,10 @@ func singleChoicePlurality(ballots []decision.Ballot) commons.ID {
 	return winner
 }
 
-// Borda count
+// BordaCount
 // 1. ignore empty ballots
 // 2. assume points shared if not shown in non-empty ballots
-// 3. randomly select one if multiple agents get the max score
+// 3. randomly select one if multiple agents get the max score.
 func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) commons.ID {
 	N := len(aliveAgentIDs)
 	updated := make(map[commons.ID]bool)

@@ -5,32 +5,14 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-	"infra/game/tally"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
 )
 
-type Strategy interface {
-	HandleFightInformation(m message.TaggedMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
-	HandleFightRequest(m message.TaggedMessage, log *immutable.Map[commons.ID, decision.FightAction]) message.Payload
-	CurrentAction() decision.FightAction
-	CreateManifesto(baseAgent BaseAgent) *decision.Manifesto
-	HandleConfidencePoll(baseAgent BaseAgent) decision.Intent
-	HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
-	HandleFightProposal(proposal *message.FightProposalMessage, baseAgent BaseAgent) decision.Intent
-	FightResolution(agent BaseAgent) tally.Proposal[decision.FightAction]
-	// HandleFightProposalRequest only called as leader
-	HandleFightProposalRequest(proposal *message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
-	// return the index of the weapon you want to use in AgentState.Weapons
-	HandleUpdateWeapon(view *state.View, baseAgent BaseAgent) decision.ItemIdx
-	// return the index of the shield you want to use in AgentState.Shields
-	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
-}
-
 type Agent struct {
-	BaseAgent BaseAgent
-	Strategy  Strategy
+	BaseAgent
+	Strategy Strategy
 }
 
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
@@ -67,7 +49,7 @@ func (a *Agent) HandleElection(agentState state.AgentState, params *decision.Ele
 func (a *Agent) HandleFight(agentState state.AgentState,
 	log immutable.Map[commons.ID, decision.FightAction],
 	votes chan commons.ProposalID,
-	submission chan tally.Proposal[decision.FightAction],
+	submission chan message.MapProposal[decision.FightAction],
 	closure <-chan struct{},
 ) {
 	a.BaseAgent.latestState = agentState
@@ -88,21 +70,19 @@ func (a *Agent) isLeader() bool {
 func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightAction],
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
-	submission chan tally.Proposal[decision.FightAction],
+	submission chan message.MapProposal[decision.FightAction],
 ) {
-	switch m.Message().MType() {
-	case message.Request:
-		payload := a.Strategy.HandleFightRequest(m, log)
-		err := a.BaseAgent.SendBlockingMessage(m.Sender(), *message.NewMessage(message.Inform, payload))
+	switch r := m.Message().(type) {
+	case message.FightRequest:
+		resp := a.Strategy.HandleFightRequest(m, log)
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
-	case message.Inform:
+	case message.FightInform:
 		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
-	case message.Proposal:
-		// todo: make this generic for all future proposals
-		proposalMessage := message.NewFightProposalMessage(m)
+	case message.FightProposalMessage:
 		if a.isLeader() {
-			if a.Strategy.HandleFightProposalRequest(proposalMessage, a.BaseAgent, log) {
-				submission <- *tally.NewProposal[decision.FightAction](proposalMessage.ProposalID(), proposalMessage.Proposal())
+			if a.Strategy.HandleFightProposalRequest(r, a.BaseAgent, log) {
+				submission <- *message.NewProposal[decision.FightAction](r.ProposalID(), r.Proposal())
 				iterator := a.BaseAgent.communication.peer.Iterator()
 				for !iterator.Done() {
 					_, value, _ := iterator.Next()
@@ -110,16 +90,13 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 				}
 			}
 		}
-		switch a.Strategy.HandleFightProposal(proposalMessage, a.BaseAgent) {
+		switch a.Strategy.HandleFightProposal(r, a.BaseAgent) {
 		case decision.Positive:
-			votes <- proposalMessage.ProposalID()
+			votes <- r.ProposalID()
 		default:
 		}
+
 	default:
 		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
 	}
-}
-
-func (a *Agent) broadcastProposal() {
-
 }

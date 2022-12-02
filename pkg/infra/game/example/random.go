@@ -1,15 +1,13 @@
 package example
 
 import (
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-	"infra/game/tally"
 	"infra/logging"
+	"math/rand"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
@@ -19,7 +17,7 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[decision.FightAction] {
+func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
 	actions := make(map[commons.ID]decision.FightAction)
 	view := baseAgent.View()
 	agentState := view.AgentState()
@@ -40,7 +38,7 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[
 		}
 	}
 	newUUID, _ := uuid.NewUUID()
-	prop := tally.NewProposal[decision.FightAction](newUUID.String(), commons.MapToImmutable(actions))
+	prop := message.NewProposal[decision.FightAction](newUUID.String(), commons.MapToImmutable(actions))
 	return *prop
 }
 
@@ -66,12 +64,11 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, baseAgent 
 
 	if makesProposal > 80 {
 		prop := r.FightResolution(baseAgent)
-		view := baseAgent.View()
-		_ = baseAgent.SendBlockingMessage(view.CurrentLeader(), *message.NewMessage(message.Proposal, *message.NewProposalPayload(prop.Proposal())))
+		_ = baseAgent.SendProposalToLeader(prop)
 	}
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
@@ -115,7 +112,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (r *RandomAgent) HandleFightProposal(_ *message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleFightProposal(_ message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -124,7 +121,7 @@ func (r *RandomAgent) HandleFightProposal(_ *message.FightProposalMessage, _ age
 	}
 }
 
-func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (r *RandomAgent) HandleFightProposalRequest(_ message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -133,15 +130,15 @@ func (r *RandomAgent) HandleFightProposalRequest(_ *message.FightProposalMessage
 	}
 }
 
-func (r *RandomAgent) HandleUpdateWeapon(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+func (r *RandomAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
 	// weapons := b.AgentState().Weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
-	// 0th weapon has greatest attack points
+	// 0th weapon has the greatest attack points
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleUpdateShield(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+func (r *RandomAgent) HandleUpdateShield(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)

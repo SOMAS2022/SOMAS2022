@@ -1,13 +1,12 @@
 package team0
 
 import (
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"math/rand"
 
 	"github.com/benbjohnson/immutable"
 )
