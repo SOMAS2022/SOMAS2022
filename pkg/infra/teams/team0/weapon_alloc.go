@@ -2,6 +2,7 @@ package team0
 
 import (
 	"infra/game/commons"
+	"infra/game/stage/loot"
 	"infra/game/state"
 	"math/rand"
 
@@ -14,6 +15,19 @@ import (
  */
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
 	allocatedState := globalState
+
+	//allocate potion
+	allocatedState.PotionSlice.HPpotion = nil
+	allocatedState.PotionSlice.STpotion = nil
+
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
+
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedState = loot.AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))
+		allocatedState = loot.AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)))
+		allocatedState.AgentState[agentID] = agentState
+	}
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
@@ -36,7 +50,6 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 		allocatedState.AgentState[agentID] = agentState
 
 		// remove W and S from unallocated loot
-
 		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeaponIdx)
 		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShieldIdx)
 	}
