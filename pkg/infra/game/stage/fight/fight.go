@@ -1,15 +1,14 @@
 package fight
 
 import (
-	"math"
-	"time"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
+	"math"
+	"time"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
@@ -42,7 +41,7 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 
 func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.FightAction] {
 	proposalVotes := make(chan commons.ProposalID)
-	proposalSubmission := make(chan tally.Proposal[decision.FightAction])
+	proposalSubmission := make(chan message.MapProposal[decision.FightAction])
 	tallyClosure := make(chan struct{})
 
 	propTally := tally.NewTally(proposalVotes, proposalSubmission, tallyClosure)
@@ -62,14 +61,14 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	mID, _ := uuid.NewUUID()
 
 	for _, messages := range channelsMap {
-		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mID)
+		messages <- *message.NewTaggedMessage("server", nil, mID)
 	}
 	time.Sleep(100 * time.Millisecond)
 	for id, c := range channelsMap {
 		closures[id] <- struct{}{}
 		go func(recv <-chan message.TaggedMessage) {
 			for m := range recv {
-				switch m.Message().MType() {
+				switch m.Message().(type) {
 				case message.Request:
 					// todo: respond with nil thing here as we're closing! Or do we need to?
 					// maybe because we're closing there's no point...

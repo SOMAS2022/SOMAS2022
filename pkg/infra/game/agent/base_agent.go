@@ -3,7 +3,6 @@ package agent
 import (
 	"errors"
 	"fmt"
-
 	"infra/game/commons"
 	"infra/game/message"
 	"infra/game/state"
@@ -56,33 +55,32 @@ func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
 }
 
 func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e error) {
-	defer func() {
-		if r := recover(); r != nil {
-			e = communicationError(fmt.Sprintf("agent %s not available for messaging, submitted", id))
-		}
-	}()
-
-	if m.MType() == message.Proposal {
-		switch ba.view.CurrentLeader() {
-		case ba.id:
-			fallthrough
-		case id:
-			break
-		default:
-			return communicationError(fmt.Sprintf("agent %s either is not leader or is attempting to send proposal to non-leader %s", ba.id, id))
+	switch m.(type) {
+	case message.Proposal:
+		return communicationError("Illegal attempt to send proposal - use SendProposalToLeader() instead")
+	default:
+		channel, ok := ba.communication.peer.Get(id)
+		if ok {
+			mID, _ := uuid.NewUUID()
+			channel <- *message.NewTaggedMessage(ba.id, m, mID)
+		} else {
+			return communicationError(fmt.Sprintf("agent %s not available for messaging", id))
 		}
 	}
-
-	channel, ok := ba.communication.peer.Get(id)
-
-	if ok {
-		mID, _ := uuid.NewUUID()
-		channel <- *message.NewTaggedMessage(ba.id, m, mID)
-	} else {
-		e = communicationError(fmt.Sprintf("agent %s not available for messaging, dead", id))
-	}
-
 	return nil
+}
+
+func (ba *BaseAgent) SendProposalToLeader(proposal message.Proposal) error {
+	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
+	if ok {
+		mID, e := uuid.NewUUID()
+		if e != nil {
+			return e
+		}
+		channel <- *message.NewTaggedMessage(ba.id, proposal, mID)
+		return nil
+	}
+	return communicationError(fmt.Sprintf("Leader not available for messaging, dead or bad!"))
 }
 
 func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string) {

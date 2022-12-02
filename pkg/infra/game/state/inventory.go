@@ -1,8 +1,9 @@
 package state
 
 import (
-	"infra/game/commons"
 	"sort"
+
+	"infra/game/commons"
 
 	"github.com/benbjohnson/immutable"
 )
