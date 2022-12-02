@@ -17,6 +17,9 @@ type RandomAgent struct {
 	bravery int
 }
 
+func (r *RandomAgent) UpdateInternalState(fightResult *decision.ImmutableFightResult) {
+}
+
 func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
 	actions := make(map[commons.ID]decision.FightAction)
 	view := baseAgent.View()
