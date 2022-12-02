@@ -73,11 +73,6 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 	updated := make(map[commons.ID]bool)
 	scores := make(map[commons.ID]float64)
 
-	// Iniatlise updated to false for all agents,
-	for _, id := range aliveAgentIDs {
-		updated[id] = false
-	}
-
 	// Fill scores
 	for _, ballot := range ballots {
 		// Ignore empty ballot
