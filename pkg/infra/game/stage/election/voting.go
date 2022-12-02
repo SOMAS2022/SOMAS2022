@@ -1,7 +1,6 @@
 package election
 
 import (
-	"fmt"
 	"math/rand"
 
 	"infra/game/commons"
@@ -74,7 +73,7 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 	updated := make(map[commons.ID]bool)
 	scores := make(map[commons.ID]float64)
 
-	// Initalise updated to false for all agents,
+	// Iniatlise updated to false for all agents,
 	for _, id := range aliveAgentIDs {
 		updated[id] = false
 	}
@@ -106,13 +105,9 @@ func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) (winner c
 				remaining++
 			}
 		}
-		logging.Log(
-			logging.Debug,
-			logging.LogField{"remainig": remaining},
-			fmt.Sprintf("%d agents not shown in ballot", remaining),
-		)
+
 		sharedScore := (float64(N) - float64(K) + 1) / float64(remaining)
-		for candidateID, _ := range updated {
+		for candidateID := range updated {
 			scores[candidateID] += sharedScore
 		}
 	}
