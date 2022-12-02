@@ -13,6 +13,12 @@ import (
 	"infra/game/agent"
 )
 
+// This type will make it easier to extract from map, sort, and retrieve agent ID
+type SocialCapInfo struct {
+	ID  string
+	arr [4]float64
+}
+
 // Demonstrate creating a strategy with input parameters
 func CreateCollaborativeAgent() agent.Strategy {
 	return NewSocialAgent(0.7)

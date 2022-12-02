@@ -10,32 +10,26 @@
 package utils
 
 import (
-	"infra/game/message"
-
-	"github.com/google/uuid"
+	"infra/game/agent"
 )
 
-// This type will make it easier to extract from map, sort, and retrieve agent ID
-
 const (
-	Praise message.Type = 2048
+	Praise int = 2048
 	Denounce
 )
 
 type MessageContent struct {
+	mtype  int
 	agents []string
 }
 
-func (mc MessageContent) isPayload() {
+func (mc *MessageContent) sealedMessage() {
 }
 
-func Gossip(from string, recepients []string, mtype message.Type, about []string) {
+func Gossip(BA agent.BaseAgent, recepient string, mtype int, about []string) {
 
-	msg := message.NewMessage(mtype, MessageContent{agents: about})
+	msg := MessageContent{mtype: mtype, agents: about}
 
-	for _, to := range recepients {
-		mId, _ := uuid.NewUUID()
-		message.NewTaggedMessage(from, msg, mId)
-	}
+	BA.SendBlockingMessage(recepient, msg)
 
 }

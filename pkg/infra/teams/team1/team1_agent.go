@@ -17,15 +17,9 @@ import (
 	"infra/game/state"
 	"infra/teams/team1/utils"
 	"math/rand"
-	"sort"
 
 	"github.com/benbjohnson/immutable"
 )
-
-type SocialCapInfo struct {
-	ID  string
-	arr [4]float64
-}
 
 type SocialAgent struct {
 	// probability of chosing collaborative strategy. p(selfish_strat) is 1 - this
@@ -98,41 +92,6 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *stat
 	r.UpdateMetadata(agent)
 	r.updateSocialCapital(m, view, agent, log)
 
-	selfID := agent.Id()
-
-	// Tell other trusted agents above a threshold T about the A agents they admire the most,
-	// and the H agents they hate the most.
-
-	// Sort based on network value, and sort based on trustworthiness
-	sortedSCNetwork := make([]SocialCapInfo, 0, len(r.socialCapital))
-	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
-	for _, sci := range r.socialCapital {
-		sortedSCNetwork = append(sortedSCNetwork, sci)
-	}
-	copy(sortedSCTrustworthiness, sortedSCNetwork)
-	sort.Slice(sortedSCNetwork, func(i int, j int) bool {
-		return sortedSCNetwork[i].arr[1] > sortedSCNetwork[j].arr[1]
-	})
-	sort.Slice(sortedSCTrustworthiness, func(i int, j int) bool {
-		return sortedSCTrustworthiness[i].arr[2] > sortedSCTrustworthiness[j].arr[2]
-	})
-
-	numAdmire := int(r.propAdmire * float64(len(sortedSCNetwork)))
-	numHate := int(r.propHate * float64(len(sortedSCNetwork)))
-	for _, sci := range sortedSCNetwork {
-		if sci.arr[1] < r.gossipThreshold {
-			break
-		}
-		if sci.ID == selfID {
-			continue
-		}
-
-		for i, scit := range sortedSCTrustworthiness {
-
-		}
-
-	}
-
 	// Calculate utility value of each action
 	// utilCower := r.utilityValue(decision.Cower, view, agent)
 	// utilAttack := r.utilityValue(decision.Attack, view, agent)
@@ -165,84 +124,6 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *stat
 
 func (r *SocialAgent) UpdateMetadata(self agent.BaseAgent) {
 	r.battleUtility = utils.AgentBattleUtility(self.ViewState())
-}
-
-// Calculate utility value of different decisions
-func (r *SocialAgent) utilityValue(action decision.FightAction, _ *state.View, agent agent.BaseAgent) float64 {
-	// Utility of each action is dependent on relationship with others. If agent hates all other agents, then
-	// will only act in its own interest.
-
-	agentStats := agent.ViewState()
-
-	switch action {
-	case decision.Cower:
-		// Goes down with health, and down with stamina and down with high social capital of others
-		return 0.005 * float64(1000-int(agentStats.Hp))
-	case decision.Attack:
-		// Goes up with health, and up with stamina and up with high social capital of others
-		return 0.005 * float64(int(agentStats.Hp))
-	case decision.Defend:
-		return 0.005 * float64(int(agentStats.Hp))
-	default:
-		return 1
-	}
-}
-
-// Called any time a message is received, initialises or updates the socialCapital map
-func (r *SocialAgent) updateSocialCapital(_ message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	// Ensure that socialCapital map is initialised
-	agentState := view.AgentState()
-	agentStateLength := agentState.Len()
-	updatedSocCapInfo := SocialCapInfo{}
-	if len(r.socialCapital) == 0 && agentStateLength > 1 {
-		// Create empty map
-		r.socialCapital = map[string]SocialCapInfo{}
-
-		// Populate map with every currently living agent, and calculate socialCapital based on log
-		itr := agentState.Iterator()
-		for !itr.Done() {
-			key, _, _ := itr.Next()
-
-			action, exists := log.Get(key)
-			updatedSocCapInfo.ID = key
-			if exists { // If agent exists in log, calculate socialCapital
-				updatedSocCapInfo.arr = utils.BoundArray(utils.ActionSentiment(action))
-			} else { // Else initialize socialCapital to 0
-				updatedSocCapInfo.arr = [4]float64{0.0, 0.0, 0.0, 0.0}
-			}
-			r.socialCapital[key] = updatedSocCapInfo
-		}
-
-		// Delete the agents own id from the socialCapital array
-		delete(r.socialCapital, agent.Name())
-
-		// Set the lastLevelUpdated variable
-		r.lastLevelUpdated = view.CurrentLevel()
-	} else if r.lastLevelUpdated < view.CurrentLevel() { // socialCapital variable already exists
-		for key := range r.socialCapital {
-			// Remove any agents that have died from socialCapital map (Might be unnecessary as it adds a lot of computation)
-			_, exists := agentState.Get(key)
-			if !exists {
-				delete(r.socialCapital, key)
-			}
-
-			updatedSocCapInfo.ID = key
-			// Decay socialCapital values
-			updatedSocCapInfo.arr = utils.DecayArray(r.socialCapital[key].arr)
-
-			// TODO: Update of socialCaptial should be dependent on the agents own action (especially for favours)
-			// Update socialCapital based on log
-			action, exists := log.Get(key)
-			if exists {
-				updatedSocCapInfo.arr = utils.BoundArray(utils.AddArrays(updatedSocCapInfo.arr, utils.BoundArray(utils.ActionSentiment(action))))
-			}
-
-			r.socialCapital[key] = updatedSocCapInfo
-		}
-
-		// Set lastLevelUpdated to current level
-		r.lastLevelUpdated = view.CurrentLevel()
-	}
 }
 
 func (r *SocialAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
