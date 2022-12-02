@@ -80,7 +80,7 @@ func (ba *BaseAgent) SendProposalToLeader(proposal message.Proposal) error {
 		channel <- *message.NewTaggedMessage(ba.id, proposal, mID)
 		return nil
 	}
-	return communicationError(fmt.Sprintf("Leader not available for messaging, dead or bad!"))
+	return communicationError("Leader not available for messaging, dead or bad!")
 }
 
 func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string) {
