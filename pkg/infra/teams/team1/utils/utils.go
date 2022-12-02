@@ -12,7 +12,6 @@ package utils
 import (
 	"infra/config"
 	"infra/game/decision"
-	"infra/game/state"
 	"math"
 )
 
@@ -23,14 +22,14 @@ var Config config.GameConfig
  *
  * Calculated based on a(curr)
  */
-func AgentBattleUtility(agentState state.AgentState) float64 {
-	attackPortion := float64(agentState.TotalAttack() / Config.StartingAttackStrength)
-	defensePortion := float64(agentState.TotalDefense() / Config.StartingShieldStrength)
-	healthPortion := float64(agentState.Hp / Config.StartingHealthPoints)
-	staminaPortion := float64(agentState.Stamina / Config.Stamina)
+// func AgentBattleUtility(agentState state.AgentState, state state.View) float64 {
+// 	attackPortion := float64(agentState.TotalAttack(state) / Config.StartingAttackStrength)
+// 	defensePortion := float64(agentState.TotalDefense(state) / Config.StartingShieldStrength)
+// 	healthPortion := float64(agentState.Hp / Config.StartingHealthPoints)
+// 	staminaPortion := float64(agentState.Stamina / Config.Stamina)
 
-	return 0.25*attackPortion + 0.25*defensePortion + 0.25*healthPortion + 0.25*staminaPortion
-}
+// 	return 0.25*attackPortion + 0.25*defensePortion + 0.25*healthPortion + 0.25*staminaPortion
+// }
 
 // Function which defines how an agent perceives an action
 func ActionSentiment(action decision.FightAction) [4]float64 {

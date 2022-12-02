@@ -89,7 +89,7 @@ func (r *SocialAgent) HandleFightRequest(m message.TaggedMessage, view *state.Vi
  * Agents dont talk to each other about fight decisions, they decide based on the Q-Table
  */
 func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *state.View, agent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	r.UpdateMetadata(agent)
+	//r.battleUtility = utils.AgentBattleUtility(agent.ViewState(), view)
 	r.updateSocialCapital(m, view, agent, log)
 
 	// Calculate utility value of each action
@@ -120,10 +120,6 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedMessage, view *stat
 	}
 
 	return
-}
-
-func (r *SocialAgent) UpdateMetadata(self agent.BaseAgent) {
-	r.battleUtility = utils.AgentBattleUtility(self.ViewState())
 }
 
 func (r *SocialAgent) CreateManifesto(view *state.View, baseAgent agent.BaseAgent) *decision.Manifesto {
