@@ -6,7 +6,6 @@ type ImmutableList[A any] struct {
 
 func NewImmutableList[A any](internalList []A) *ImmutableList[A] {
 	return &ImmutableList[A]{internalList: internalList}
-
 }
 
 type Iterator[A any] struct {
