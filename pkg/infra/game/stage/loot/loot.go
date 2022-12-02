@@ -79,11 +79,14 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 	allocatedState.PotionSlice.HPpotion = nil
 	allocatedState.PotionSlice.STpotion = nil
 
-	for agentID, agentState := range allocatedState.AgentState {
-		agentState.H = AllocatePotion(allocatedState, agent state.AgentState, HPi int, STi int) state.State
-	}
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
 
-	
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))
+		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)))
+		allocatedState.AgentState[agentID] = agentState
+	}
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
