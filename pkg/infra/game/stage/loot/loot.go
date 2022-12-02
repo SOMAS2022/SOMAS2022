@@ -25,29 +25,38 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 }
 
 // HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
-func AllocatePotion(globalState state.State, agentID uint, HPi int, STi int) state.State {
+func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) state.State {
 	allocatedState := globalState
-	agent.Hp += allocatedState.PotionSlice.HPpotion[HPi]
-	agent.Stamina += allocatedState.PotionSlice.STpotion[STi]
+	hpPotionValue := allocatedState.PotionSlice.STpotion[HPi]
+	allocatedState.AgentState[agentID].Hp += hpPotionValue
 	allocatedState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.HPpotion, HPi)
-	allocatedState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.STpotion, STi)
 	return allocatedState
 }
 
+func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) state.State {
+	allocatedState := globalState
+	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
+	allocatedState.AgentState[agentID].Stamina += stPotionValue
+	allocatedState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.STpotion, STi)
+	return allocatedState
+}
 //Use simple append function to append to the potion slice when generating new loot potions.
 
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
 	allocatedState := globalState
 
 	//allocate potion
 	allocatedState.PotionSlice.HPpotion = nil
 	allocatedState.PotionSlice.STpotion = nil
 
-	for agentID, agentState := range allocatedState.AgentState {
-		agentState.H = AllocatePotion(allocatedState, agent state.AgentState, HPi int, STi int) state.State
-	}
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
 
-	
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))
+		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)))
+		allocatedState.AgentState[agentID] = agentState
+	}
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
