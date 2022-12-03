@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
@@ -86,15 +87,19 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 ) {
 	switch r := m.Message().(type) {
 	case message.FightRequest:
-		resp := a.Strategy.HandleFightRequest(m, log)
+		req := *message.NewTaggedRequestMessage[message.FightRequest](m.Sender(), r, m.MID())
+		resp := a.Strategy.HandleFightRequest(req, log)
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
 	case message.FightInform:
-		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
-	case message.FightProposalMessage:
+		inf := *message.NewTaggedInformMessage[message.FightInform](m.Sender(), r, m.MID())
+		a.Strategy.HandleFightInformation(inf, a.BaseAgent, log)
+	case message.MapProposal[decision.FightAction]:
+		//todo: Refactor this type to be similar to the types above
+		v := *message.NewFightProposalMessage(m.Sender(), r.Proposal(), r.ProposalID())
 		if a.isLeader() {
-			if a.Strategy.HandleFightProposalRequest(r, a.BaseAgent, log) {
-				submission <- *message.NewProposal(r.ProposalID(), r.Proposal())
+			if a.Strategy.HandleFightProposalRequest(v, a.BaseAgent, log) {
+				submission <- *message.NewProposal(v.ProposalID(), v.Proposal())
 				iterator := a.BaseAgent.communication.peer.Iterator()
 				for !iterator.Done() {
 					_, value, _ := iterator.Next()
@@ -102,13 +107,12 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 				}
 			}
 		}
-		switch a.Strategy.HandleFightProposal(r, a.BaseAgent) {
+		switch a.Strategy.HandleFightProposal(v, a.BaseAgent) {
 		case decision.Positive:
-			votes <- r.ProposalID()
+			votes <- v.ProposalID()
 		default:
 		}
-
 	default:
-		a.Strategy.HandleFightInformation(m, a.BaseAgent, log)
+		logging.Log(logging.Warn, nil, fmt.Sprintf("Unknown type, %T", r))
 	}
 }

@@ -10,8 +10,8 @@ import (
 )
 
 type Strategy interface {
-	HandleFightInformation(m message.TaggedMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
-	HandleFightRequest(m message.TaggedMessage, log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform
+	HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
+	HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform
 	CurrentAction() decision.FightAction
 	CreateManifesto(baseAgent BaseAgent) *decision.Manifesto
 	HandleConfidencePoll(baseAgent BaseAgent) decision.Intent
