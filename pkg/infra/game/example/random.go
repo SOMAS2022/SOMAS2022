@@ -150,6 +150,10 @@ func (r *RandomAgent) HandleUpdateShield(_ *state.View, _ agent.BaseAgent) decis
 	return decision.ItemIdx(0)
 }
 
+// Only implementable in team experiments
+func (r *RandomAgent) HandleCustomInformation(m message.TaggedInformMessage[message.CustomInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+}
+
 func NewRandomAgent() agent.Strategy {
 	return &RandomAgent{bravery: 0}
 }

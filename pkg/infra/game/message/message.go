@@ -40,6 +40,11 @@ type FightInform interface {
 	sealedFightInform()
 }
 
+type CustomInform interface {
+	Inform
+	sealedCustomInform()
+}
+
 type TaggedMessage struct {
 	sender  commons.ID
 	message Message

@@ -26,4 +26,6 @@ type Strategy interface {
 	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
 	UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint])
 	DonateToHpPool(baseAgent BaseAgent) uint
+	// Only implementable in team experiments
+	HandleCustomInformation(m message.TaggedInformMessage[message.CustomInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 }
