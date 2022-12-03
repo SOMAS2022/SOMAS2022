@@ -16,7 +16,6 @@ type Agent struct {
 }
 
 func (a *Agent) HandleDonateToHpPool(agentState state.AgentState) uint {
-	// fmt.Print(agentState)
 	a.BaseAgent.latestState = agentState
 
 	return a.Strategy.DonateToHpPool(a.BaseAgent)
