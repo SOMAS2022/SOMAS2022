@@ -48,9 +48,9 @@ func testEq[Type comparable](a, b []Type) bool {
 	return true
 }
 
-func testSlice2Map(t *testing.T) {
+func testSliceToMap(t *testing.T) {
 	s := []uint{1, 2, 3, 4, 5}
-	m := commons.Slice2Map(s)
+	m := commons.SliceToMap(s)
 	mt := make(map[int]uint)
 	mt[1] = 1
 	mt[2] = 2

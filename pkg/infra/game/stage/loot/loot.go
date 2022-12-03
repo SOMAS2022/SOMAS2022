@@ -9,6 +9,7 @@ import (
 	"math/rand"
 
 	//"github.com/benbjohnson/immutable"
+	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 )
 
@@ -37,16 +38,7 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (sta
 	HPPotionList := commons.NewImmutableList[uint](allocatedState.PotionSlice.HPpotion)
 	return allocatedState, HPPotionList
 }
-
-func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, *commons.ImmutableList[uint]) {
-=======
-	hpPotionMap := commons.Slice2Map(allocatedState.PotionSlice.HPpotion)
-	HPPotionMap := commons.MapToImmutable(hpPotionMap)
-	return allocatedState, HPPotionMap
-}
-
 func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, immutable.Map[int, uint]) {
->>>>>>> 3c2129d (Enable generating immutable potion maps)
 	allocatedState := globalState
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
 	v := allocatedState
