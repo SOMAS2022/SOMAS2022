@@ -177,14 +177,14 @@ type HpPoolDonation struct {
 }
 
 func checkHpPool() {
-	if globalState.HpPool >= globalState.MonsterHealth {
+	if globalState.HpPool >= globalState.MonsterAttack {
 		logging.Log(logging.Info, logging.LogField{
 			"Original HP Pool":  globalState.HpPool,
-			"Monster Health":    globalState.MonsterHealth,
-			"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
+			"Monster Damage":    globalState.MonsterAttack,
+			"HP Pool Remaining": globalState.HpPool - globalState.MonsterAttack,
 		}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
 
-		globalState.HpPool -= globalState.MonsterHealth
+		globalState.HpPool -= globalState.MonsterAttack
 		globalState.MonsterHealth = 0
 	}
 }
