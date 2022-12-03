@@ -14,6 +14,8 @@ import (
 	"infra/game/decision"
 	"infra/game/state"
 	"math"
+
+	"github.com/benbjohnson/immutable"
 )
 
 var Config config.GameConfig
@@ -23,11 +25,13 @@ var Config config.GameConfig
  *
  * Calculated based on a(curr)
  */
-func AgentBattleUtility(agentState state.AgentState, state state.View) float64 {
-	attackPortion := float64(agentState.TotalAttack(state) / Config.StartingAttackStrength)
-	defensePortion := float64(agentState.TotalDefense(state) / Config.StartingShieldStrength)
-	healthPortion := float64(agentState.Hp / Config.StartingHealthPoints)
-	staminaPortion := float64(agentState.Stamina / Config.Stamina)
+func AgentBattleUtility(agentStates immutable.Map[string, state.HiddenAgentState], agent string) float64 {
+	agentStat, _ := agentStates.Get(agent)
+
+	attackPortion := float64((agentStat.Attack + agentStat.BonusAttack) / Config.StartingAttackStrength)
+	defensePortion := float64((agentStat.Defense + agentStat.BonusDefense) / Config.StartingShieldStrength)
+	healthPortion := float64(uint(agentStat.Hp) / Config.StartingHealthPoints)
+	staminaPortion := float64(uint(agentStat.Stamina) / Config.Stamina)
 
 	return 0.25*attackPortion + 0.25*defensePortion + 0.25*healthPortion + 0.25*staminaPortion
 }

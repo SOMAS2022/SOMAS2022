@@ -139,8 +139,9 @@ func (r *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[messa
 
 	switch m.Message().(type) {
 	case message.StartFight:
-		r.battleUtility = utils.AgentBattleUtility(baseAgent.AgentState(), baseAgent.View())
 		r.selfID = baseAgent.ID()
+		view := baseAgent.View()
+		r.battleUtility = utils.AgentBattleUtility(view.AgentState(), r.selfID)
 		r.updateSocialCapital(baseAgent.View(), log)
 		r.sendGossip(baseAgent)
 
