@@ -42,7 +42,7 @@ func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (sta
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
 	v := allocatedState
 	a := allocatedState.AgentState[agentID]
-	a.Stamina = v.AgentState[agentID].Hp + stPotionValue
+	a.Stamina = v.AgentState[agentID].Stamina + stPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.STpotion[STi] = 0
 	STPotionList := commons.NewImmutableList[uint](allocatedState.PotionSlice.STpotion)

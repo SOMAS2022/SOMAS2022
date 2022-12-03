@@ -16,10 +16,6 @@ import (
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
 	allocatedState := globalState
 
-	//allocate potion
-	allocatedState.PotionSlice.HPpotion = nil
-	allocatedState.PotionSlice.STpotion = nil
-
 	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
 	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
 
