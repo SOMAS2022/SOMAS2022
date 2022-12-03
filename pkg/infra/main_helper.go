@@ -212,6 +212,8 @@ func updateHpPool() {
 		agentHp := globalState.AgentState[agentDonation.agentId].Hp
 		if agentDonation.donation > agentHp {
 			agentDonation.donation = agentHp
+			delete(globalState.AgentState, agentDonation.agentId)
+			delete(agentMap, agentDonation.agentId)
 		}
 
 		logging.Log(logging.Trace, logging.LogField{
