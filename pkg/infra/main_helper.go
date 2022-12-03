@@ -155,13 +155,31 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 
 func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
 	var wg sync.WaitGroup
-	for _, a := range agentMap {
+	for id, a := range agentMap {
+		id := id
 		a := a
 		wg.Add(1)
 		go func(wait *sync.WaitGroup) {
-			a.Strategy.UpdateInternalState(immutableFightRounds, votesResult)
+			a.HandleUpdateInternalState(globalState.AgentState[id], immutableFightRounds, votesResult)
 			wait.Done()
 		}(&wg)
 	}
 	wg.Wait()
+}
+
+/*
+	Hp Pool Helpers
+*/
+
+func checkHpPool() {
+	if globalState.HpPool >= globalState.MonsterAttack {
+		logging.Log(logging.Info, logging.LogField{
+			"Original HP Pool":  globalState.HpPool,
+			"Monster Damage":    globalState.MonsterAttack,
+			"HP Pool Remaining": globalState.HpPool - globalState.MonsterAttack,
+		}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
+
+		globalState.HpPool -= globalState.MonsterAttack
+		globalState.MonsterHealth = 0
+	}
 }

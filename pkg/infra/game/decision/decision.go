@@ -91,4 +91,9 @@ const (
 	BordaCount
 )
 
+type HpPoolDonation struct {
+	AgentID  commons.ID
+	Donation uint
+}
+
 type ItemIdx uint

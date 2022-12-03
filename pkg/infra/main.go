@@ -10,6 +10,7 @@ import (
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
+	"infra/game/stage/hppool"
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
@@ -53,11 +54,11 @@ func startGameLoop() {
 			termLeft, votes = runConfidenceVote(termLeft)
 		}
 
+		checkHpPool()
+
 		// allow agents to change the weapon and the shield in use
 		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
 		globalState = &updatedGlobalState
-
-		// TODO: Fight Discussion Stage
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -117,6 +118,8 @@ func startGameLoop() {
 
 		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot)
 		globalState = &newGlobalState
+
+		hppool.UpdateHpPool(agentMap, globalState)
 
 		// TODO: End of level Updates
 		termLeft--
