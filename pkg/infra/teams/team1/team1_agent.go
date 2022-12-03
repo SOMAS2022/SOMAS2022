@@ -14,7 +14,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 	"infra/teams/team1/utils"
 	"math/rand"
 
@@ -137,30 +136,36 @@ func (r *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
  * Agents dont talk to each other about fight decisions, they decide based on the Q-Table
  */
 func (r *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	//r.battleUtility = utils.AgentBattleUtility(agent.ViewState(), view)
-	r.selfID = baseAgent.ID()
-	r.updateSocialCapital(baseAgent.View(), log)
-	r.sendGossip(baseAgent)
 
-	// Calculate utility value of each action
-	// utilCower := r.utilityValue(decision.Cower, view, agent)
-	// utilAttack := r.utilityValue(decision.Attack, view, agent)
-	// utilDefend := r.utilityValue(decision.Defend, view, agent)
+	switch m.Message().(type) {
+	case message.StartFight:
+		//r.battleUtility = utils.AgentBattleUtility(agent.ViewState(), view)
+		r.selfID = baseAgent.ID()
+		r.updateSocialCapital(baseAgent.View(), log)
+		r.sendGossip(baseAgent)
 
-	// Apply softmax to get probabilities
-	//softArray := utils.Softmax([3]float64{utilCower, utilAttack, utilDefend})
+		// Calculate utility value of each action
+		// utilCower := r.utilityValue(decision.Cower, view, agent)
+		// utilAttack := r.utilityValue(decision.Attack, view, agent)
+		// utilDefend := r.utilityValue(decision.Defend, view, agent)
 
-	// Make number representation incremental
-	//probArray := utils.MakeIncremental(softArray)
+		// Apply softmax to get probabilities
+		//softArray := utils.Softmax([3]float64{utilCower, utilAttack, utilDefend})
 
-	/*it := view.AgentState().Iterator()
-	nextId, _, _ := it.Next()
-	if agent.Id == nextId {
-		fmt.Println(utilCower)
-		fmt.Println([3]float64{utilCower, utilAttack, utilDefend})
-		fmt.Println(softArray)
-		fmt.Println(probArray)
-	}*/
+		// Make number representation incremental
+		//probArray := utils.MakeIncremental(softArray)
+
+		/*it := view.AgentState().Iterator()
+		nextId, _, _ := it.Next()
+		if agent.Id == nextId {
+			fmt.Println(utilCower)
+			fmt.Println([3]float64{utilCower, utilAttack, utilDefend})
+			fmt.Println(softArray)
+			fmt.Println(probArray)
+		}*/
+	case message.ArrayInfo:
+		r.receiveGossip(m.Message().(message.ArrayInfo), m.Sender())
+	}
 
 	random := rand.Float64()
 	if random < r.pCollaborate {
@@ -231,7 +236,7 @@ func (r *SocialAgent) HandleFightProposalRequest(_ message.FightProposalMessage,
 }
 
 // TODO: Currently default
-func (r *SocialAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+func (r *SocialAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
 	// weapons := b.AgentState().Weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
@@ -240,7 +245,7 @@ func (r *SocialAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decis
 }
 
 // TODO: Currently default
-func (r *SocialAgent) HandleUpdateShield(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+func (r *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)

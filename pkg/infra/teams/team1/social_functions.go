@@ -158,6 +158,29 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 
 }
 
-func receiveGossip(m message.TaggedMessage) {
+/**
+ * On receiving gossip, scale the network value up/down by a constant and
+ * the senders overall perception to this agent. This means that someone
+ * with 0.2 network would become 0.22, and someone with 0.7 network would
+ * become 0.77, with a 10% increase
+ *
+ * TODO: More advanced but consider reversing perception if the agent
+ * hates the sender
+ */
+func (r *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
+	senderPerception := utils.OverallPerception(r.socialCapital[sender].arr)
+	var sign float64
+	switch m.Num {
+	case utils.Praise:
+		sign = 1.0
+	case utils.Denounce:
+		sign = -1.0
+	}
 
+	for _, about := range m.StringArr {
+		sci := r.socialCapital[about]
+		sci.arr[1] += sign * senderPerception * 0.1 * sci.arr[1]
+		sci.arr = utils.BoundArray(sci.arr)
+		r.socialCapital[about] = sci
+	}
 }

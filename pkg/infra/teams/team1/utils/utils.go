@@ -124,3 +124,7 @@ func MakeIncremental(inputArray [3]float64) [3]float64 {
 
 	return outputArray
 }
+
+func OverallPerception(inputArray [4]float64) float64 {
+	return (inputArray[0] + inputArray[1] + inputArray[2] + inputArray[3]) * 0.25
+}
