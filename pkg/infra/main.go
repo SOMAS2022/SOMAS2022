@@ -53,16 +53,7 @@ func startGameLoop() {
 			termLeft, votes = runConfidenceVote(termLeft)
 		}
 
-		if globalState.HpPool >= globalState.MonsterHealth {
-			logging.Log(logging.Info, logging.LogField{
-				"Original HP Pool":  globalState.HpPool,
-				"Monster Health":    globalState.MonsterHealth,
-				"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
-			}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
-
-			globalState.HpPool -= globalState.MonsterHealth
-			globalState.MonsterHealth = 0
-		}
+		checkHpPool()
 
 		// allow agents to change the weapon and the shield in use
 		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)

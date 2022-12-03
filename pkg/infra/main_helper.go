@@ -167,9 +167,26 @@ func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.I
 	wg.Wait()
 }
 
+/*
+	Hp Pool Helpers
+*/
+
 type HpPoolDonation struct {
 	agentId  commons.ID
 	donation uint
+}
+
+func checkHpPool() {
+	if globalState.HpPool >= globalState.MonsterHealth {
+		logging.Log(logging.Info, logging.LogField{
+			"Original HP Pool":  globalState.HpPool,
+			"Monster Health":    globalState.MonsterHealth,
+			"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
+		}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
+
+		globalState.HpPool -= globalState.MonsterHealth
+		globalState.MonsterHealth = 0
+	}
 }
 
 func updateHpPool() {
