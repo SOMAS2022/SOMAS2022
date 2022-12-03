@@ -8,6 +8,7 @@ import (
 	"infra/logging"
 	"math/rand"
 
+	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +26,7 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 }
 
 // HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
-func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) state.State {
+func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (state.State, immutable.Map[int, uint]) {
 	allocatedState := globalState
 	hpPotionValue := allocatedState.PotionSlice.HPpotion[HPi]
 	v := allocatedState
@@ -33,10 +34,12 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) stat
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.HPpotion[HPi] = 0
-	return allocatedState
+	hpPotionMap := commons.Slice2Map(allocatedState.PotionSlice.HPpotion)
+	HPPotionMap := commons.MapToImmutable(hpPotionMap)
+	return allocatedState, HPPotionMap
 }
 
-func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) state.State {
+func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, immutable.Map[int, uint]) {
 	allocatedState := globalState
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
 	v := allocatedState
@@ -44,7 +47,9 @@ func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) stat
 	a.Stamina = v.AgentState[agentID].Hp + stPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.STpotion[STi] = 0
-	return allocatedState
+	stPotionMap := commons.Slice2Map(allocatedState.PotionSlice.STpotion)
+	STPotionMap := commons.MapToImmutable(stPotionMap)
+	return allocatedState, STPotionMap
 }
 
 //Use simple append function to append to the potion slice when generating new loot potions.
@@ -59,8 +64,8 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 	idx := 0
 
 	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
-		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
+		allocatedState, _ = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
+		allocatedState, _ = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
 		allocatedState.AgentState[agentID] = agentState
 		idx++
 	}
