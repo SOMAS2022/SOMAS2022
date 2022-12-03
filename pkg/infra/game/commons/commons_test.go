@@ -64,7 +64,6 @@ func testSlice2Map(t *testing.T) {
 				t.Errorf("m[%d] is %d, want %d", i, m[i], i)
 			}
 		}
-
 	} else {
 		t.Errorf("emplty map, expect 5 mapping")
 	}
