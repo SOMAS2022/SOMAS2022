@@ -119,8 +119,7 @@ func startGameLoop() {
 			STpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
-		globalState = &newGlobalState
+		globalState = stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
 
 		hppool.UpdateHpPool(agentMap, globalState)
 
