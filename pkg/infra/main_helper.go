@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/election"
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
-	"sync"
-
-	gamemath "infra/game/math"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/joho/godotenv"
@@ -80,8 +80,7 @@ func addCommsChannels() map[commons.ID]chan message.TaggedMessage {
 	}
 	immutableMap := createImmutableMapForChannels(res)
 	for id, a := range agentMap {
-		a.BaseAgent = agent.NewBaseAgent(agent.NewCommunication(res[id], *immutableMap.Delete(id)), id, a.BaseAgent.Name(), viewPtr)
-		(agentMap)[id] = a
+		a.SetCommunication(agent.NewCommunication(res[id], *immutableMap.Delete(id)))
 	}
 	return res
 }
@@ -110,7 +109,7 @@ func runElection() uint {
 func runConfidenceVote(termLeft uint) (uint, map[decision.Intent]uint) {
 	votes := make(map[decision.Intent]uint)
 	for _, a := range agentMap {
-		votes[a.Strategy.HandleConfidencePoll(a.BaseAgent)]++
+		votes[a.Strategy.HandleConfidencePoll(*a.BaseAgent)]++
 	}
 	leader := agentMap[globalState.CurrentLeader]
 	leaderName := leader.BaseAgent.Name()

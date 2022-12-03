@@ -16,7 +16,7 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-// ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
+// Mode ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
 var Mode string
 
 func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Strategy) map[commons.ID]func() agent.Strategy {
@@ -47,7 +47,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 }
 
 // TODO: Change to using views.
-func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Agent, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) (allocatedState state.State) {
+func AgentLootDecisions(globalState state.State, agents map[commons.ID]agent.Agent, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
 	switch Mode {
 	case "0":
 		return t0.AllocateLoot(globalState, weaponLoot, shieldLoot, hpPotionLoot, stPotionLoot)

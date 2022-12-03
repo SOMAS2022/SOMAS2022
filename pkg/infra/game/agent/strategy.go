@@ -4,7 +4,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -21,9 +20,9 @@ type Strategy interface {
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
 	// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons
-	HandleUpdateWeapon(view *state.View, baseAgent BaseAgent) decision.ItemIdx
+	HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx
 	// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
-	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
+	HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx
 	UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint])
 	DonateToHpPool(baseAgent BaseAgent) uint
 }

@@ -3,10 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/example"
+	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
@@ -14,10 +18,6 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
-	"math"
-	"math/rand"
-
-	gamemath "infra/game/math"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -57,8 +57,8 @@ func startGameLoop() {
 		checkHpPool()
 
 		// allow agents to change the weapon and the shield in use
-		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
-		globalState = &updatedGlobalState
+		globalState = loot.UpdateItems(*globalState, agentMap)
+		*viewPtr = globalState.ToView()
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -79,8 +79,7 @@ func startGameLoop() {
 			}
 			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
-			stateAfterFight := fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
-			globalState = &stateAfterFight
+			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
 			logging.Log(logging.Info, logging.LogField{
@@ -120,8 +119,7 @@ func startGameLoop() {
 			STpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
-		globalState = &newGlobalState
+		globalState = stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
 
 		hppool.UpdateHpPool(agentMap, globalState)
 

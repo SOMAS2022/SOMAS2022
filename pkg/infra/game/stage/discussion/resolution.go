@@ -14,7 +14,7 @@ func ResolveFightDiscussion(agentMap map[commons.ID]agent.Agent,
 	fightActions := make(map[commons.ID]decision.FightAction)
 	// todo: cleanup the nil check that acts to check if the leader died in combat
 	if manifesto.FightImposition() && currentLeader.Strategy != nil {
-		resolution := currentLeader.Strategy.FightResolution(currentLeader.BaseAgent).Proposal()
+		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent).Proposal()
 		iterator := resolution.Iterator()
 		for !iterator.Done() {
 			id, a, ok := iterator.Next()

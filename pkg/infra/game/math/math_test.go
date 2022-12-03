@@ -1,8 +1,9 @@
 package math_test
 
 import (
-	"infra/game/math"
 	"testing"
+
+	"infra/game/math"
 )
 
 func TestCalculateMonsterHealth(t *testing.T) {

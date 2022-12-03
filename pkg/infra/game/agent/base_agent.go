@@ -3,6 +3,7 @@ package agent
 import (
 	"errors"
 	"fmt"
+
 	"infra/game/commons"
 	"infra/game/message"
 	"infra/game/state"
@@ -25,6 +26,10 @@ type BaseAgent struct {
 	view          *state.View
 }
 
+func (ba *BaseAgent) setCommunication(communication *Communication) {
+	ba.communication = communication
+}
+
 func (ba *BaseAgent) View() state.View {
 	return *ba.view
 }
@@ -37,14 +42,13 @@ func (ba *BaseAgent) Name() string {
 	return ba.name
 }
 
-func NewBaseAgent(communication *Communication, id commons.ID, agentName string, ptr *state.View) BaseAgent {
-	return BaseAgent{communication: communication, id: id, name: agentName, view: ptr}
+func NewBaseAgent(communication *Communication, id commons.ID, agentName string, ptr *state.View) *BaseAgent {
+	return &BaseAgent{communication: communication, id: id, name: agentName, view: ptr}
 }
 
 func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
 	iterator := ba.communication.peer.Iterator()
-	mID, _ := uuid.NewUUID()
-	tm := message.NewTaggedMessage(ba.id, m, mID)
+	tm := message.NewTaggedMessage(ba.id, m, uuid.New())
 
 	for !iterator.Done() {
 		_, c, ok := iterator.Next()
@@ -61,8 +65,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 	default:
 		channel, ok := ba.communication.peer.Get(id)
 		if ok {
-			mID, _ := uuid.NewUUID()
-			channel <- *message.NewTaggedMessage(ba.id, m, mID)
+			channel <- *message.NewTaggedMessage(ba.id, m, uuid.New())
 		} else {
 			return communicationError(fmt.Sprintf("agent %s not available for messaging", id))
 		}
@@ -73,11 +76,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 func (ba *BaseAgent) SendProposalToLeader(proposal message.Proposal) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
-		mID, e := uuid.NewUUID()
-		if e != nil {
-			return e
-		}
-		channel <- *message.NewTaggedMessage(ba.id, proposal, mID)
+		channel <- *message.NewTaggedMessage(ba.id, proposal, uuid.New())
 		return nil
 	}
 	return communicationError("Leader not available for messaging, dead or bad!")

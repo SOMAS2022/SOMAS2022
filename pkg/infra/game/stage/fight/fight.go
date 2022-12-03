@@ -1,14 +1,15 @@
 package fight
 
 import (
+	"math"
+	"time"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
-	"math"
-	"time"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
@@ -21,7 +22,8 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 		newHP := commons.SaturatingSub(agentState.Hp, splitDamage)
 		if newHP == 0 {
 			// kill agent
-			// todo: prune peer channels somehow...
+			removeItems(globalState, globalState.AgentState[id])
+
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
 		} else {
@@ -36,6 +38,19 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 				ShieldInUse: agentState.ShieldInUse,
 			}
 		}
+	}
+}
+
+func removeItems(globalState *state.State, agentState state.AgentState) {
+	removeItemsFromMap(globalState.InventoryMap.Weapons, agentState.Weapons)
+	removeItemsFromMap(globalState.InventoryMap.Shields, agentState.Shields)
+}
+
+func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.InventoryItem]) {
+	iterator := l.Iterator()
+	for !iterator.Done() {
+		_, v := iterator.Next()
+		delete(m, v.ID)
 	}
 }
 
@@ -58,7 +73,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil, closure)
 		}
 	}
-	mID, _ := uuid.NewUUID()
+	mID := uuid.Nil
 
 	for _, messages := range channelsMap {
 		messages <- *message.NewTaggedMessage("server", &message.StartFight{}, mID)
@@ -86,7 +101,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	return propTally
 }
 
-func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) state.State {
+func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) *state.State {
 	var attackSum uint
 	var shieldSum uint
 
@@ -127,5 +142,5 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 
 	fightResult.AttackSum = attackSum
 	fightResult.ShieldSum = shieldSum
-	return state
+	return &state
 }
