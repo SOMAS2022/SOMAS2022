@@ -22,7 +22,7 @@ func DeleteElFromSlice(s []uint, i int) ([]uint, error) {
 		s[i] = s[len(s)-1]
 		return s[:len(s)-1], nil
 	} else {
-		return s, fmt.Errorf("Out of bounds error, attempted to access index %d in slice %v\n", i, s)
+		return s, fmt.Errorf("out of bounds error, attempted to access index %d in slice %v", i, s)
 	}
 }
 
@@ -45,6 +45,15 @@ func MapToImmutable[K constraints.Ordered, V any](m map[K]V) immutable.Map[K, V]
 		builder.Set(k, v)
 	}
 	return *builder.Map()
+}
+
+func ListToimmutable[I constraints.Ordered](l []I) immutable.List[I] {
+	v := immutable.NewListBuilder[I]()
+
+	for _, x := range l {
+		v.Append(x)
+	}
+	return *v.List()
 }
 
 type ID = string

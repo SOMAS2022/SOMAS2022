@@ -12,6 +12,7 @@ import (
 	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
+	"sync"
 
 	gamemath "infra/game/math"
 
@@ -106,7 +107,7 @@ func runElection() uint {
 	return termLeft
 }
 
-func runConfidenceVote(termLeft uint) uint {
+func runConfidenceVote(termLeft uint) (uint, map[decision.Intent]uint) {
 	votes := make(map[decision.Intent]uint)
 	for _, a := range agentMap {
 		votes[a.Strategy.HandleConfidencePoll(a.BaseAgent)]++
@@ -124,12 +125,12 @@ func runConfidenceVote(termLeft uint) uint {
 	}, "Confidence Vote")
 
 	if votes[decision.Negative]+votes[decision.Positive] == 0 {
-		return termLeft
+		return termLeft, votes
 	} else if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
 		termLeft = runElection()
 	}
-	return termLeft
+	return termLeft, votes
 }
 
 /*
@@ -150,4 +151,17 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
 	}
 	*viewPtr = globalState.ToView()
+}
+
+func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
+	var wg sync.WaitGroup
+	for _, a := range agentMap {
+		a := a
+		wg.Add(1)
+		go func(wait *sync.WaitGroup) {
+			a.Strategy.UpdateInternalState(immutableFightRounds, votesResult)
+			wait.Done()
+		}(&wg)
+	}
+	wg.Wait()
 }

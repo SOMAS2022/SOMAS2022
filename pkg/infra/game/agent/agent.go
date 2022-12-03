@@ -57,7 +57,7 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 		select {
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
 			a.handleMessage(&log, taggedMessage, votes, submission)
-		case _ = <-closure:
+		case <-closure:
 			return
 		}
 	}
@@ -82,7 +82,7 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	case message.FightProposalMessage:
 		if a.isLeader() {
 			if a.Strategy.HandleFightProposalRequest(r, a.BaseAgent, log) {
-				submission <- *message.NewProposal[decision.FightAction](r.ProposalID(), r.Proposal())
+				submission <- *message.NewProposal(r.ProposalID(), r.Proposal())
 				iterator := a.BaseAgent.communication.peer.Iterator()
 				for !iterator.Done() {
 					_, value, _ := iterator.Next()

@@ -17,6 +17,9 @@ type RandomAgent struct {
 	bravery int
 }
 
+func (r *RandomAgent) UpdateInternalState(fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
+}
+
 func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
 	actions := make(map[commons.ID]decision.FightAction)
 	view := baseAgent.View()
@@ -38,7 +41,7 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProp
 		}
 	}
 	newUUID, _ := uuid.NewUUID()
-	prop := message.NewProposal[decision.FightAction](newUUID.String(), commons.MapToImmutable(actions))
+	prop := message.NewProposal(newUUID.String(), commons.MapToImmutable(actions))
 	return *prop
 }
 
