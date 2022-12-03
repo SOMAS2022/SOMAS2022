@@ -16,7 +16,7 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-// ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
+// Mode ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
 var Mode string
 
 func ChooseDefaultStrategyMap(defaultStrategyMap map[commons.ID]func() agent.Strategy) map[commons.ID]func() agent.Strategy {

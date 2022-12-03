@@ -25,6 +25,10 @@ type BaseAgent struct {
 	view          *state.View
 }
 
+func (ba *BaseAgent) setCommunication(communication *Communication) {
+	ba.communication = communication
+}
+
 func (ba *BaseAgent) View() state.View {
 	return *ba.view
 }
@@ -37,8 +41,8 @@ func (ba *BaseAgent) Name() string {
 	return ba.name
 }
 
-func NewBaseAgent(communication *Communication, id commons.ID, agentName string, ptr *state.View) BaseAgent {
-	return BaseAgent{communication: communication, id: id, name: agentName, view: ptr}
+func NewBaseAgent(communication *Communication, id commons.ID, agentName string, ptr *state.View) *BaseAgent {
+	return &BaseAgent{communication: communication, id: id, name: agentName, view: ptr}
 }
 
 func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
