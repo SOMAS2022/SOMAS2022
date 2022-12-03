@@ -34,8 +34,12 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (sta
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.HPpotion[HPi] = 0
+<<<<<<< HEAD
 	HPPotionList := commons.NewImmutableList[uint](allocatedState.PotionSlice.HPpotion)
 	return allocatedState, HPPotionList
+=======
+	return allocatedState
+>>>>>>> 923117a (Fixed potion pool oder after each consumpion)
 }
 
 func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, *commons.ImmutableList[uint]) {
