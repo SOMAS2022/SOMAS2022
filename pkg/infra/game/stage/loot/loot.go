@@ -8,7 +8,11 @@ import (
 	"infra/logging"
 	"math/rand"
 
+<<<<<<< HEAD
 	//"github.com/benbjohnson/immutable"
+=======
+	"github.com/benbjohnson/immutable"
+>>>>>>> 3c2129d (Enable generating immutable potion maps)
 	"github.com/google/uuid"
 )
 
@@ -34,15 +38,19 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (sta
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.HPpotion[HPi] = 0
-<<<<<<< HEAD
 	HPPotionList := commons.NewImmutableList[uint](allocatedState.PotionSlice.HPpotion)
 	return allocatedState, HPPotionList
-=======
-	return allocatedState
->>>>>>> 923117a (Fixed potion pool oder after each consumpion)
 }
 
 func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, *commons.ImmutableList[uint]) {
+=======
+	hpPotionMap := commons.Slice2Map(allocatedState.PotionSlice.HPpotion)
+	HPPotionMap := commons.MapToImmutable(hpPotionMap)
+	return allocatedState, HPPotionMap
+}
+
+func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, immutable.Map[int, uint]) {
+>>>>>>> 3c2129d (Enable generating immutable potion maps)
 	allocatedState := globalState
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
 	v := allocatedState
@@ -86,8 +94,8 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 	idx := 0
 
 	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
-		allocatedState = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
+		allocatedState, _ = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
+		allocatedState, _ = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
 		allocatedState.AgentState[agentID] = agentState
 		idx++
 	}
