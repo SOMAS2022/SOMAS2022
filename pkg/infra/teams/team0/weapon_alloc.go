@@ -1,10 +1,11 @@
 package team0
 
 import (
+	"math/rand"
+
 	"infra/game/commons"
 	"infra/game/stage/loot"
 	"infra/game/state"
-	"math/rand"
 
 	"github.com/google/uuid"
 )
@@ -16,8 +17,8 @@ import (
 func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) *state.State {
 	allocatedState := globalState
 
-	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
-	allocatedState.PotionSlice.HPpotion = make([]uint, len(STpotionloot))
+	allocatedState.PotionSlice.HPPotion = make([]uint, len(HPpotionloot))
+	allocatedState.PotionSlice.HPPotion = make([]uint, len(STpotionloot))
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedState, _ = loot.AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))

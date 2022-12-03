@@ -61,8 +61,8 @@ func (s *AgentState) ChangeShieldInUse(shieldIdx decision.ItemIdx) {
 }
 
 type PotionSlice struct {
-	HPpotion []uint //index is potion's id and element cotent is the potion's value
-	STpotion []uint
+	HPPotion []uint
+	STPotion []uint
 }
 
 type State struct {

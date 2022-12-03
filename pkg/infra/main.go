@@ -3,10 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/example"
+	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
@@ -14,10 +18,6 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
-	"math"
-	"math/rand"
-
-	gamemath "infra/game/math"
 
 	"github.com/benbjohnson/immutable"
 )

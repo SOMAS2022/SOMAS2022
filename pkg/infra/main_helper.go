@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
+	"sync"
+
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	gamemath "infra/game/math"
 	"infra/game/message"
 	"infra/game/stage/election"
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
-	"sync"
-
-	gamemath "infra/game/math"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/joho/godotenv"

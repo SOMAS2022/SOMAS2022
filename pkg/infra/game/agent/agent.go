@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
@@ -98,7 +99,7 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 		inf := *message.NewTaggedInformMessage[message.FightInform](m.Sender(), r, m.MID())
 		a.Strategy.HandleFightInformation(inf, *a.BaseAgent, log)
 	case message.MapProposal[decision.FightAction]:
-		//todo: Refactor this type to be similar to the types above
+		// todo: Refactor this type to be similar to the types above
 		v := *message.NewFightProposalMessage(m.Sender(), r.Proposal(), r.ProposalID())
 		if a.isLeader() {
 			if a.Strategy.HandleFightProposalRequest(v, *a.BaseAgent, log) {

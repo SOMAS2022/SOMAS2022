@@ -1,14 +1,15 @@
 package fight
 
 import (
+	"math"
+	"time"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
 	"infra/game/tally"
-	"math"
-	"time"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"

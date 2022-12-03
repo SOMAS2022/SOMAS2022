@@ -1,11 +1,12 @@
 package example
 
 import (
+	"math/rand"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"math/rand"
 
 	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"

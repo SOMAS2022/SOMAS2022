@@ -82,20 +82,17 @@ func NewTaggedInformMessage[I Inform](sender commons.ID, message I, mID uuid.UUI
 	return &TaggedInformMessage[I]{sender: sender, message: message, mID: mID}
 }
 
-type StartFight struct {
-}
+type StartFight struct{}
 
 func (s StartFight) sealedMessage() {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (s StartFight) sealedInform() {
-	//TODO implement me
 	panic("implement me")
 }
 
 func (s StartFight) sealedFightInform() {
-	//TODO implement me
 	panic("implement me")
 }

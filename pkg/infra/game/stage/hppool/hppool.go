@@ -1,12 +1,13 @@
 package hppool
 
 import (
+	"sync"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
-	"sync"
 )
 
 func UpdateHpPool(agentMap map[commons.ID]agent.Agent, globalState *state.State) {
