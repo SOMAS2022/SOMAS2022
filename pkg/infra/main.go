@@ -53,6 +53,11 @@ func startGameLoop() {
 			termLeft, votes = runConfidenceVote(termLeft)
 		}
 
+		if globalState.HpPool >= globalState.MonsterHealth {
+			globalState.HpPool -= globalState.MonsterHealth
+			globalState.MonsterHealth = 0
+		}
+
 		// allow agents to change the weapon and the shield in use
 		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
 		globalState = &updatedGlobalState
@@ -117,6 +122,8 @@ func startGameLoop() {
 
 		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot)
 		globalState = &newGlobalState
+
+		// TODO: HP Pool donations
 
 		// TODO: End of level Updates
 		termLeft--
