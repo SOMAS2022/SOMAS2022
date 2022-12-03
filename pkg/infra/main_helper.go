@@ -210,7 +210,7 @@ func updateHpPool() {
 		agentDonation := <-donationChan
 
 		agentHp := globalState.AgentState[agentDonation.agentId].Hp
-		if agentDonation.donation > agentHp {
+		if agentDonation.donation >= agentHp {
 			agentDonation.donation = agentHp
 			delete(globalState.AgentState, agentDonation.agentId)
 			delete(agentMap, agentDonation.agentId)
