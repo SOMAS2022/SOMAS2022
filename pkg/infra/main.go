@@ -119,7 +119,6 @@ func startGameLoop() {
 		newGlobalState := stages.AgentLootDecisions(*globalState, agentMap, weaponLoot, shieldLoot)
 		globalState = &newGlobalState
 
-		// TODO: HP Pool donations
 		hppool.UpdateHpPool(agentMap, globalState)
 
 		// TODO: End of level Updates
