@@ -34,7 +34,7 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (sta
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.HPpotion[HPi] = 0
-	hpPotionMap := commons.Slice2Map(allocatedState.PotionSlice.HPpotion)
+	hpPotionMap := commons.SliceToMap(allocatedState.PotionSlice.HPpotion)
 	HPPotionMap := commons.MapToImmutable(hpPotionMap)
 	return allocatedState, HPPotionMap
 }
@@ -47,7 +47,7 @@ func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (sta
 	a.Stamina = v.AgentState[agentID].Hp + stPotionValue
 	allocatedState.AgentState[agentID] = a
 	allocatedState.PotionSlice.STpotion[STi] = 0
-	stPotionMap := commons.Slice2Map(allocatedState.PotionSlice.STpotion)
+	stPotionMap := commons.SliceToMap(allocatedState.PotionSlice.STpotion)
 	STPotionMap := commons.MapToImmutable(stPotionMap)
 	return allocatedState, STPotionMap
 }
