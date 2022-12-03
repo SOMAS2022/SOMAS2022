@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -136,7 +135,7 @@ func (r *RandomAgent) HandleFightProposalRequest(_ message.FightProposalMessage,
 	}
 }
 
-func (r *RandomAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
 	// weapons := b.AgentState().Weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
@@ -144,7 +143,7 @@ func (r *RandomAgent) HandleUpdateWeapon(_ *state.View, _ agent.BaseAgent) decis
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleUpdateShield(_ *state.View, _ agent.BaseAgent) decision.ItemIdx {
+func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)

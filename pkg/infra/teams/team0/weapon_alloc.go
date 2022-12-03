@@ -13,7 +13,7 @@ import (
 /**
 * This default function allocates loot randomly.
  */
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) *state.State {
 	allocatedState := globalState
 
 	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
@@ -46,9 +46,10 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 		allocatedState.AgentState[agentID] = agentState
 
 		// remove W and S from unallocated loot
+
 		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeaponIdx)
 		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShieldIdx)
 	}
 
-	return allocatedState
+	return &allocatedState
 }

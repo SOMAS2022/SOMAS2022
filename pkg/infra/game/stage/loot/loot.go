@@ -11,20 +11,20 @@ import (
 	"github.com/google/uuid"
 )
 
-func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.State {
+func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) *state.State {
 	updatedState := state
-	for _, agent := range agents {
-		agentState := updatedState.AgentState[agent.BaseAgent.ID()]
-		weaponId := agent.HandleUpdateWeapon(agentState, state.ToView())
-		shieldId := agent.HandleUpdateShield(agentState, state.ToView())
+	for _, a := range agents {
+		agentState := updatedState.AgentState[a.BaseAgent.ID()]
+		weaponId := a.HandleUpdateWeapon(agentState)
+		shieldId := a.HandleUpdateShield(agentState)
 		agentState.ChangeWeaponInUse(weaponId)
 		agentState.ChangeShieldInUse(shieldId)
-		updatedState.AgentState[agent.BaseAgent.ID()] = agentState
+		updatedState.AgentState[a.BaseAgent.ID()] = agentState
 	}
-	return updatedState
+	return &updatedState
 }
 
-// HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
+// AllocateHPPotion HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
 func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (state.State, *commons.ImmutableList[uint]) {
 	allocatedState := globalState
 	hpPotionValue := allocatedState.PotionSlice.HPpotion[HPi]
@@ -54,10 +54,10 @@ type PotionList struct {
 	STPotionList *commons.ImmutableList[uint]
 }
 
-// immutable list for communication with agent only.
+// AllocateLoot immutable list for communication with agent only.
 // a slice is generated from state, action is done on the slice
-// imumutable list is generated upon temporory slice
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
+// immutable list is generated upon temporary slice
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) *state.State {
 	allocatedState := globalState
 	var PotionList PotionList
 
@@ -109,5 +109,5 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 		fmt.Sprintf("%6d Weapons, %6d Shields in InventoryMap", len(globalState.InventoryMap.Weapons), len(globalState.InventoryMap.Shields)),
 	)
 
-	return allocatedState
+	return &allocatedState
 }

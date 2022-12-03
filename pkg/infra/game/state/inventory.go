@@ -20,7 +20,7 @@ type InventoryItem struct {
 
 // Add an InventoryItem to an immutable list of InventoryItem.
 // return a sorted immutable.List with 0th InventoryItem has greatest value.
-func Add2Inventory(items immutable.List[InventoryItem], item InventoryItem) (newItems immutable.List[InventoryItem]) {
+func addToInventory(items immutable.List[InventoryItem], item InventoryItem) (newItems immutable.List[InventoryItem]) {
 	// convert immutable.List to slice
 	itemList := []InventoryItem{item}
 	itr := items.Iterator()
@@ -45,7 +45,7 @@ func Add2Inventory(items immutable.List[InventoryItem], item InventoryItem) (new
 
 // Remove an InventoryItem from an immutable list of InventoryItem.
 // return a sorted immutable.List with 0th InventoryItem has greatest value.
-func RemoveFromInventory(items immutable.List[InventoryItem], itemID commons.ItemID) (newItems immutable.List[InventoryItem]) {
+func removeFromInventory(items immutable.List[InventoryItem], itemID commons.ItemID) immutable.List[InventoryItem] {
 	b := immutable.NewListBuilder[InventoryItem]()
 
 	// filter inventoryItem with ID == itemID

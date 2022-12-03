@@ -57,8 +57,8 @@ func startGameLoop() {
 		checkHpPool()
 
 		// allow agents to change the weapon and the shield in use
-		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
-		globalState = &updatedGlobalState
+		globalState = loot.UpdateItems(*globalState, agentMap)
+		*viewPtr = globalState.ToView()
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -79,8 +79,7 @@ func startGameLoop() {
 			}
 			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
-			stateAfterFight := fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
-			globalState = &stateAfterFight
+			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
 			logging.Log(logging.Info, logging.LogField{

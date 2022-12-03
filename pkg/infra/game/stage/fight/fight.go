@@ -86,7 +86,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	return propTally
 }
 
-func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) state.State {
+func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) *state.State {
 	var attackSum uint
 	var shieldSum uint
 
@@ -127,5 +127,5 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 
 	fightResult.AttackSum = attackSum
 	fightResult.ShieldSum = shieldSum
-	return state
+	return &state
 }

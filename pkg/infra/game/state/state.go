@@ -18,34 +18,34 @@ type AgentState struct {
 	Shields     immutable.List[InventoryItem]
 }
 
-func (a AgentState) BonusAttack(state State) uint {
-	if val, ok := state.InventoryMap.Weapons[a.WeaponInUse]; ok {
+func (s *AgentState) BonusAttack(state State) uint {
+	if val, ok := state.InventoryMap.Weapons[s.WeaponInUse]; ok {
 		return val
 	}
 	return 0
 }
 
-func (a AgentState) BonusDefense(state State) uint {
-	if val, ok := state.InventoryMap.Shields[a.ShieldInUse]; ok {
+func (s *AgentState) BonusDefense(state State) uint {
+	if val, ok := state.InventoryMap.Shields[s.ShieldInUse]; ok {
 		return val
 	}
 	return 0
 }
 
-func (a AgentState) TotalAttack(state State) uint {
-	return a.Attack + a.BonusAttack(state)
+func (s *AgentState) TotalAttack(state State) uint {
+	return s.Attack + s.BonusAttack(state)
 }
 
-func (a AgentState) TotalDefense(state State) uint {
-	return a.Defense + a.BonusDefense(state)
+func (s *AgentState) TotalDefense(state State) uint {
+	return s.Defense + s.BonusDefense(state)
 }
 
 func (s *AgentState) AddWeapon(weapon InventoryItem) {
-	s.Weapons = Add2Inventory(s.Weapons, weapon)
+	s.Weapons = addToInventory(s.Weapons, weapon)
 }
 
 func (s *AgentState) AddShield(shield InventoryItem) {
-	s.Shields = Add2Inventory(s.Shields, shield)
+	s.Shields = addToInventory(s.Shields, shield)
 }
 
 func (s *AgentState) ChangeWeaponInUse(weaponIdx decision.ItemIdx) {

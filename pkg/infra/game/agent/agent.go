@@ -28,16 +28,15 @@ func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResu
 	a.Strategy.UpdateInternalState(a.BaseAgent, fightResults, voteResults)
 }
 
-func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
+func (a *Agent) HandleUpdateWeapon(agentState state.AgentState) decision.ItemIdx {
 	a.BaseAgent.latestState = agentState
 
-	return a.Strategy.HandleUpdateWeapon(&view, a.BaseAgent)
+	return a.Strategy.HandleUpdateWeapon(a.BaseAgent)
 }
 
-func (a *Agent) HandleUpdateShield(agentState state.AgentState, view state.View) decision.ItemIdx {
+func (a *Agent) HandleUpdateShield(agentState state.AgentState) decision.ItemIdx {
 	a.BaseAgent.latestState = agentState
-
-	return a.Strategy.HandleUpdateShield(&view, a.BaseAgent)
+	return a.Strategy.HandleUpdateShield(a.BaseAgent)
 }
 
 func (a *Agent) SubmitManifesto(agentState state.AgentState) *decision.Manifesto {
