@@ -22,7 +22,7 @@ import (
 )
 
 type SocialAgent struct {
-	// probability of chosing collaborative strategy. p(selfish_strat) is 1 - this
+	// probability of chosing collaborative strategy. p(selfish_strategy) is 1 - this
 	pCollaborate float64
 
 	// current fightDecision
@@ -136,7 +136,6 @@ func (r *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
  * Agents dont talk to each other about fight decisions, they decide based on the Q-Table
  */
 func (r *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-
 	switch m.Message().(type) {
 	case message.StartFight:
 		r.selfID = baseAgent.ID()

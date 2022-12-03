@@ -102,13 +102,16 @@ func (r *SocialAgent) utilityValue(action decision.FightAction, _ *state.View, a
 /**
  * Tell other trusted agents above a threshold T about the A agents they admire the most,
  * and the H agents they hate the most.
- * Currently messages may be sent to recepients praising or denouncing the recepient
+ * Currently messages may be sent to recipients praising or denouncing the recipient
  */
 func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	selfID := agent.Name()
 
 	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
 	for _, sci := range r.socialCapital {
+		if sci.ID == selfID { // Exclude self
+			continue
+		}
 		sortedSCTrustworthiness = append(sortedSCTrustworthiness, sci)
 	}
 
@@ -126,11 +129,6 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 			break
 		}
 
-		if scit.ID == selfID { // Dont include self
-			numAdmire++
-			continue
-		}
-
 		admiredAgents = append(admiredAgents, scit.ID)
 	}
 
@@ -139,23 +137,16 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 			break
 		}
 
-		if sortedSCTrustworthiness[i].ID == selfID { // Dont include self
-			numAdmire++
-			continue
-		}
-
 		hatedAgents = append(hatedAgents, sortedSCTrustworthiness[i].ID)
 	}
 
 	for _, sci := range sortedSCTrustworthiness {
-		if sci.arr[1] < r.gossipThreshold || sci.ID == selfID {
+		if sci.arr[1] < r.gossipThreshold {
 			continue
 		}
 		utils.Gossip(agent, sci.ID, utils.Praise, admiredAgents)
 		utils.Gossip(agent, sci.ID, utils.Denounce, hatedAgents)
-
 	}
-
 }
 
 /**

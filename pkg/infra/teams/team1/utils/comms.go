@@ -19,7 +19,7 @@ const (
 	Denounce
 )
 
-func Gossip(BA agent.BaseAgent, recepient string, mtype int, about []string) {
+func Gossip(BA agent.BaseAgent, recipients string, mtype int, about []string) {
 	msg := message.ArrayInfo{Num: mtype, StringArr: about}
-	BA.SendBlockingMessage(recepient, msg)
+	BA.SendBlockingMessage(recipients, msg)
 }
