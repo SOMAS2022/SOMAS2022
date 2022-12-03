@@ -24,8 +24,55 @@ func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) state.Sta
 	return updatedState
 }
 
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
+// HPi and STi are the index of HP potion slice and ST potion slice that is allocate to the agent. Pass one at a time.
+func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (state.State, *commons.ImmutableList[uint]) {
 	allocatedState := globalState
+	hpPotionValue := allocatedState.PotionSlice.HPpotion[HPi]
+	v := allocatedState
+	a := allocatedState.AgentState[agentID]
+	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
+	allocatedState.AgentState[agentID] = a
+	allocatedState.PotionSlice.HPpotion[HPi] = 0
+	HPPotionList := commons.NewImmutableList(allocatedState.PotionSlice.HPpotion)
+	return allocatedState, HPPotionList
+}
+
+func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, *commons.ImmutableList[uint]) {
+	allocatedState := globalState
+	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
+	v := allocatedState
+	a := allocatedState.AgentState[agentID]
+	a.Stamina = v.AgentState[agentID].Stamina + stPotionValue
+	allocatedState.AgentState[agentID] = a
+	allocatedState.PotionSlice.STpotion[STi] = 0
+	STPotionList := commons.NewImmutableList(allocatedState.PotionSlice.STpotion)
+	return allocatedState, STPotionList
+}
+
+type PotionList struct {
+	HPPotionList *commons.ImmutableList[uint]
+	STPotionList *commons.ImmutableList[uint]
+}
+
+// immutable list for communication with agent only.
+// a slice is generated from state, action is done on the slice
+// imumutable list is generated upon temporory slice
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) state.State {
+	allocatedState := globalState
+	var PotionList PotionList
+
+	//allocate potion
+	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
+	allocatedState.PotionSlice.STpotion = make([]uint, len(STpotionloot))
+
+	idx := 0
+
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedState, PotionList.HPPotionList = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
+		allocatedState, PotionList.STPotionList = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
+		allocatedState.AgentState[agentID] = agentState
+		idx++
+	}
 
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
