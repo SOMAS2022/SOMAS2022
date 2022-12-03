@@ -64,7 +64,7 @@ func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *RandomAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
@@ -74,7 +74,7 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, baseAgent 
 	}
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+func (r *RandomAgent) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
