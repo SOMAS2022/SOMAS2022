@@ -21,7 +21,8 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 		newHP := commons.SaturatingSub(agentState.Hp, splitDamage)
 		if newHP == 0 {
 			// kill agent
-			// todo: prune peer channels somehow...
+			removeItems(globalState, globalState.AgentState[id])
+
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
 		} else {
@@ -36,6 +37,19 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 				ShieldInUse: agentState.ShieldInUse,
 			}
 		}
+	}
+}
+
+func removeItems(globalState *state.State, agentState state.AgentState) {
+	removeItemsFromMap(globalState.InventoryMap.Weapons, agentState.Weapons)
+	removeItemsFromMap(globalState.InventoryMap.Shields, agentState.Shields)
+}
+
+func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.InventoryItem]) {
+	iterator := l.Iterator()
+	for !iterator.Done() {
+		_, v := iterator.Next()
+		delete(m, v.ID)
 	}
 }
 
