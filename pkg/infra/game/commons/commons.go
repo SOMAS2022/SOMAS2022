@@ -47,14 +47,6 @@ func MapToImmutable[K constraints.Ordered, V any](m map[K]V) immutable.Map[K, V]
 	return *builder.Map()
 }
 
-func SliceToMap(s []uint) map[int]uint {
-	m := make(map[int]uint)
-	for i := 0; i < cap(s); i++ {
-		m[i] = s[i]
-	}
-	return m
-}
-
 func ListToimmutable[I constraints.Ordered](l []I) immutable.List[I] {
 	v := immutable.NewListBuilder[I]()
 
