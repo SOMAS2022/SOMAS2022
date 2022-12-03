@@ -30,14 +30,14 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 		allocatedShieldIdx := rand.Intn(len(shieldLoot))
 
 		// add W to global InventoryMap and this agent's inventory
-		wid := uuid.New().String()
+		wid := uuid.NewString()
 		weaponValue := weaponLoot[allocatedWeaponIdx]
 		allocatedState.InventoryMap.Weapons[wid] = weaponValue
 		allocatedWeapon := state.InventoryItem{ID: wid, Value: weaponValue}
 		agentState.AddWeapon(allocatedWeapon)
 
 		// add S to global InventoryMap and this agent's inventory
-		sid := uuid.New().String()
+		sid := uuid.NewString()
 		shieldValue := shieldLoot[allocatedShieldIdx]
 		allocatedState.InventoryMap.Shields[sid] = shieldValue
 		allocatedShield := state.InventoryItem{ID: sid, Value: shieldValue}

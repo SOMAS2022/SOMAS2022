@@ -58,7 +58,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil, closure)
 		}
 	}
-	mID, _ := uuid.NewUUID()
+	mID := uuid.Nil
 
 	for _, messages := range channelsMap {
 		messages <- *message.NewTaggedMessage("server", &message.StartFight{}, mID)

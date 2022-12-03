@@ -42,8 +42,7 @@ func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProp
 			actions[id] = decision.Cower
 		}
 	}
-	newUUID, _ := uuid.NewUUID()
-	prop := message.NewProposal(newUUID.String(), commons.MapToImmutable(actions))
+	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
 	return *prop
 }
 
