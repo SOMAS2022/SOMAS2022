@@ -47,24 +47,3 @@ func testEq[Type comparable](a, b []Type) bool {
 	}
 	return true
 }
-
-func testSliceToMap(t *testing.T) {
-	s := []uint{1, 2, 3, 4, 5}
-	m := commons.SliceToMap(s)
-	mt := make(map[int]uint)
-	mt[1] = 1
-	mt[2] = 2
-	mt[3] = 3
-	mt[4] = 4
-	mt[5] = 5
-
-	if m != nil {
-		for i := 1; i <= 5; i++ {
-			if m[i] != mt[i] {
-				t.Errorf("m[%d] is %d, want %d", i, m[i], i)
-			}
-		}
-	} else {
-		t.Errorf("emplty map, expect 5 mapping")
-	}
-}
