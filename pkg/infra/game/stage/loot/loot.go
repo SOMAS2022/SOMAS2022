@@ -9,7 +9,6 @@ import (
 	"math/rand"
 
 	//"github.com/benbjohnson/immutable"
-	"github.com/benbjohnson/immutable"
 	"github.com/google/uuid"
 )
 
@@ -38,7 +37,8 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) (sta
 	HPPotionList := commons.NewImmutableList[uint](allocatedState.PotionSlice.HPpotion)
 	return allocatedState, HPPotionList
 }
-func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, immutable.Map[int, uint]) {
+
+func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) (state.State, *commons.ImmutableList[uint]) {
 	allocatedState := globalState
 	stPotionValue := allocatedState.PotionSlice.STpotion[STi]
 	v := allocatedState
@@ -71,19 +71,6 @@ func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint,
 	for agentID, agentState := range allocatedState.AgentState {
 		allocatedState, PotionList.HPPotionList = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
 		allocatedState, PotionList.STPotionList = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
-		allocatedState.AgentState[agentID] = agentState
-		idx++
-	}
-
-	//allocate potion
-	allocatedState.PotionSlice.HPpotion = make([]uint, len(HPpotionloot))
-	allocatedState.PotionSlice.STpotion = make([]uint, len(STpotionloot))
-
-	idx := 0
-
-	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState, _ = AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)-idx))
-		allocatedState, _ = AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)-idx))
 		allocatedState.AgentState[agentID] = agentState
 		idx++
 	}
