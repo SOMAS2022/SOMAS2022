@@ -10,6 +10,7 @@ import (
 	"infra/game/message"
 	"infra/game/stage/discussion"
 	"infra/game/stage/fight"
+	"infra/game/stage/hppool"
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
@@ -119,7 +120,7 @@ func startGameLoop() {
 		globalState = &newGlobalState
 
 		// TODO: HP Pool donations
-		updateHpPool()
+		hppool.UpdateHpPool(agentMap, globalState)
 
 		// TODO: End of level Updates
 		termLeft--
