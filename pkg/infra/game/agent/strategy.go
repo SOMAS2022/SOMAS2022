@@ -24,5 +24,6 @@ type Strategy interface {
 	HandleUpdateWeapon(view *state.View, baseAgent BaseAgent) decision.ItemIdx
 	// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
 	HandleUpdateShield(view *state.View, baseAgent BaseAgent) decision.ItemIdx
-	UpdateInternalState(fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint])
+	UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint])
+	DonateToHpPool(baseAgent BaseAgent) uint
 }

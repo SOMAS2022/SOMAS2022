@@ -54,6 +54,12 @@ func startGameLoop() {
 		}
 
 		if globalState.HpPool >= globalState.MonsterHealth {
+			logging.Log(logging.Info, logging.LogField{
+				"Original HP Pool":  globalState.HpPool,
+				"Monster Health":    globalState.MonsterHealth,
+				"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
+			}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
+
 			globalState.HpPool -= globalState.MonsterHealth
 			globalState.MonsterHealth = 0
 		}
@@ -61,8 +67,6 @@ func startGameLoop() {
 		// allow agents to change the weapon and the shield in use
 		updatedGlobalState := loot.UpdateItems(*globalState, agentMap)
 		globalState = &updatedGlobalState
-
-		// TODO: Fight Discussion Stage
 
 		// Battle Rounds
 		// TODO: Ambiguity in specification - do agents have a upper limit of rounds to try and slay the monster?
@@ -124,6 +128,7 @@ func startGameLoop() {
 		globalState = &newGlobalState
 
 		// TODO: HP Pool donations
+		updateHpPool()
 
 		// TODO: End of level Updates
 		termLeft--

@@ -15,6 +15,19 @@ type Agent struct {
 	Strategy
 }
 
+func (a *Agent) HandleDonateToHpPool(agentState state.AgentState) uint {
+	// fmt.Print(agentState)
+	a.BaseAgent.latestState = agentState
+
+	return a.Strategy.DonateToHpPool(a.BaseAgent)
+}
+
+func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResults *commons.ImmutableList[decision.ImmutableFightResult], voteResults *immutable.Map[decision.Intent, uint]) {
+	a.BaseAgent.latestState = agentState
+
+	a.Strategy.UpdateInternalState(a.BaseAgent, fightResults, voteResults)
+}
+
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState, view state.View) decision.ItemIdx {
 	a.BaseAgent.latestState = agentState
 

@@ -6,7 +6,6 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-	"infra/logging"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -17,7 +16,11 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) UpdateInternalState(fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
+func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+}
+
+func (r *RandomAgent) UpdateInternalState(agent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
 }
 
 func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
@@ -62,7 +65,7 @@ func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 }
 
 func (r *RandomAgent) HandleFightInformation(_ message.TaggedMessage, baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
+	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
 	if makesProposal > 80 {

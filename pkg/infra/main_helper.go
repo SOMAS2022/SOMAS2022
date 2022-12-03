@@ -155,13 +155,66 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 
 func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
 	var wg sync.WaitGroup
-	for _, a := range agentMap {
+	for id, a := range agentMap {
+		id := id
 		a := a
 		wg.Add(1)
 		go func(wait *sync.WaitGroup) {
-			a.Strategy.UpdateInternalState(immutableFightRounds, votesResult)
+			a.HandleUpdateInternalState(globalState.AgentState[id], immutableFightRounds, votesResult)
 			wait.Done()
 		}(&wg)
 	}
 	wg.Wait()
+}
+
+type HpPoolDonation struct {
+	agentId  commons.ID
+	donation uint
+}
+
+func updateHpPool() {
+	var wg sync.WaitGroup
+	donationChan := make(chan HpPoolDonation, len(agentMap))
+	for id, a := range agentMap {
+		// fmt.Print(a.BaseAgent.AgentState().Hp)
+		id := id
+		a := a
+		wg.Add(1)
+		go func(wait *sync.WaitGroup, donationChan chan HpPoolDonation) {
+			donation := a.HandleDonateToHpPool(globalState.AgentState[id])
+			donationChan <- HpPoolDonation{id, donation}
+			wait.Done()
+		}(&wg, donationChan)
+	}
+	wg.Wait()
+
+	sum := uint(0)
+	for i := 0; i < len(agentMap); i++ {
+		agentDonation := <-donationChan
+
+		agentHp := globalState.AgentState[agentDonation.agentId].Hp
+		if agentDonation.donation > agentHp {
+			agentDonation.donation = agentHp
+		}
+
+		logging.Log(logging.Trace, logging.LogField{
+			"Agent Donation": agentDonation,
+			"Old Sum":        sum,
+			"New Sum":        sum + agentDonation.donation,
+		}, "HP Pool Donation")
+
+		sum += agentDonation.donation
+		if a, ok := globalState.AgentState[agentDonation.agentId]; ok {
+			a.Hp = agentHp - agentDonation.donation
+			globalState.AgentState[agentDonation.agentId] = a
+		}
+	}
+
+	logging.Log(logging.Info, logging.LogField{
+		"Old HP Pool":           globalState.HpPool,
+		"HP Donated This Round": sum,
+		"New Hp Pool":           globalState.HpPool + sum,
+	}, "HP Pool Donation")
+
+	globalState.HpPool += sum
 }
