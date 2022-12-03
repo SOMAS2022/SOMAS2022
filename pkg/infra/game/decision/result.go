@@ -64,11 +64,3 @@ func NewImmutableFightResult(fightResult FightResult, round uint) *ImmutableFigh
 		round:           round,
 	}
 }
-
-func (a ImmutableFightResult) Compare(b ImmutableFightResult) int {
-	if a.round > b.round {
-		return 1
-	} else {
-		return -1
-	}
-}
