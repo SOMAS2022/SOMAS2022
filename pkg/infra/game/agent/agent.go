@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/stages"
 	"infra/game/state"
 	"infra/logging"
 
@@ -115,6 +116,11 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 		case decision.Positive:
 			votes <- v.ProposalID()
 		default:
+		}
+	case message.CustomInform:
+		if stages.Mode != "default" {
+			inf := *message.NewTaggedInformMessage[message.CustomInform](m.Sender(), r, m.MID())
+			a.Strategy.HandleCustomInformation(inf, a.BaseAgent, log)
 		}
 	default:
 		logging.Log(logging.Warn, nil, fmt.Sprintf("Unknown type, %T", r))
