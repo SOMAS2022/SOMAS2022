@@ -32,7 +32,7 @@ func AllocateHPPotion(globalState state.State, agentID commons.ID, HPi int) stat
 	a := allocatedState.AgentState[agentID]
 	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
 	allocatedState.AgentState[agentID] = a
-	allocatedState.PotionSlice.HPpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.HPpotion, HPi)
+	allocatedState.PotionSlice.HPpotion[HPi] = 0
 	return allocatedState
 }
 
@@ -43,7 +43,7 @@ func AllocateSTPotion(globalState state.State, agentID commons.ID, STi int) stat
 	a := allocatedState.AgentState[agentID]
 	a.Stamina = v.AgentState[agentID].Hp + stPotionValue
 	allocatedState.AgentState[agentID] = a
-	allocatedState.PotionSlice.STpotion, _ = commons.DeleteElFromSlice(allocatedState.PotionSlice.STpotion, STi)
+	allocatedState.PotionSlice.STpotion[STi] = 0
 	return allocatedState
 }
 
