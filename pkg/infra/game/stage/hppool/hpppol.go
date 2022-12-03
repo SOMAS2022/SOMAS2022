@@ -13,15 +13,15 @@ func UpdateHpPool(agentMap map[commons.ID]agent.Agent, globalState *state.State)
 	var wg sync.WaitGroup
 	donationChan := make(chan decision.HpPoolDonation, len(agentMap))
 	for id, a := range agentMap {
-		// fmt.Print(a.BaseAgent.AgentState().Hp)
 		id := id
 		a := a
+		aState := globalState.AgentState[id]
 		wg.Add(1)
-		go func(wait *sync.WaitGroup, donationChan chan decision.HpPoolDonation) {
-			donation := a.HandleDonateToHpPool(globalState.AgentState[id])
+		go func(wait *sync.WaitGroup, donationChan chan decision.HpPoolDonation, agentState state.AgentState) {
+			donation := a.HandleDonateToHpPool(agentState)
 			donationChan <- decision.HpPoolDonation{AgentID: id, Donation: donation}
 			wait.Done()
-		}(&wg, donationChan)
+		}(&wg, donationChan, aState)
 	}
 
 	go func(wait *sync.WaitGroup) {
