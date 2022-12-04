@@ -3,6 +3,7 @@ package loot
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 
 	"infra/game/agent"
 	"infra/game/commons"
@@ -12,16 +13,41 @@ import (
 	"github.com/google/uuid"
 )
 
-func UpdateItems(state state.State, agents map[commons.ID]agent.Agent) *state.State {
-	updatedState := state
-	for _, a := range agents {
-		agentState := updatedState.AgentState[a.BaseAgent.ID()]
-		weaponId := a.HandleUpdateWeapon(agentState)
-		shieldId := a.HandleUpdateShield(agentState)
-		agentState.ChangeWeaponInUse(weaponId)
-		agentState.ChangeShieldInUse(shieldId)
-		updatedState.AgentState[a.BaseAgent.ID()] = agentState
+type agentStateUpdate struct {
+	commons.ID
+	state.AgentState
+}
+
+func UpdateItems(s state.State, agents map[commons.ID]agent.Agent) *state.State {
+	updatedState := s
+	var wg sync.WaitGroup
+	updatedStates := make(chan agentStateUpdate)
+	for id, a := range agents {
+		wg.Add(1)
+		id := id
+		a := a
+		agentState := s.AgentState[id]
+		go func(id commons.ID, a agent.Agent, sender chan<- agentStateUpdate, wait *sync.WaitGroup) {
+			weaponId := a.HandleUpdateWeapon(agentState)
+			shieldId := a.HandleUpdateShield(agentState)
+			agentState.ChangeWeaponInUse(weaponId)
+			agentState.ChangeShieldInUse(shieldId)
+			sender <- agentStateUpdate{
+				ID:         id,
+				AgentState: agentState,
+			}
+			wait.Done()
+		}(id, a, updatedStates, &wg)
 	}
+	go func(group *sync.WaitGroup) {
+		group.Wait()
+		close(updatedStates)
+	}(&wg)
+
+	for update := range updatedStates {
+		updatedState.AgentState[update.ID] = update.AgentState
+	}
+
 	return &updatedState
 }
 
