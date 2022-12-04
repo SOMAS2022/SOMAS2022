@@ -7,8 +7,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
-	"infra/game/tally"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -20,9 +18,23 @@ type AgentThree struct {
 	utilityScore map[commons.ID]int
 }
 
+// HP pool donation
+func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	donation := rand.Intn(2)
+	// If our health is > 50% then donate some HP
+	if donation == 1 && baseAgent.AgentState().Hp > 500 {
+		return uint(rand.Intn(int((baseAgent.AgentState().Hp * 20) / 100)))
+	} else {
+		return 0
+	}
+}
+
+func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+	a.UpdateUtility(baseAgent)
+}
+
 // Update Utility
 func (a *AgentThree) UpdateUtility(baseAgent agent.BaseAgent) {
-
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
@@ -40,10 +52,7 @@ func (a *AgentThree) UpdateUtility(baseAgent agent.BaseAgent) {
 }
 
 // Create proposal for fight decisions
-func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[decision.FightAction] {
-
-	a.UpdateUtility(baseAgent)
-
+func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
 	actions := make(map[commons.ID]decision.FightAction)
 	view := baseAgent.View()
 	agentState := view.AgentState()
@@ -70,8 +79,8 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) tally.Proposal[d
 			}
 		}
 	}
-	newUUID, _ := uuid.NewUUID()
-	prop := tally.NewProposal(newUUID.String(), commons.MapToImmutable(actions))
+
+	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
 	return *prop
 }
 
@@ -94,20 +103,18 @@ func (a *AgentThree) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 }
 
 // Send proposal to leader
-func (a *AgentThree) HandleFightInformation(_ message.TaggedMessage, baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": a.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
+func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
 	if makesProposal > 80 {
 		prop := a.FightResolution(baseAgent)
-		view := baseAgent.View()
-		_ = baseAgent.SendBlockingMessage(view.CurrentLeader(), *message.NewMessage(message.Proposal, *message.NewProposalPayload(prop.Proposal())))
+		_ = baseAgent.SendProposalToLeader(prop)
 	}
 }
 
 // Calculate our agents action
 func (a *AgentThree) CurrentAction() decision.FightAction {
-
 	if a.bravery > 2 {
 		fight := rand.Intn(2)
 		switch fight {
@@ -150,8 +157,7 @@ func (a *AgentThree) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electio
 }
 
 // Vote on proposal
-func (a *AgentThree) HandleFightProposal(m *message.FightProposalMessage, baseAgent agent.BaseAgent) decision.Intent {
-
+func (a *AgentThree) HandleFightProposal(m message.FightProposalMessage, baseAgent agent.BaseAgent) decision.Intent {
 	prop := m.Proposal()
 	act, _ := prop.Get(baseAgent.ID())
 
@@ -163,7 +169,7 @@ func (a *AgentThree) HandleFightProposal(m *message.FightProposalMessage, baseAg
 	}
 }
 
-func (a *AgentThree) HandleUpdateWeapon(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+func (a *AgentThree) HandleUpdateWeapon(b agent.BaseAgent) decision.ItemIdx {
 	// weapons := b.AgentState().Weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
@@ -171,14 +177,14 @@ func (a *AgentThree) HandleUpdateWeapon(view *state.View, b agent.BaseAgent) dec
 	return decision.ItemIdx(0)
 }
 
-func (a *AgentThree) HandleUpdateShield(view *state.View, b agent.BaseAgent) decision.ItemIdx {
+func (a *AgentThree) HandleUpdateShield(b agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
 }
 
 // Leader function to grant the floor
-func (a *AgentThree) HandleFightProposalRequest(_ *message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (a *AgentThree) HandleFightProposalRequest(_ message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -187,7 +193,7 @@ func (a *AgentThree) HandleFightProposalRequest(_ *message.FightProposalMessage,
 	}
 }
 
-func (a *AgentThree) HandleFightRequest(_ message.TaggedMessage, _ *immutable.Map[commons.ID, decision.FightAction]) message.Payload {
+func (a *AgentThree) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
