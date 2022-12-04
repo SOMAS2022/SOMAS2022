@@ -12,19 +12,22 @@ import (
 func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
 	// todo: cleanup the nil check that acts to check if the leader died in combat
+	var prop commons.ImmutableList[proposal.Rule[decision.FightAction]]
 	if manifesto.FightImposition() && currentLeader.Strategy != nil {
-		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent).Rules()
-		predicate := proposal.ToPredicate(resolution)
-		for id, a := range agentMap {
-			fightActions[id] = predicate(gs, a.AgentState())
-		}
+		prop = currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent).Rules()
 	} else {
 		// get proposal with most votes
-		winningProp := tally.GetMax().Rules()
-		predicate := proposal.ToPredicate(winningProp)
-		for id, a := range agentMap {
-			fightActions[id] = predicate(gs, a.AgentState())
+		prop = tally.GetMax().Rules()
+	}
+
+	predicate := proposal.ToPredicate(prop)
+	if predicate == nil {
+		predicate = func(_ state.State, _ state.AgentState) decision.FightAction {
+			return decision.Cower
 		}
+	}
+	for id, a := range agentMap {
+		fightActions[id] = predicate(gs, a.AgentState())
 	}
 
 	return decision.FightResult{

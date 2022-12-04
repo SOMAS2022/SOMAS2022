@@ -16,18 +16,20 @@ func ToPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]
 			predicates = append(predicates, makePredicate(*cond, rule))
 		}
 	}
-
-	return func(s state.State, agentState state.AgentState) A {
-		for _, predicate := range predicates {
-			action, match := predicate(s, agentState)
-			if match {
-				return action
+	if len(predicates) > 0 {
+		return func(s state.State, agentState state.AgentState) A {
+			for _, predicate := range predicates {
+				action, match := predicate(s, agentState)
+				if match {
+					return action
+				}
 			}
+			// todo: what to do if unallocated with parameterized class
+			a, _ := predicates[len(predicates)-1](s, agentState)
+			return a
 		}
-		// todo: what to do if unallocated with parameterized class
-		a, _ := predicates[len(predicates)-1](s, agentState)
-		return a
 	}
+	return nil
 }
 
 func makePredicate[A decision.ProposalAction](cond ComparativeCondition, rule Rule[A]) func(s state.State, agentState state.AgentState) (A, bool) {
