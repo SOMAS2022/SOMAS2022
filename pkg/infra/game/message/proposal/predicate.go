@@ -11,10 +11,7 @@ func ToPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]
 	predicates := make([]func(s state.State, agentState state.AgentState) (A, bool), 0)
 	for !iterator.Done() {
 		rule, _ := iterator.Next()
-		switch cond := rule.condition.(type) {
-		case *ComparativeCondition:
-			predicates = append(predicates, makePredicate(*cond, rule))
-		}
+		makePredicate(rule)
 	}
 	if len(predicates) > 0 {
 		return func(s state.State, agentState state.AgentState) A {
@@ -32,10 +29,22 @@ func ToPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]
 	return nil
 }
 
-func makePredicate[A decision.ProposalAction](cond ComparativeCondition, rule Rule[A]) func(s state.State, agentState state.AgentState) (A, bool) {
+func makePredicate[A decision.ProposalAction](rule Rule[A]) func(s state.State, agentState state.AgentState) (A, bool) {
+	switch condT := rule.condition.(type) {
+	case ComparativeCondition:
+		return buildCompPredicate(rule, condT)
+	default:
+		return func(s state.State, agentState state.AgentState) (A, bool) {
+			//todo: use state/agentState to check if in recent defector set
+			return rule.action, true
+		}
+	}
+}
+
+func buildCompPredicate[A decision.ProposalAction](rule Rule[A], condT ComparativeCondition) func(s state.State, agentState state.AgentState) (A, bool) {
 	return func(s state.State, agentState state.AgentState) (A, bool) {
 		var attr uint
-		switch cond.Attribute {
+		switch condT.Attribute {
 		case Health:
 			attr = agentState.Hp
 		case Stamina:
@@ -47,15 +56,15 @@ func makePredicate[A decision.ProposalAction](cond ComparativeCondition, rule Ru
 		default:
 			attr = agentState.Hp
 		}
-		switch cond.Comparator {
+		switch condT.Comparator {
 		case GreaterThan:
-			if attr > cond.Value {
+			if attr > condT.Value {
 				return rule.action, true
 			} else {
 				return rule.action, false
 			}
 		default:
-			if attr < cond.Value {
+			if attr < condT.Value {
 				return rule.action, true
 			} else {
 				return rule.action, false
