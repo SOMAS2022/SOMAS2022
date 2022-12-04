@@ -21,37 +21,24 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+func (r *SocialAgent) initSocialCapital(selfID string, sci map[string]SocialCapInfo) {
+	r.selfID = selfID
+	// Create empty map
+	r.socialCapital = sci
+
+	// Delete the agents own id from the socialCapital array
+	delete(r.socialCapital, r.selfID)
+
+	// Set the lastLevelUpdated variable
+	r.lastLevelUpdated = 0
+}
+
 // Called any time a message is received, initialises or updates the socialCapital map
 func (r *SocialAgent) updateSocialCapital(view state.View, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// Ensure that socialCapital map is initialised
 	agentState := view.AgentState()
-	agentStateLength := agentState.Len()
 	updatedSocCapInfo := SocialCapInfo{}
-	if len(r.socialCapital) == 0 && agentStateLength > 1 {
-		// Create empty map
-		r.socialCapital = map[string]SocialCapInfo{}
-
-		// Populate map with every currently living agent, and calculate socialCapital based on log
-		itr := agentState.Iterator()
-		for !itr.Done() {
-			key, _, _ := itr.Next()
-
-			action, exists := log.Get(key)
-			updatedSocCapInfo.ID = key
-			if exists { // If agent exists in log, calculate socialCapital
-				updatedSocCapInfo.arr = utils.BoundArray(utils.ActionSentiment(action))
-			} else { // Else initialize socialCapital to 0
-				updatedSocCapInfo.arr = [4]float64{0.0, 0.0, 0.0, 0.0}
-			}
-			r.socialCapital[key] = updatedSocCapInfo
-		}
-
-		// Delete the agents own id from the socialCapital array
-		delete(r.socialCapital, r.selfID)
-
-		// Set the lastLevelUpdated variable
-		r.lastLevelUpdated = view.CurrentLevel()
-	} else if r.lastLevelUpdated < view.CurrentLevel() { // socialCapital variable already exists
+	if r.lastLevelUpdated < view.CurrentLevel() {
 		for key := range r.socialCapital {
 			// Remove any agents that have died from socialCapital map (Might be unnecessary as it adds a lot of computation)
 			_, exists := agentState.Get(key)

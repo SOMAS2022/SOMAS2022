@@ -46,6 +46,8 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	switch Mode {
 	case "0":
 		return t0.InitAgents(defaultStrategyMap, gameConfig, ptr)
+	case "1":
+		return t1.InitAgents(defaultStrategyMap, gameConfig, ptr)
 	default:
 		return initialise.InitAgents(defaultStrategyMap, gameConfig, ptr)
 	}

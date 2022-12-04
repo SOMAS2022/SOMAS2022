@@ -41,7 +41,8 @@ type SocialAgent struct {
 	// Proportion of agents to talk well about
 	propAdmire float64
 
-	selfID string
+	selfID  string
+	graphID int
 
 	// Four metrics for each agent's perception of other agents. Three metrics are borrowed from Ostrom-Ahn
 	// social capital model: (The ordering below is the same as the ordering in the array)

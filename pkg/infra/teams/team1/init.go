@@ -13,7 +13,6 @@ import (
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
-	"infra/game/example"
 	"infra/game/stage/initialise"
 	"infra/game/state"
 	"infra/teams/team1/utils"
@@ -22,7 +21,6 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
-	"RANDOM":             example.NewRandomAgent,
 	"CollaborativeAgent": CreateCollaborativeAgent,
 	"SelfishAgent":       CreateSelfishAgent,
 }
@@ -47,6 +45,20 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 		numAgents += quantity
 		initialise.InstantiateAgent(gameConfig, agentMap, agentStateMap, quantity, strategy, agentName, ptr)
 	}
+
+	// intit agent's social cap info
+	sci := SocialCapInfo{}
+	sci.arr = [4]float64{0.5, 0.5, 0.5, 0.5}
+	sciMap := map[string]SocialCapInfo{}
+	for k, _ := range agentMap {
+		sci.ID = k
+		sciMap[k] = sci
+	}
+	for k, a := range agentMap {
+		socialStrategy := a.Strategy.(*SocialAgent)
+		socialStrategy.initSocialCapital(k, sciMap)
+	}
+	connectAgents(agentMap)
 
 	return
 }
