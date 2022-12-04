@@ -20,7 +20,7 @@ func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 }
 
-func (r *RandomAgent) UpdateInternalState(agent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
 }
 
 func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
@@ -63,7 +63,7 @@ func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
@@ -73,7 +73,7 @@ func (r *RandomAgent) HandleFightInformation(m message.TaggedInformMessage[messa
 	}
 }
 
-func (r *RandomAgent) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+func (r *RandomAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
