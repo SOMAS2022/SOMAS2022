@@ -62,7 +62,7 @@ func (a *Agent) HandleElection(agentState state.AgentState, params *decision.Ele
 func (a *Agent) HandleFight(agentState state.AgentState,
 	log immutable.Map[commons.ID, decision.FightAction],
 	votes chan commons.ProposalID,
-	submission chan message.MapProposal[decision.FightAction],
+	submission chan message.Proposal[decision.FightAction],
 	closure <-chan struct{},
 ) {
 	a.BaseAgent.latestState = agentState
@@ -87,7 +87,7 @@ func (a *Agent) SetCommunication(communication *Communication) {
 func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightAction],
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
-	submission chan message.MapProposal[decision.FightAction],
+	submission chan message.Proposal[decision.FightAction],
 ) {
 	switch r := m.Message().(type) {
 	case message.FightRequest:
@@ -98,12 +98,11 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	case message.FightInform:
 		inf := *message.NewTaggedInformMessage[message.FightInform](m.Sender(), r, m.MID())
 		a.Strategy.HandleFightInformation(inf, *a.BaseAgent, log)
-	case message.MapProposal[decision.FightAction]:
-		// todo: Refactor this type to be similar to the types above
-		v := *message.NewFightProposalMessage(m.Sender(), r.Proposal(), r.ProposalID())
+
+	case message.Proposal[decision.FightAction]:
 		if a.isLeader() {
-			if a.Strategy.HandleFightProposalRequest(v, *a.BaseAgent, log) {
-				submission <- *message.NewProposal(v.ProposalID(), v.Proposal())
+			if a.Strategy.HandleFightProposalRequest(r, *a.BaseAgent, log) {
+				submission <- r
 				iterator := a.BaseAgent.communication.peer.Iterator()
 				for !iterator.Done() {
 					_, value, _ := iterator.Next()
@@ -111,9 +110,9 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 				}
 			}
 		}
-		switch a.Strategy.HandleFightProposal(v, *a.BaseAgent) {
+		switch a.Strategy.HandleFightProposal(r, *a.BaseAgent) {
 		case decision.Positive:
-			votes <- v.ProposalID()
+			votes <- r.ProposalID()
 		default:
 		}
 	default:

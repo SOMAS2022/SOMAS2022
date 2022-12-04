@@ -78,7 +78,7 @@ func startGameLoop() {
 				decisionMapView.Set(u, action)
 			}
 			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
-			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
+			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
 			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
