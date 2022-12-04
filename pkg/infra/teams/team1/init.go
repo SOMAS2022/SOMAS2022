@@ -50,7 +50,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	sci := SocialCapInfo{}
 	sci.arr = [4]float64{0.5, 0.5, 0.5, 0.5}
 	sciMap := map[string]SocialCapInfo{}
-	for k, _ := range agentMap {
+	for k := range agentMap {
 		sci.ID = k
 		sciMap[k] = sci
 	}

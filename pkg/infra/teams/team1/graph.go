@@ -43,7 +43,7 @@ func connectAgents(agentMap map[commons.ID]agent.Agent) {
 	// fmt.Println(combined.String())
 
 	agentIDs := make([]string, 0, len(agentMap))
-	for k, _ := range agentMap {
+	for k := range agentMap {
 		agentIDs = append(agentIDs, k)
 	}
 	sort.Strings(agentIDs)
@@ -53,5 +53,4 @@ func connectAgents(agentMap map[commons.ID]agent.Agent) {
 		currentAgent.graphID = i
 		combined.Visit(i, createConnection)
 	}
-
 }
