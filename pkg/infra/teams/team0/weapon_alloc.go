@@ -14,15 +14,12 @@ import (
 /**
 * This default function allocates loot randomly.
  */
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, HPpotionloot []uint, STpotionloot []uint) *state.State {
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
 	allocatedState := globalState
 
-	allocatedState.PotionSlice.HPPotion = make([]uint, len(HPpotionloot))
-	allocatedState.PotionSlice.HPPotion = make([]uint, len(STpotionloot))
-
 	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState, _ = loot.AllocateHPPotion(allocatedState, agentID, rand.Intn(len(HPpotionloot)))
-		allocatedState, _ = loot.AllocateSTPotion(allocatedState, agentID, rand.Intn(len(STpotionloot)))
+		allocatedState = loot.AllocateHPPotion(allocatedState, hpPotionLoot, agentID, rand.Intn(len(hpPotionLoot)))
+		allocatedState = loot.AllocateSTPotion(allocatedState, stPotionLoot, agentID, rand.Intn(len(stPotionLoot)))
 		allocatedState.AgentState[agentID] = agentState
 	}
 

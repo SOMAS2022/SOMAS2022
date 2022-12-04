@@ -46,7 +46,7 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	}
 }
 
-// TODO: Change to using views.
+// AgentLootDecisions TODO: Change to using views.
 func AgentLootDecisions(globalState state.State, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
 	switch Mode {
 	case "0":
