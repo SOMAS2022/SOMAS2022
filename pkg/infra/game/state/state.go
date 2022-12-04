@@ -60,11 +60,6 @@ func (s *AgentState) ChangeShieldInUse(shieldIdx decision.ItemIdx) {
 	}
 }
 
-type PotionSlice struct {
-	HPPotion []uint
-	STPotion []uint
-}
-
 type State struct {
 	CurrentLevel    uint
 	HpPool          uint
@@ -72,7 +67,6 @@ type State struct {
 	MonsterAttack   uint
 	AgentState      map[commons.ID]AgentState
 	InventoryMap    InventoryMap
-	PotionSlice     PotionSlice
 	CurrentLeader   commons.ID
 	LeaderManifesto decision.Manifesto
 }
