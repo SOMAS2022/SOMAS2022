@@ -26,9 +26,6 @@ func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.Immutabl
 
 func (r *RandomAgent) FightResolution(_ agent.BaseAgent) message.Proposal[decision.FightAction] {
 	rules := make([]proposal.Rule[decision.FightAction], 0)
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 100),
-	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
 		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
@@ -39,7 +36,11 @@ func (r *RandomAgent) FightResolution(_ agent.BaseAgent) message.Proposal[decisi
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 0),
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 	))
 
 	prop := message.NewProposal[decision.FightAction](uuid.Nil.String(), *commons.NewImmutableList(rules))

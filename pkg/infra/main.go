@@ -110,16 +110,16 @@ func startGameLoop() {
 		// TODO: Loot Discussion Stage
 		numberOfItems := len(agentMap)
 		weaponLoot, shieldLoot := make([]uint, numberOfItems), make([]uint, numberOfItems)
-		HPpotionloot, STpotionloot := make([]uint, numberOfItems), make([]uint, numberOfItems)
+		HPPotionLoot, STPotionLoot := make([]uint, numberOfItems), make([]uint, numberOfItems)
 
 		for i := range weaponLoot {
 			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			HPpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			STpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+			HPPotionLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+			STPotionLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		globalState = stages.AgentLootDecisions(*globalState, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
+		globalState = stages.AgentLootDecisions(*globalState, weaponLoot, shieldLoot, HPPotionLoot, STPotionLoot)
 
 		hppool.UpdateHpPool(agentMap, globalState)
 
