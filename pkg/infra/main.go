@@ -66,10 +66,10 @@ func startGameLoop() {
 		roundNum := uint(0)
 		for globalState.MonsterHealth != 0 {
 			// find out the maximum attack from alive agents
-			var maxAttack uint = 0
+			maxAttack := uint(0)
 			for _, agentState := range globalState.AgentState {
 				if agentState.Hp > 0 {
-					maxAttack = maxAttack + agentState.TotalAttack(*globalState)
+					maxAttack += agentState.TotalAttack(*globalState)
 				}
 			}
 
