@@ -4,6 +4,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -16,7 +17,7 @@ type Strategy interface {
 	HandleConfidencePoll(baseAgent BaseAgent) decision.Intent
 	HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
 	HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent) decision.Intent
-	FightResolution(agent BaseAgent) message.Proposal[decision.FightAction]
+	FightResolution(agent BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]]
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
 	// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons

@@ -10,7 +10,6 @@ import (
 	"infra/game/message"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 type RandomAgent struct {
@@ -24,7 +23,7 @@ func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
 }
 
-func (r *RandomAgent) FightResolution(_ agent.BaseAgent) message.Proposal[decision.FightAction] {
+func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
@@ -43,8 +42,7 @@ func (r *RandomAgent) FightResolution(_ agent.BaseAgent) message.Proposal[decisi
 		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 	))
 
-	prop := message.NewProposal[decision.FightAction](uuid.Nil.String(), *commons.NewImmutableList(rules))
-	return *prop
+	return *commons.NewImmutableList(rules)
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {

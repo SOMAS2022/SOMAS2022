@@ -59,5 +59,5 @@ func (t *Tally[A]) HandleMessages() {
 
 // GetMax call from thread after goroutine closes.
 func (t *Tally[A]) GetMax() message.Proposal[A] {
-	return *message.NewProposal[A](t.currMax.ID, t.proposalMap[t.currMax.ID])
+	return *message.NewProposalInternal[A](t.currMax.ID, t.proposalMap[t.currMax.ID])
 }

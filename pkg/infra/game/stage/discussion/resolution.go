@@ -14,7 +14,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	// todo: cleanup the nil check that acts to check if the leader died in combat
 	var prop commons.ImmutableList[proposal.Rule[decision.FightAction]]
 	if manifesto.FightImposition() && currentLeader.Strategy != nil {
-		prop = currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent).Rules()
+		prop = currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent)
 	} else {
 		// get proposal with most votes
 		prop = tally.GetMax().Rules()
