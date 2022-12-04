@@ -42,19 +42,23 @@ func InitGameConfig() config.GameConfig {
 	gameConfig := config.GameConfig{
 		NumLevels:              config.EnvToUint("LEVELS", 60),
 		StartingHealthPoints:   config.EnvToUint("STARTING_HP", 1000),
-		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 100),
-		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 100),
+		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 20),
+		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 20),
 		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 1),
-		VotingPreferences:      config.EnvToUint("VOTING_PREFERENCES", 1),
+		VotingPreferences:      config.EnvToUint("VOTING_PREFERENCES", 2),
 	}
 
 	return gameConfig
 }
 
-func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameConfig config.GameConfig, ptr *state.View) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState, inventoryMap state.InventoryMap) {
+func InitAgents(
+	defaultStrategyMap map[commons.ID]func() agent.Strategy,
+	gameConfig config.GameConfig,
+	ptr *state.View,
+) (numAgents uint, agentMap map[commons.ID]agent.Agent, agentStateMap map[commons.ID]state.AgentState, inventoryMap state.InventoryMap) {
 	agentMap = make(map[commons.ID]agent.Agent)
 	agentStateMap = make(map[commons.ID]state.AgentState)
 	inventoryMap = state.InventoryMap{

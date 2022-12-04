@@ -22,12 +22,13 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 
 	predicate := proposal.ToPredicate(prop)
 	if predicate == nil {
-		predicate = func(_ state.State, _ state.AgentState) decision.FightAction {
-			return decision.Cower
+		for id, a := range agentMap {
+			fightActions[id] = a.CurrentAction()
 		}
-	}
-	for id, a := range agentMap {
-		fightActions[id] = predicate(gs, a.AgentState())
+	} else {
+		for id, a := range agentMap {
+			fightActions[id] = predicate(gs, a.AgentState())
+		}
 	}
 
 	return decision.FightResult{
