@@ -9,7 +9,7 @@ import (
 
 func CalculateMonsterHealth(n uint, st uint, l uint, cl uint) uint {
 	delta := ((float64(rand.Intn(40))) + float64(80)) / float64(100)
-	return uint(math.Ceil((float64(n) * float64(st) / float64(l)) * delta * (2.0*float64(cl)/float64(l) + float64(0.5))))
+	return uint(math.Ceil((float64(n) * float64(st) / float64(l)) * delta * (2.0*float64(cl)/float64(l) + 0.5)))
 }
 
 func CalculateMonsterDamage(n uint, hp uint, st uint, th float32, l uint, cl uint) uint {
