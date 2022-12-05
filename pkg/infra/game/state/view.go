@@ -2,20 +2,25 @@ package state
 
 import (
 	"infra/game/commons"
+	"infra/game/decision"
 
 	"github.com/benbjohnson/immutable"
 )
 
 type View struct {
-	currentLevel  uint
-	hpPool        uint
-	monsterHealth uint
-	monsterAttack uint
-	agentState    *immutable.Map[commons.ID, HiddenAgentState]
+	currentLevel    uint
+	hpPool          uint
+	monsterHealth   uint
+	monsterAttack   uint
+	agentState      *immutable.Map[commons.ID, HiddenAgentState]
+	currentLeader   commons.ID
+	leaderManifesto decision.Manifesto
 }
 
-type HealthRange uint
-type StaminaRange uint
+type (
+	HealthRange  uint
+	StaminaRange uint
+)
 
 const (
 	LowHealth  uint = 250 // 25% starting HP
@@ -58,8 +63,17 @@ func (v *View) AgentState() immutable.Map[commons.ID, HiddenAgentState] {
 	return *v.agentState
 }
 
-func (s *State) ToView() *View {
+func (v *View) CurrentLeader() commons.ID {
+	return v.currentLeader
+}
+
+func (v *View) LeaderManifesto() decision.Manifesto {
+	return v.leaderManifesto
+}
+
+func (s *State) ToView() View {
 	b := immutable.NewMapBuilder[commons.ID, HiddenAgentState](nil)
+
 	for uuid, state := range s.AgentState {
 		healthRange := MidHealth
 
@@ -70,10 +84,11 @@ func (s *State) ToView() *View {
 		}
 
 		staminaRange := MidStamina
+
 		if state.Stamina < LowStamina {
-			healthRange = LowHealth
+			staminaRange = LowHealth
 		} else if state.Stamina > HighStamina {
-			healthRange = HighHealth
+			staminaRange = HighHealth
 		}
 
 		b.Set(uuid, HiddenAgentState{
@@ -81,16 +96,18 @@ func (s *State) ToView() *View {
 			Stamina:      StaminaRange(staminaRange),
 			Attack:       state.Attack,
 			Defense:      state.Defense,
-			BonusAttack:  state.BonusAttack,
-			BonusDefense: state.BonusDefense,
+			BonusAttack:  state.BonusAttack(*s),
+			BonusDefense: state.BonusDefense(*s),
 		})
 	}
 
-	return &View{
-		currentLevel:  s.CurrentLevel,
-		hpPool:        s.HpPool,
-		monsterHealth: s.MonsterHealth,
-		monsterAttack: s.MonsterAttack,
-		agentState:    b.Map(),
+	return View{
+		currentLevel:    s.CurrentLevel,
+		hpPool:          s.HpPool,
+		monsterHealth:   s.MonsterHealth,
+		monsterAttack:   s.MonsterAttack,
+		agentState:      b.Map(),
+		currentLeader:   s.CurrentLeader,
+		leaderManifesto: s.LeaderManifesto,
 	}
 }

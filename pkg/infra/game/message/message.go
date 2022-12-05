@@ -1,60 +1,50 @@
 package message
 
-import (
-	"infra/game/commons"
-	"infra/game/decision"
-
-	"github.com/google/uuid"
-)
-
-type Payload interface {
-	isPayload()
+type Message interface {
+	sealedMessage()
 }
 
-type Type int64
+type Inform interface {
+	Message
+	sealedInform()
+}
 
-const (
-	Close Type = iota
+type Request interface {
+	Message
+	sealedRequest()
+}
+
+type Proposal interface {
+	Message
+	sealedProposal()
+}
+
+type FightRequest interface {
 	Request
+	sealedFightRequest()
+}
+
+type LootRequest interface {
+	Request
+	sealedLootRequest()
+}
+
+type FightInform interface {
 	Inform
-)
-
-type Message struct {
-	mType   Type
-	payload Payload
+	sealedFightInform()
 }
 
-func NewMessage(mType Type, payload Payload) *Message {
-	return &Message{mType: mType, payload: payload}
+type StartFight struct{}
+
+func (s StartFight) sealedMessage() {
+	// TODO implement me
+	panic("implement me")
 }
 
-func (m Message) MType() Type {
-	return m.mType
+func (s StartFight) sealedInform() {
+	panic("implement me")
 }
 
-func (m Message) Payload() Payload {
-	return m.payload
-}
-
-type TaggedMessage struct {
-	sender  commons.ID
-	message Message
-	mId     uuid.UUID
-}
-
-func NewTaggedMessage(sender commons.ID, message Message, mId uuid.UUID) *TaggedMessage {
-	return &TaggedMessage{sender: sender, message: message, mId: mId}
-}
-
-func (t TaggedMessage) Sender() commons.ID {
-	return t.Sender()
-}
-
-func (t TaggedMessage) Message() Message {
-	return t.message
-}
-
-type ActionMessage struct {
-	Action decision.FightAction
-	Sender commons.ID
+func (s StartFight) sealedFightInform() {
+	panic("implement me")
 }

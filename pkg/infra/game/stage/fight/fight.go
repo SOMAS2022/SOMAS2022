@@ -1,17 +1,18 @@
 package fight
 
 import (
+	"math"
+	"time"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
-	"math"
-	"sync"
-
-	"github.com/google/uuid"
+	"infra/game/tally"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons.ID]agent.Agent, globalState *state.State) {
@@ -21,58 +22,86 @@ func DealDamage(damageToDeal uint, agentsFighting []string, agentMap map[commons
 		newHP := commons.SaturatingSub(agentState.Hp, splitDamage)
 		if newHP == 0 {
 			// kill agent
-			// todo: prune peer channels somehow...
+			removeItems(globalState, globalState.AgentState[id])
+
 			delete(globalState.AgentState, id)
 			delete(agentMap, id)
 		} else {
 			globalState.AgentState[id] = state.AgentState{
-				Hp:           newHP,
-				Attack:       agentState.Attack,
-				Defense:      agentState.Defense,
-				BonusAttack:  agentState.BonusAttack,
-				BonusDefense: agentState.BonusDefense,
-				Stamina:      agentState.Stamina,
+				Hp:          newHP,
+				Attack:      agentState.Attack,
+				Defense:     agentState.Defense,
+				Stamina:     agentState.Stamina,
+				Weapons:     agentState.Weapons,
+				Shields:     agentState.Shields,
+				WeaponInUse: agentState.WeaponInUse,
+				ShieldInUse: agentState.ShieldInUse,
 			}
 		}
 	}
 }
 
-func AgentFightDecisions(state *state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) map[commons.ID]decision.FightAction {
-	decisionMap := make(map[commons.ID]decision.FightAction)
-	channel := make(chan message.ActionMessage, 100)
-
-	var wg sync.WaitGroup
-
-	for _, a := range agents {
-		a := a
-		wg.Add(1)
-		agentState := state.AgentState[a.BaseAgent.Id()]
-		startAgentFightHandlers(agentState, *state.ToView(), &a, previousDecisions, channel, &wg)
-	}
-
-	for _, messages := range channelsMap {
-		mId, _ := uuid.NewUUID()
-		messages <- *message.NewTaggedMessage("server", *message.NewMessage(message.Inform, nil), mId)
-	}
-
-	go func(group *sync.WaitGroup) {
-		group.Wait()
-		for _, messages := range channelsMap {
-			close(messages)
-		}
-		close(channel)
-	}(&wg)
-
-	for actionMessage := range channel {
-		decisionMap[actionMessage.Sender] = actionMessage.Action
-	}
-
-	wg.Wait()
-
-	return decisionMap
+func removeItems(globalState *state.State, agentState state.AgentState) {
+	removeItemsFromMap(globalState.InventoryMap.Weapons, agentState.Weapons)
+	removeItemsFromMap(globalState.InventoryMap.Shields, agentState.Shields)
 }
 
-func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision.FightResult) {
+func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.InventoryItem]) {
+	iterator := l.Iterator()
+	for !iterator.Done() {
+		_, v := iterator.Next()
+		delete(m, v.ID)
+	}
+}
+
+func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.FightAction] {
+	proposalVotes := make(chan commons.ProposalID)
+	proposalSubmission := make(chan message.MapProposal[decision.FightAction])
+	tallyClosure := make(chan struct{})
+
+	propTally := tally.NewTally(proposalVotes, proposalSubmission, tallyClosure)
+	go propTally.HandleMessages()
+	closures := make(map[commons.ID]chan<- struct{})
+	for id, a := range agents {
+		a := a
+		closure := make(chan struct{})
+		closures[id] = closure
+		agentState := state.AgentState[a.BaseAgent.ID()]
+		if a.BaseAgent.ID() == state.CurrentLeader {
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, proposalSubmission, closure)
+		} else {
+			go (&a).HandleFight(agentState, previousDecisions, proposalVotes, nil, closure)
+		}
+	}
+	mID := uuid.Nil
+
+	for _, messages := range channelsMap {
+		messages <- *message.NewTaggedMessage("server", &message.StartFight{}, mID)
+	}
+	time.Sleep(100 * time.Millisecond)
+	for id, c := range channelsMap {
+		closures[id] <- struct{}{}
+		go func(recv <-chan message.TaggedMessage) {
+			for m := range recv {
+				switch m.Message().(type) {
+				case message.Request:
+					// todo: respond with nil thing here as we're closing! Or do we need to?
+					// maybe because we're closing there's no point...
+				default:
+				}
+			}
+		}(c)
+	}
+
+	for _, c := range channelsMap {
+		close(c)
+	}
+
+	tallyClosure <- struct{}{}
+	return propTally
+}
+
+func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.FightResult) *state.State {
 	var attackSum uint
 	var shieldSum uint
 
@@ -82,10 +111,10 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 		const scalingFactor = 0.01
 		switch d {
 		case decision.Attack:
-			if agentState.Stamina > agentState.BonusAttack {
+			if agentState.Stamina > agentState.BonusAttack(state) {
 				fightResult.AttackingAgents = append(fightResult.AttackingAgents, agentID)
-				attackSum += agentState.TotalAttack()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack)
+				attackSum += agentState.TotalAttack(state)
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack(state))
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
@@ -93,10 +122,10 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
-			if agentState.Stamina > agentState.BonusDefense {
+			if agentState.Stamina > agentState.BonusDefense(state) {
 				fightResult.ShieldingAgents = append(fightResult.ShieldingAgents, agentID)
-				shieldSum += agentState.TotalDefense()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense)
+				shieldSum += agentState.TotalDefense(state)
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense(state))
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
@@ -113,8 +142,5 @@ func HandleFightRound(state *state.State, baseHealth uint, fightResult *decision
 
 	fightResult.AttackSum = attackSum
 	fightResult.ShieldSum = shieldSum
-}
-
-func startAgentFightHandlers(agentState state.AgentState, view state.View, a *agent.Agent, decisionLog immutable.Map[commons.ID, decision.FightAction], channel chan message.ActionMessage, wg *sync.WaitGroup) {
-	go a.HandleFight(agentState, view, decisionLog, channel, wg)
+	return &state
 }

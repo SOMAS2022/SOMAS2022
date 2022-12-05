@@ -5,6 +5,8 @@ LDFLAGS=-ldflags="-X 'infra/game/stages.mode=${TEAM}'"
 
 PACKAGES=$(shell go list ./pkg/infra | grep -v 'tests')
 
+PACKAGES=$(shell go list ./pkg/infra | grep -v 'tests')
+
 all: run
 
 build:

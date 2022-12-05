@@ -1,27 +1,53 @@
 package team0
 
 import (
-	"infra/game/commons"
-	"infra/game/state"
 	"math/rand"
+
+	"infra/game/commons"
+	"infra/game/stage/loot"
+	"infra/game/state"
+
+	"github.com/google/uuid"
 )
 
 // AllocateLoot
 /**
-* This default function allocates loot randomly
+* This default function allocates loot randomly.
  */
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint) state.State {
+func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
 	allocatedState := globalState
 
-	for _, agentState := range allocatedState.AgentState {
-		allocatedWeapon := rand.Intn(len(weaponLoot))
-		allocatedShield := rand.Intn(len(shieldLoot))
-
-		agentState.BonusAttack = weaponLoot[allocatedWeapon]
-		agentState.BonusDefense = shieldLoot[allocatedShield]
-		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeapon)
-		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShield)
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedState = loot.AllocateHPPotion(allocatedState, hpPotionLoot, agentID, rand.Intn(len(hpPotionLoot)))
+		allocatedState = loot.AllocateSTPotion(allocatedState, stPotionLoot, agentID, rand.Intn(len(stPotionLoot)))
+		allocatedState.AgentState[agentID] = agentState
 	}
 
-	return allocatedState
+	for agentID, agentState := range allocatedState.AgentState {
+		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
+		allocatedShieldIdx := rand.Intn(len(shieldLoot))
+
+		// add W to global InventoryMap and this agent's inventory
+		wid := uuid.NewString()
+		weaponValue := weaponLoot[allocatedWeaponIdx]
+		allocatedState.InventoryMap.Weapons[wid] = weaponValue
+		allocatedWeapon := state.InventoryItem{ID: wid, Value: weaponValue}
+		agentState.AddWeapon(allocatedWeapon)
+
+		// add S to global InventoryMap and this agent's inventory
+		sid := uuid.NewString()
+		shieldValue := shieldLoot[allocatedShieldIdx]
+		allocatedState.InventoryMap.Shields[sid] = shieldValue
+		allocatedShield := state.InventoryItem{ID: sid, Value: shieldValue}
+		agentState.AddShield(allocatedShield)
+
+		allocatedState.AgentState[agentID] = agentState
+
+		// remove W and S from unallocated loot
+
+		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeaponIdx)
+		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShieldIdx)
+	}
+
+	return &allocatedState
 }
