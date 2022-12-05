@@ -1,16 +1,18 @@
 package loot
 
 import (
-	"fmt"
-	"math/rand"
+	"infra/game/decision"
+	"infra/game/message"
+	"infra/game/tally"
+	"infra/logging"
 	"sync"
+	"time"
+
+	"github.com/benbjohnson/immutable"
 
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/state"
-	"infra/logging"
-
-	"github.com/google/uuid"
 )
 
 type agentStateUpdate struct {
@@ -51,83 +53,111 @@ func UpdateItems(s state.State, agents map[commons.ID]agent.Agent) *state.State 
 	return &updatedState
 }
 
-// AllocateHPPotion HPi and STi are the index of HP potion slice and ST potion slice that is allocated to the agent. Pass one at a time.
-func AllocateHPPotion(globalState state.State, loot []uint, agentID commons.ID, HPi int) state.State {
-	allocatedState := globalState
-	hpPotionValue := loot[HPi]
-	v := allocatedState
-	a := allocatedState.AgentState[agentID]
-	a.Hp = v.AgentState[agentID].Hp + hpPotionValue
-	allocatedState.AgentState[agentID] = a
-	return allocatedState
-}
+func AgentLootDecisions(
+	state state.State,
+	availableLoot state.LootPool,
+	agents map[commons.ID]agent.Agent,
+	channelsMap map[commons.ID]chan message.TaggedMessage,
+) *tally.Tally[decision.LootAction] {
+	proposalVotes := make(chan commons.ProposalID)
+	proposalSubmission := make(chan message.Proposal[decision.LootAction])
+	tallyClosure := make(chan struct{})
 
-func AllocateSTPotion(globalState state.State, loot []uint, agentID commons.ID, STi int) state.State {
-	allocatedState := globalState
-	stPotionValue := loot[STi]
-	v := allocatedState
-	a := allocatedState.AgentState[agentID]
-	a.Stamina = v.AgentState[agentID].Stamina + stPotionValue
-	allocatedState.AgentState[agentID] = a
-	return allocatedState
-}
+	propTally := tally.NewTally(proposalVotes, proposalSubmission, tallyClosure)
+	go propTally.HandleMessages()
+	closures := make(map[commons.ID]chan<- struct{})
+	starts := make(map[commons.ID]chan<- message.StartLoot)
+	for id, a := range agents {
+		a := a
+		closure := make(chan struct{})
+		closures[id] = closure
 
-type PotionList struct {
-	HPPotionList *commons.ImmutableList[uint]
-	STPotionList *commons.ImmutableList[uint]
-}
+		start := make(chan message.StartLoot)
+		starts[id] = start
 
-// AllocateLoot immutable list for communication with agent only.
-// a slice is generated from state, action is done on the slice
-// immutable list is generated upon temporary slice.
-func AllocateLoot(globalState state.State, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
-	allocatedState := globalState
-
-	idx := 0
-	rand.Shuffle(len(hpPotionLoot), func(i, j int) { hpPotionLoot[i], hpPotionLoot[j] = hpPotionLoot[j], hpPotionLoot[i] })
-	rand.Shuffle(len(stPotionLoot), func(i, j int) { stPotionLoot[i], stPotionLoot[j] = stPotionLoot[j], stPotionLoot[i] })
-
-	for agentID, agentState := range allocatedState.AgentState {
-		allocatedState = AllocateHPPotion(allocatedState, hpPotionLoot, agentID, idx)
-		allocatedState = AllocateSTPotion(allocatedState, stPotionLoot, agentID, idx)
-		allocatedState.AgentState[agentID] = agentState
-		idx++
+		agentState := state.AgentState[a.BaseAgent.ID()]
+		if a.BaseAgent.ID() == state.CurrentLeader {
+			go (&a).HandleLoot(agentState, proposalVotes, proposalSubmission, closure, start)
+		} else {
+			go (&a).HandleLoot(agentState, proposalVotes, nil, closure, start)
+		}
 	}
 
-	for agentID, agentState := range allocatedState.AgentState {
-		allocatedWeaponIdx := rand.Intn(len(weaponLoot))
-		allocatedShieldIdx := rand.Intn(len(shieldLoot))
-
-		// add W to global InventoryMap and this agent's inventory
-		wid := uuid.NewString()
-		weaponValue := weaponLoot[allocatedWeaponIdx]
-		allocatedState.InventoryMap.Weapons[wid] = weaponValue
-		allocatedWeapon := state.InventoryItem{ID: wid, Value: weaponValue}
-		agentState.AddWeapon(allocatedWeapon)
-
-		// add S to global InventoryMap and this agent's inventory
-		sid := uuid.NewString()
-		shieldValue := shieldLoot[allocatedShieldIdx]
-		allocatedState.InventoryMap.Shields[sid] = shieldValue
-		allocatedShield := state.InventoryItem{ID: sid, Value: shieldValue}
-		agentState.AddShield(allocatedShield)
-
-		allocatedState.AgentState[agentID] = agentState
-
-		// remove W and S from unallocated loot
-
-		weaponLoot, _ = commons.DeleteElFromSlice(weaponLoot, allocatedWeaponIdx)
-		shieldLoot, _ = commons.DeleteElFromSlice(shieldLoot, allocatedShieldIdx)
+	startLootMessage := *message.NewStartLoot(availableLoot)
+	for _, start := range starts {
+		start <- startLootMessage
 	}
 
-	logging.Log(
-		logging.Info,
-		logging.LogField{
-			"weapons": len(globalState.InventoryMap.Weapons),
-			"shields": len(globalState.InventoryMap.Shields),
-		},
-		fmt.Sprintf("%6d Weapons, %6d Shields in InventoryMap", len(globalState.InventoryMap.Weapons), len(globalState.InventoryMap.Shields)),
-	)
+	time.Sleep(100 * time.Millisecond)
+	for id, c := range channelsMap {
+		closures[id] <- struct{}{}
+		go func(recv <-chan message.TaggedMessage) {
+			for m := range recv {
+				switch m.Message().(type) {
+				case message.Request:
+					// todo: respond with nil thing here as we're closing! Or do we need to?
+					// maybe because we're closing there's no point...
+				default:
+				}
+			}
+		}(c)
+	}
 
-	return &allocatedState
+	for _, c := range channelsMap {
+		close(c)
+	}
+
+	tallyClosure <- struct{}{}
+	close(tallyClosure)
+	return propTally
+}
+
+func HandleLootAllocation(
+	globalState state.State,
+	allocation *immutable.Map[commons.ID, immutable.List[commons.ItemID]],
+	pool *state.LootPool,
+) *state.State {
+	weaponSet := itemListToSet(pool.Weapons())
+	shieldSet := itemListToSet(pool.Shields())
+	hpPotionSet := itemListToSet(pool.HpPotions())
+	staminaPotionSet := itemListToSet(pool.StaminaPotions())
+
+	allocationIterator := allocation.Iterator()
+
+	for !allocationIterator.Done() {
+		agentID, items, _ := allocationIterator.Next()
+		itemIterator := items.Iterator()
+		for !itemIterator.Done() {
+			_, item := itemIterator.Next()
+			agentState := globalState.AgentState[agentID]
+
+			if val, ok := weaponSet[item]; ok {
+				globalState.InventoryMap.Weapons[item] = val
+				agentState.AddWeapon(*state.NewItem(item, val))
+			} else if val, ok := shieldSet[item]; ok {
+				globalState.InventoryMap.Shields[item] = val
+				agentState.AddWeapon(*state.NewItem(item, val))
+			} else if val, ok := hpPotionSet[item]; ok {
+				agentState.Hp += val
+			} else if val, ok := staminaPotionSet[item]; ok {
+				agentState.Stamina += val
+			} else {
+				logging.Log(logging.Warn, nil, "unknown item attempted to be allocated")
+			}
+			globalState.AgentState[agentID] = agentState
+		}
+	}
+	return &globalState
+}
+
+func itemListToSet(
+	list *commons.ImmutableList[state.Item],
+) map[commons.ItemID]uint {
+	iterator := list.Iterator()
+	res := make(map[commons.ItemID]uint)
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		res[next.Id()] = next.Value()
+	}
+	return res
 }

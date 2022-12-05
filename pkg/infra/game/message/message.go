@@ -1,5 +1,7 @@
 package message
 
+import "infra/game/state"
+
 type Message interface {
 	sealedMessage()
 }
@@ -27,6 +29,34 @@ type LootRequest interface {
 type FightInform interface {
 	Inform
 	sealedFightInform()
+}
+
+type LootInform interface {
+	Inform
+	sealedLootInform()
+}
+
+type StartLoot struct {
+	state.LootPool
+}
+
+func NewStartLoot(lootPool state.LootPool) *StartLoot {
+	return &StartLoot{LootPool: lootPool}
+}
+
+func (s StartLoot) sealedMessage() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s StartLoot) sealedInform() {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s StartLoot) sealedLootInform() {
+	//TODO implement me
+	panic("implement me")
 }
 
 type StartFight struct{}
