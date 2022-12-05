@@ -78,7 +78,7 @@ func startGameLoop() {
 				decisionMapView.Set(u, action)
 			}
 			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
-			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
+			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
 			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
@@ -110,16 +110,16 @@ func startGameLoop() {
 		// TODO: Loot Discussion Stage
 		numberOfItems := len(agentMap)
 		weaponLoot, shieldLoot := make([]uint, numberOfItems), make([]uint, numberOfItems)
-		HPpotionloot, STpotionloot := make([]uint, numberOfItems), make([]uint, numberOfItems)
+		HPPotionLoot, STPotionLoot := make([]uint, numberOfItems), make([]uint, numberOfItems)
 
 		for i := range weaponLoot {
 			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			HPpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			STpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+			HPPotionLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
+			STPotionLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
 		}
 
-		globalState = stages.AgentLootDecisions(*globalState, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
+		globalState = stages.AgentLootDecisions(*globalState, weaponLoot, shieldLoot, HPPotionLoot, STPotionLoot)
 
 		hppool.UpdateHpPool(agentMap, globalState)
 

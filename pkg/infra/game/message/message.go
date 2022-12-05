@@ -14,11 +14,6 @@ type Request interface {
 	sealedRequest()
 }
 
-type Proposal interface {
-	Message
-	sealedProposal()
-}
-
 type FightRequest interface {
 	Request
 	sealedFightRequest()

@@ -1,6 +1,7 @@
 package example
 
 import (
+	"infra/game/message/proposal"
 	"math/rand"
 
 	"infra/game/agent"
@@ -9,7 +10,6 @@ import (
 	"infra/game/message"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 type RandomAgent struct {
@@ -23,28 +23,26 @@ func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
 }
 
-func (r *RandomAgent) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
-	actions := make(map[commons.ID]decision.FightAction)
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, _, ok := itr.Next()
-		if !ok {
-			break
-		}
+func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
+	rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		switch rand.Intn(3) {
-		case 0:
-			actions[id] = decision.Attack
-		case 1:
-			actions[id] = decision.Defend
-		default:
-			actions[id] = decision.Cower
-		}
-	}
-	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
-	return *prop
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+	))
+
+	return *commons.NewImmutableList(rules)
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -69,7 +67,7 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 
 	if makesProposal > 80 {
 		prop := r.FightResolution(baseAgent)
-		_ = baseAgent.SendProposalToLeader(prop)
+		_ = baseAgent.SendFightProposalToLeader(prop)
 	}
 }
 
@@ -117,7 +115,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (r *RandomAgent) HandleFightProposal(_ message.FightProposalMessage, _ agent.BaseAgent) decision.Intent {
+func (r *RandomAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -126,7 +124,11 @@ func (r *RandomAgent) HandleFightProposal(_ message.FightProposalMessage, _ agen
 	}
 }
 
-func (r *RandomAgent) HandleFightProposalRequest(_ message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (r *RandomAgent) HandleFightProposalRequest(
+	_ message.Proposal[decision.FightAction],
+	_ agent.BaseAgent,
+	_ *immutable.Map[commons.ID, decision.FightAction],
+) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true

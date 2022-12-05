@@ -3,6 +3,8 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"infra/game/decision"
+	"infra/game/message/proposal"
 
 	"infra/game/commons"
 	"infra/game/message"
@@ -60,8 +62,10 @@ func (ba *BaseAgent) BroadcastBlockingMessage(m message.Message) {
 
 func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e error) {
 	switch m.(type) {
-	case message.Proposal:
-		return communicationError("Illegal attempt to send proposal - use SendProposalToLeader() instead")
+	case message.Proposal[decision.FightAction]:
+		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
+	case message.Proposal[decision.LootDecision]:
+		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
 	default:
 		channel, ok := ba.communication.peer.Get(id)
 		if ok {
@@ -73,10 +77,10 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 	return nil
 }
 
-func (ba *BaseAgent) SendProposalToLeader(proposal message.Proposal) error {
+func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.FightAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
-		channel <- *message.NewTaggedMessage(ba.id, proposal, uuid.New())
+		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules), uuid.New())
 		return nil
 	}
 	return communicationError("Leader not available for messaging, dead or bad!")

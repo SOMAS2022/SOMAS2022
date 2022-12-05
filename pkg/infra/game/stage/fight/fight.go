@@ -56,7 +56,7 @@ func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.InventoryI
 
 func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, previousDecisions immutable.Map[commons.ID, decision.FightAction], channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.FightAction] {
 	proposalVotes := make(chan commons.ProposalID)
-	proposalSubmission := make(chan message.MapProposal[decision.FightAction])
+	proposalSubmission := make(chan message.Proposal[decision.FightAction])
 	tallyClosure := make(chan struct{})
 
 	propTally := tally.NewTally(proposalVotes, proposalSubmission, tallyClosure)
