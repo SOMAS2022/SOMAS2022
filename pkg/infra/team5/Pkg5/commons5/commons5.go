@@ -17,7 +17,7 @@ type Agents struct {
 
 func FetchLoot(view *state.View) Loot {
 	var Loot Loot
-	//read loot infomation into Loot struct
+	//read loot information into Loot struct
 	return Loot
 }
 
