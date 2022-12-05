@@ -4,8 +4,8 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/state"
 	_ "infra/game/state"
-	"infra/logging"
 	"math"
 	"math/rand"
 
@@ -15,14 +15,18 @@ import (
 
 // Agent2 type : private attributes of agent
 type Agent2 struct {
-	HistoryMap []map[uint][]immutable.Map[commons.ID, decision.FightAction]
-
-	// Parameters for decision making
+	// Parameters for decision-making
 	// Can be randomly generated per agent, tests need to be conducted to see
 	// which values are the most efficient
 	personalTendency    float64 // in [0,1] Tendency to fight, defend or cower
 	replacementTendency float64 // in [0,1] Tendency to replace cowering agents on the battlefield
 	estimationTendency  float64 // Tendency to go fight if it thinks not enough agents are fighting still
+
+	decisionMap   []immutable.Map[commons.ID, decision.FightAction]
+	baseAgentMap  []BaseAgent
+	viewMap       []state.View
+	agentStateMap []immutable.Map[commons.ID, state.HiddenAgentState]
+	leaderMap     []commons.ID
 }
 
 // NewAgent2 : Constructor of Agent2
@@ -30,21 +34,77 @@ func NewAgent2() Strategy {
 	return &Agent2{}
 }
 
-func (a *Agent2) History(log immutable.Map[commons.ID, decision.FightAction], currentLevel uint) map[uint][]immutable.Map[commons.ID, decision.FightAction] {
-	draftMap := make([]immutable.Map[commons.ID, decision.FightAction], 0)
-	draftLevelMap := make(map[uint][]immutable.Map[commons.ID, decision.FightAction])
-	draftMap = append(draftMap, log)
-	draftLevelMap[currentLevel] = draftMap
-	return draftLevelMap
+func (a *Agent2) getDecisionHelper(multi bool) []immutable.Map[commons.ID, decision.FightAction] {
+	if multi == true {
+		return a.decisionMap
+	} else {
+		singleArray := a.decisionMap[len(a.decisionMap)-1:]
+		return singleArray
+	}
+}
+func (a *Agent2) getBaseHelper(multi bool) []BaseAgent {
+	if multi == true {
+		return a.baseAgentMap
+	} else {
+		singleArray := a.baseAgentMap[len(a.baseAgentMap)-1:]
+		return singleArray
+	}
+}
+func (a *Agent2) getViewHelper(multi bool) []state.View {
+	if multi == true {
+		return a.viewMap
+	} else {
+		singleArray := a.viewMap[len(a.viewMap)-1:]
+		return singleArray
+	}
+}
+
+func (a *Agent2) getAgentStateHelper(multi bool) []immutable.Map[commons.ID, state.HiddenAgentState] {
+	if multi == true {
+		return a.agentStateMap
+	} else {
+		singleArray := a.agentStateMap[len(a.agentStateMap)-1:]
+		return singleArray
+	}
+}
+
+func (a *Agent2) getLeaderHelper(multi bool) []commons.ID {
+	if multi == true {
+		return a.leaderMap
+	} else {
+		singleArray := a.leaderMap[len(a.leaderMap)-1:]
+		return singleArray
+	}
+}
+
+func (a *Agent2) updateDecisionHelper(log immutable.Map[commons.ID, decision.FightAction]) {
+	a.decisionMap = append(a.decisionMap, log)
+}
+func (a *Agent2) updateBaseHelper(baseAgent BaseAgent) {
+	a.baseAgentMap = append(a.baseAgentMap, baseAgent)
+}
+func (a *Agent2) updateViewHelper(view state.View) {
+	a.viewMap = append(a.viewMap, view)
+}
+func (a *Agent2) updateAgentStateHelper(agentState immutable.Map[commons.ID, state.HiddenAgentState]) {
+	a.agentStateMap = append(a.agentStateMap, agentState)
+}
+
+func (a *Agent2) updateLeaderHelper(leader commons.ID) {
+	a.leaderMap = append(a.leaderMap, leader)
 }
 
 // HandleFightInformation TODO: Implement me!
 // Description: Used to extract agent information
 // Return:		nil
 func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	baseAgent.Log(logging.Trace, logging.LogField{}, "Something")
-	currentHistory := a.History(*log, baseAgent.view.CurrentLevel())
-	a.HistoryMap = append(a.HistoryMap, currentHistory)
+	view := baseAgent.View()
+	// Update Logs
+	a.updateDecisionHelper(*log)
+	a.updateBaseHelper(baseAgent)
+	a.updateViewHelper(view)
+	a.updateAgentStateHelper(baseAgent.view.AgentState())
+	a.updateLeaderHelper(view.CurrentLeader())
 }
 
 // HandleFightRequest TODO: Implement me!
@@ -164,6 +224,7 @@ func (a *Agent2) CurrentAction() decision.FightAction {
 // CurrentAction TODO: Implement me!
 // Description: Logic of Fighting Action Decision-Making.
 // Return:		Cower, Defend or Attack decision.
+
 func (a *Agent2) CurrentAction() decision.FightAction {
 	fight := rand.Intn(10)
 	switch {
