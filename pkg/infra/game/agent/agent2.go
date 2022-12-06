@@ -89,6 +89,30 @@ func (a *Agent2) getLeaderHelper(multi bool) []commons.ID {
 	}
 }
 
+// Description: The function is used to return the current Agent's health (Hp)
+// Returns: uint
+func (a *Agent2) getCurrentHp() uint {
+	return a.getBaseHelper(false)[0].latestState.Hp
+}
+
+// Description: The function is used to return the current Agent's stamina
+// Returns: uint
+func (a *Agent2) getCurrentStamina() uint {
+	return a.getBaseHelper(false)[0].latestState.Stamina
+}
+
+// Description: The function is used to return the current Agent's defence points
+// Returns: uint
+func (a *Agent2) getCurrentDefense() uint {
+	return a.getBaseHelper(false)[0].latestState.Defense
+}
+
+// Description: The function is used to return the current Agent's attack points
+// Returns: uint
+func (a *Agent2) getCurrentAttack() uint {
+	return a.getBaseHelper(false)[0].latestState.Attack
+}
+
 func (a *Agent2) updateDecisionHelper(log immutable.Map[commons.ID, decision.FightAction]) {
 	a.decisionMap = append(a.decisionMap, log)
 }
@@ -110,13 +134,10 @@ func (a *Agent2) updateLeaderHelper(leader commons.ID) {
 // Description: Used to extract agent information
 // Return:		nil
 func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	view := baseAgent.View()
 	// Update Logs
 	a.updateDecisionHelper(*log)
-	a.updateBaseHelper(baseAgent)
-	a.updateViewHelper(view)
-	a.updateAgentStateHelper(baseAgent.view.AgentState())
-	a.updateLeaderHelper(view.CurrentLeader())
+
+	//v, ok := view.AgentState().Get("asdf")
 }
 
 // HandleFightRequest TODO: Implement me!
@@ -309,9 +330,18 @@ func (a *Agent2) HandleFightProposal(proposal message.FightProposalMessage, base
 		return decision.Negative
 	}
 }
+
 func (a *Agent2) FightResolution(baseAgent BaseAgent) message.MapProposal[decision.FightAction] {
-	actions := make(map[commons.ID]decision.FightAction)
+
+	// Info update per round
 	view := baseAgent.View()
+	a.updateBaseHelper(baseAgent)
+	a.updateViewHelper(view)
+	a.updateAgentStateHelper(baseAgent.view.AgentState())
+	a.updateLeaderHelper(view.CurrentLeader())
+
+	actions := make(map[commons.ID]decision.FightAction)
+
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
 	for !itr.Done() {
@@ -358,6 +388,8 @@ func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
 }
+
+// UpdateInternalState return the
 func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
 }
 func (a *Agent2) DonateToHpPool(baseAgent BaseAgent) uint {
