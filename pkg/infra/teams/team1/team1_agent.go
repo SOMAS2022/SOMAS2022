@@ -115,7 +115,7 @@ func (r *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[p
 
 // TODO: Currently default
 func (r *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 50)
+	manifesto := decision.NewManifesto(false, true, 10, 50)
 	return manifesto
 }
 
