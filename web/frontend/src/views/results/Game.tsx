@@ -1,6 +1,7 @@
 import { Box } from "@mui/material";
 import { Run } from "../../../../common/types";
 import { AgentDeathGraph } from "../../components/game/AgentDeathGraph";
+import { FightRoundGraph } from "../../components/game/FightRoundGraph";
 import { HPPoolGraph } from "../../components/game/HPPoolGraph";
 
 interface ResultsOverviewProps {
@@ -24,10 +25,15 @@ export default function ResultsOverview({ run }: ResultsOverviewProps) {
     const MonsterResilience = run.Logs.Levels.map(round => {
         return round.LevelStats.MonsterAttack;
     });
+
+    const FightRoundsPerLevel = run.Logs.Levels.map(round => {
+        return round.FightStage.Rounds?.length;
+    });
     return (
         <Box>
             <AgentDeathGraph agents={agentsAlivePerRound} threshold={run.Config.PassThreshold*run.Logs.Levels[0].LevelStats.NumberOfAgents}/>
             <HPPoolGraph pool={HPPool} monsterHP={MonsterResilience}/>
+            <FightRoundGraph fightRounds={FightRoundsPerLevel}/>
         </Box>
     );
 }

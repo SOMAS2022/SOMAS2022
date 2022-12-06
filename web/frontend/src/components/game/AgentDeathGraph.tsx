@@ -9,6 +9,7 @@ import {
     Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import { v4 as uuid } from "uuid";
 
 ChartJS.register(
     CategoryScale,
@@ -69,5 +70,5 @@ export function AgentDeathGraph({agents, threshold}: AgentDeathGraphProps) {
     data.datasets[0].data = agents;
     data.datasets[1].data= thresholdArr;
     
-    return <Line options={options} data={data} />;
+    return <Line key={uuid().toString()} options={options} data={data} />;
 }

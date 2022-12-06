@@ -2,20 +2,18 @@ import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
+    BarElement,
     Title,
     Tooltip,
     Legend,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import { v4 as uuid } from "uuid";
 
 ChartJS.register(
     CategoryScale,
     LinearScale,
-    PointElement,
-    LineElement,
+    BarElement,
     Title,
     Tooltip,
     Legend
@@ -23,13 +21,21 @@ ChartJS.register(
 
 export const options = {
     responsive: true,
+    scales: {
+        y: {
+            ticks: {
+                stepSize: 1
+            },
+            // title: "hello",
+        }
+    },
     plugins: {
         legend: {
             position: "top" as const,
         },
         title: {
             display: true,
-            text: "HP Pool",
+            text: "Fight Rounds per Level",
         },
     },
 };
@@ -40,32 +46,24 @@ const data = {
     labels: labels,
     datasets: [
         {
-            label: "HP Pool",
+            label: "Fight Rounds",
             data: [0],
             borderColor: "rgb(255, 99, 132)",
             backgroundColor: "rgba(255, 99, 132, 0.5)",
         },
-        {
-            label: "Monster Resilience",
-            data: [0],
-            borderColor: "rgb(53, 162, 235)",
-            backgroundColor: "rgba(53, 162, 235, 0.5)",
-        },
     ],
 };
 
-interface HPPoolGraphProps {
-    pool: Array<number>
-    monsterHP: Array<number>
+interface FightRoundGraph {
+    fightRounds: Array<number>
 }
 
-export function HPPoolGraph({ pool, monsterHP }: HPPoolGraphProps) {
-    const xaxis = pool.map((_, idx) => {
+export function FightRoundGraph({ fightRounds }: FightRoundGraph) {
+    const xaxis = fightRounds.map((_, idx) => {
         return idx + 1;
     });
     data.labels = xaxis;
-    data.datasets[0].data = pool;
-    data.datasets[1].data = monsterHP;
+    data.datasets[0].data = fightRounds;
 
-    return <Line key={uuid().toString()} options={options} data={data} />;
+    return <Bar key={uuid().toString()} options={options} data={data} />;
 }
