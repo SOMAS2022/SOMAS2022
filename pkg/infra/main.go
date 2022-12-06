@@ -124,15 +124,16 @@ func startGameLoop() {
 				"maxAttack":     maxAttack,
 			}, "Battle Summary")
 
+			// NOTE: update the following function when you change AgentState
+			damageCalculation(fightActions)
 			levelLog.FightStage.Rounds = append(levelLog.FightStage.Rounds, logging.FightLog{
 				AttackingAgents: fightActions.AttackingAgents,
 				CoweringAgents:  fightActions.CoweringAgents,
 				ShieldingAgents: fightActions.ShieldingAgents,
 				AttackSum:       fightActions.AttackSum,
 				ShieldSum:       fightActions.ShieldSum,
+				AgentsRemaining: uint(len(agentMap)),
 			})
-			// NOTE: update the following function when you change AgentState
-			damageCalculation(fightActions)
 
 			channelsMap = addCommsChannels()
 

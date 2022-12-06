@@ -13,25 +13,35 @@ export interface TeamScore {
     wins: number
 }
 
-export interface RunDetails {
+export interface Run {
     Meta: Meta
+    Config: Config
     Logs: GameLog
 }
 
 export interface Meta {
-    name: string,
-    id: string,
-    onGITCommit: string,
-    time_queued: Date,
-    time_taken: number,
+    Name: string,
+    Id: string,
+    OnGITCommit: string,
+    TimeSubmitted: Date,
+    TimeTaken: number,
 }
 
 export interface GameLog {
-    warnings: Array<Map<string, string | number>>
-    errors: Array<Map<string, string | number>>
+    Warnings: Array<Warnings>
+    Errors: Array<Errors>
     Levels: Array<LevelStages>
     Outcome: boolean
-    Config: Config
+}
+
+export interface Warnings {
+    msg: string
+    [key:string]: string
+}
+
+export interface Errors {
+    msg: string,
+    [key:string]: string
 }
 
 export enum VotingStrategy {
@@ -48,7 +58,7 @@ export interface Config {
     BaseStamina: number
     PassThreshold: number
     VotingStrategy: number
-    VotingPreferences: number
+    VotingPreferences: VotingStrategy
     AgentRandomQty: number
     AgentTeam1Qty: number
     AgentTeam2Qty: number
@@ -110,6 +120,7 @@ export interface FightLog {
     CoweringAgents: Array<string>
     AttackSum: number
     ShieldSum: number
+    AgentsRemaining: number
 }
 
 export interface LootStage {

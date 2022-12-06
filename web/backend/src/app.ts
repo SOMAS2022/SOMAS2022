@@ -2,10 +2,11 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { exec } from "child_process";
-import { GameLog, RunDetails, TeamNames, TeamScore } from "../../common/types";
+import { GameLog, Run, TeamNames, TeamScore } from "../../common/types";
 import { getGITCommitHash  } from "./common/utils";
 import SimEntryModel from "./db/schema/Run";
 import fs from "fs";
+import RunModel from "./db/schema/Run";
 
 const app = express();
 const PORT = 9000;
@@ -36,28 +37,28 @@ app.get("/fetchLeaderboardData", (_, res) => {
 });
 
 app.post("/sendToQueue", (req, res) => {
-    const config = req.body as RunDetails;
+    const config = req.body as Run;
 
     const env_vars = process.env;
-    env_vars["MODE"] = config.Logs.Config.Mode;
-    env_vars["LEVELS"] = config.Logs.Config.Levels.toString();
-    env_vars["STARTING_HP"] = config.Logs.Config.Levels.toString();
-    env_vars["STARTING_ATTACK"] = config.Logs.Config.Levels.toString();
-    env_vars["STARTING_SHIELD"] = config.Logs.Config.Levels.toString();
-    env_vars["BASE_STAMINA"] = config.Logs.Config.Levels.toString();
-    env_vars["THRESHOLD_PCT"] = config.Logs.Config.Levels.toString();
-    env_vars["VOTING_STRATEGY"] = config.Logs.Config.Levels.toString();
-    env_vars["VOTING_PREFERENCES"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_RANDOM_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM1_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM2_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM3_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM4_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM5_QUANTITY"] = config.Logs.Config.Levels.toString();
-    env_vars["AGENT_TEAM6_QUANTITY"] = config.Logs.Config.Levels.toString();
+    env_vars["MODE"] = config.Config.Mode;
+    env_vars["LEVELS"] = config.Config.Levels.toString();
+    env_vars["STARTING_HP"] = config.Config.StartingHP.toString();
+    env_vars["STARTING_ATTACK"] = config.Config.StartingAttack.toString();
+    env_vars["STARTING_SHIELD"] = config.Config.StartingShield.toString();
+    env_vars["BASE_STAMINA"] = config.Config.BaseStamina.toString();
+    env_vars["THRESHOLD_PCT"] = config.Config.PassThreshold.toString();
+    env_vars["VOTING_STRATEGY"] = config.Config.VotingStrategy.toString();
+    env_vars["VOTING_PREFERENCES"] = config.Config.VotingPreferences.toString();
+    env_vars["AGENT_RANDOM_QUANTITY"] = config.Config.AgentRandomQty.toString();
+    env_vars["AGENT_TEAM1_QUANTITY"] = config.Config.AgentTeam1Qty.toString();
+    env_vars["AGENT_TEAM2_QUANTITY"] = config.Config.AgentTeam2Qty.toString();
+    env_vars["AGENT_TEAM3_QUANTITY"] = config.Config.AgentTeam3Qty.toString();
+    env_vars["AGENT_TEAM4_QUANTITY"] = config.Config.AgentTeam4Qty.toString();
+    env_vars["AGENT_TEAM5_QUANTITY"] = config.Config.AgentTeam5Qty.toString();
+    env_vars["AGENT_TEAM6_QUANTITY"] = config.Config.AgentTeam6Qty.toString();
         
     const startTime = new Date(Date.now());
-    exec(`cd ../../ && make ID=${config.Meta.id} runWithID`, { env: env_vars }, (error, stdout, stderr) => {
+    exec(`cd ../../ && make ID=${config.Meta.Id} runWithID`, { env: env_vars }, (error, stdout, stderr) => {
         if (error) {
             console.error(`error: ${error.message}`);
             return;
@@ -69,51 +70,40 @@ app.post("/sendToQueue", (req, res) => {
         }
         
         const endTime = new Date(Date.now());
-        console.log(endTime.getTime()-startTime.getTime());
-        fs.writeFile(`../../logs/${config.Meta.id}.log`, stdout, function (err) {
+        config.Meta.TimeTaken = endTime.getTime()-startTime.getTime();
+        console.log(endTime.getTime() - startTime.getTime());
+        config.Meta.OnGITCommit = getGITCommitHash("short");
+        fs.writeFile(`../../logs/${config.Meta.Id}.log`, stdout, function (err) {
             if (err) {
                 return console.log(err);
             }
             console.log("The file was saved!");
         }); 
 
-        fs.readFile(`../../logs/${config.Meta.id}.json`, "utf8", function (err, data) {
+        fs.readFile(`../../logs/${config.Meta.Id}.json`, "utf8", function (err, data) {
             if (err) throw err;
             const log = JSON.parse(data) as GameLog;
-            config.Logs = log;
             
-        });
+            config.Logs = log;
+            config; 
 
-        // const newSimEntry = new SimEntryModel({
-        //     name: config.name,
-        //     id: config.id,
-        //     onGITCommit: getGITCommitHash("short"),
-        //     time_queued: config.time_queued,
-        //     time_taken: endTime.getTime() - startTime.getTime(),
-        //     sim_status: simulation_status.Finished,
-        //     result: hasError? "Error" : hasLost? "Loss" : "Win",
-        //     error: hasError ? "Crashed" : null,
-        //     winner: config.winner,
-        //     config: config.config,
-        //     logs: log
-        // });
-        // newSimEntry.save((err: unknown) => {
-        //     if (err) {
-        //         console.log(err);
-        //         res.status(500).send("Error saving to database");
-        //     }
-        // }); 
-        // console.log(log);
-        
+            const newRun = new RunModel(config);
+            newRun.save((err) => {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+            });
+        });
     });
     res.status(202).send("Accepted");
 });
 
-app.get("/fetchSimResults", (_, res) => {
+app.get("/fetchRuns", (_, res) => {
     SimEntryModel
         .find()
         .limit(20)
-        .sort({ time_queued: -1 })
+        .sort({ "Meta.TimeSubmitted": -1 })
         .exec((err, docs) => {
             // console.log(err, docs);
             if (err) {

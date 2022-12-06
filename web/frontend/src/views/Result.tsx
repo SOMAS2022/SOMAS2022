@@ -1,34 +1,70 @@
-import { Box, Typography } from "@mui/material";
-import { simulation_result } from "../types/global";
+import { useState } from "react";
+import { Alert, Box, Tab, Tabs, Typography } from "@mui/material";
+import { Run } from "../../../common/types";
+import ResultsOverview from "./results/Overview";
 
-interface ResultProps {
-    simRes: simulation_result
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
 }
 
-export default function Result ({simRes}: ResultProps) {
-    console.log(simRes);
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
     return (
-        <Box>        
-            <Typography variant={"h5"}>
-                {simRes.name}
-            </Typography>
-            <Typography variant="subtitle1">
-                ID: {simRes.id}
-            </Typography>
-            <Typography variant="subtitle1">
-                Queued: {simRes.time_queued?.toLocaleString()} - Time Taken: {simRes.time_taken}
-            </Typography>
-            <Typography variant="subtitle1">
-                Status: {simRes.sim_status}
-            </Typography>
-            <Typography variant="subtitle1">
-                Result: {simRes.result ? simRes.result + " - " + simRes.winner : simRes.sim_status} 
-            </Typography>
-            <Typography variant="subtitle1">
-                {simRes.onGITCommit}
-            </Typography>
-            <pre>{JSON.stringify(simRes, null, 2)}</pre>
-            {/* {JSON.stringify(simRes)} */}
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`simple-tabpanel-${index}`}
+            aria-labelledby={`simple-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box sx={{ p: 3 }}>
+                    {children}
+                </Box>
+            )}
+        </div>
+    );
+}
+
+function a11yProps(index: number) {
+    return {
+        id: `simple-tab-${index}`,
+        "aria-controls": `simple-tabpanel-${index}`,
+    };
+}
+
+interface ResultProps {
+    run: Run
+}
+
+export default function Result ({run}: ResultProps) {
+    const [tabValue, setTabValue] = useState(0);
+
+    const handleChange = (_: React.SyntheticEvent, newValue: number) => {
+        setTabValue(newValue);
+    };
+
+    return (
+        <Box>
+            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <Tabs value={tabValue} onChange={handleChange} aria-label="basic tabs example">
+                    <Tab label="Overview" {...a11yProps(0)} />
+                    <Tab label="Game Stats" {...a11yProps(1)} />
+                    <Tab label="Agent Stats" {...a11yProps(2)} />
+                </Tabs>
+            </Box>
+            <TabPanel value={tabValue} index={0}>
+                <ResultsOverview run={run}/>
+            </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+                Game Stats
+            </TabPanel>
+            <TabPanel value={tabValue} index={2}>
+                Agent Stats
+            </TabPanel>
         </Box>
     );
 }

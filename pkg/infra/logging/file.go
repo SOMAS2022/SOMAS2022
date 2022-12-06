@@ -117,6 +117,7 @@ type FightLog struct {
 	CoweringAgents  []commons.ID
 	AttackSum       uint
 	ShieldSum       uint
+	AgentsRemaining uint
 }
 
 type LootStage struct {
