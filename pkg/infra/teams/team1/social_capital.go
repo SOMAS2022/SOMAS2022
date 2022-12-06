@@ -6,20 +6,6 @@ import (
 	"math"
 )
 
-// Function which defines how an agent perceives an action
-func actionSentiment(action decision.FightAction) [4]float64 {
-	switch action {
-	case decision.Cower:
-		return [4]float64{0.0, 0.0, -0.1, -0.1}
-	case decision.Attack:
-		return [4]float64{0.0, 0.0, 0.1, 0.1}
-	case decision.Defend:
-		return [4]float64{0.0, 0.0, 0.1, 0.1}
-	default:
-		return [4]float64{0.0, 0.0, 0.0, 0.0}
-	}
-}
-
 // Ensures a float is between -1 and 1
 func boundFloat(inputNumber float64) float64 {
 	if inputNumber > 1.0 {
@@ -101,8 +87,13 @@ func makeIncremental(inputArray [3]float64) [3]float64 {
 	return outputArray
 }
 
+func normalise(inputArray [3]float64) [3]float64 {
+	// TODO
+}
+
 // Called any time a message is received, initialises or updates the socialCapital map
 func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions decision.ImmutableFightResult) {
+
 	// For some reason had to split .Choices() and .Len() for Golang not to complain
 	choices := fightDecisions.Choices()
 
@@ -123,21 +114,37 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 		delete(s.socialCapital, self.ID())
 	}
 
+	// Extract agentState from base agent
+	view := self.View()
+	agentState := view.AgentState()
+
 	// Update socialCapital values
 	for agentID := range s.socialCapital {
 		// Decay existing socialCapital values
 		s.socialCapital[agentID] = decayArray(s.socialCapital[agentID])
 
-		// Update socialCapital based on agent action
-		// TODO: Update of socialCaptial should be dependent on the agents own action (especially for honour)
+		// If agent did an action, update socialCapital based on action
 		action, exists := choices.Get(agentID)
 		if exists {
-			s.socialCapital[agentID] = addArrays(s.socialCapital[agentID], boundArray(actionSentiment(action)))
-		}
-	}
 
-	// Ensure all socialCapital values are between -1 and 1
-	for key := range s.socialCapital {
-		s.socialCapital[key] = boundArray(s.socialCapital[key])
+			// Get hidden state of agent
+			otherAgentState, _ := agentState.Get(agentID)
+
+			// Calculate how cooperative each action is in other agents current state
+			cooperativeQ := hiddenCooperationQ(otherAgentState)
+
+			// Put actions on linear scale from -1 (least cooperative) to 1 (most cooperative)
+			cooperationScale := normalise(cooperativeQ)
+
+			// Calculate update of trustworthiness based on how cooperative action was
+			deltaTrust :=
+
+			// Calculate update of based on how cooperative action was compared to the agents own action
+			deltaHonour :=
+
+			// Update the socialCapital array based on calculated delta for trustworthiness and honour
+			s.socialCapital[agentID] = boundArray(addArrays(s.socialCapital[agentID], actionSentiment(action)))
+
+		}
 	}
 }
