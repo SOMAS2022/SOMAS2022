@@ -34,6 +34,17 @@ export default function ResultsOverview({ run }: ResultsOverviewProps) {
             <Typography mt={2}>
                 Outcome: {run.Logs.Outcome ? "Win" : "Loss"}
             </Typography>
+            <Typography>
+                Level: {run.Logs.Levels.length}
+            </Typography>
+            <Typography>
+                Agents Remaining: {
+                    run.Logs.Levels[run.Logs.Levels.length - 1].FightStage.Occurred
+                        ? 
+                        run.Logs.Levels[run.Logs.Levels.length - 1].FightStage.Rounds[run.Logs.Levels[run.Logs.Levels.length - 1].FightStage.Rounds.length-1].AgentsRemaining
+                        : run.Logs.Levels[run.Logs.Levels.length - 1].LevelStats.NumberOfAgents
+                }
+            </Typography>
         </Box>
     );
 }

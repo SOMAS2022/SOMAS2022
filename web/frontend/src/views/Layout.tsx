@@ -20,9 +20,8 @@ import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import { ColourModeContext } from "../App";
-import { Book, NoteAdd, SignalCellular4Bar, Summarize, WifiOff } from "@mui/icons-material";
+import { Book, NoteAdd, SignalCellular4Bar, WifiOff } from "@mui/icons-material";
 import { Tooltip } from "@mui/material";
-import Summary from "./Summary";
 import Schedule from "./Schedule";
 import Result from "./Result";
 import { Run } from "../../../common/types";

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Tab, Tabs } from "@mui/material";
 import { Run } from "../../../common/types";
 import ResultsOverview from "./results/Overview";
+import Game from "./results/Game";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -52,18 +53,18 @@ export default function Result ({run}: ResultProps) {
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                 <Tabs value={tabValue} onChange={handleChange} aria-label="basic tabs example">
                     <Tab label="Overview" {...a11yProps(0)} />
-                    <Tab label="Game Stats" {...a11yProps(1)} />
-                    <Tab label="Agent Stats" {...a11yProps(2)} />
+                    <Tab label="Game" {...a11yProps(1)} />
+                    {/* <Tab label="Agents" {...a11yProps(2)} /> */}
                 </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
                 <ResultsOverview run={run}/>
             </TabPanel>
             <TabPanel value={tabValue} index={1}>
-                Game Stats
+                <Game run={run}/>
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
-                Agent Stats
+                {/* <Agents run={run}/> */}
             </TabPanel>
         </Box>
     );
