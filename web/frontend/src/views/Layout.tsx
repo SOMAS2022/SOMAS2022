@@ -169,15 +169,7 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                 </DrawerHeader>
                 <Divider />
                 <List>
-                    <ListItem key={"summary"} disablePadding onClick={() => setView(0)}>
-                        <ListItemButton>
-                            <ListItemIcon>
-                                <Summarize />
-                            </ListItemIcon>
-                            <ListItemText primary={"Summary"} />
-                        </ListItemButton>
-                    </ListItem>
-                    <ListItem key={"create"} disablePadding onClick={() => setView(1)}>
+                    <ListItem key={"create"} disablePadding onClick={() => setView(0)}>
                         <ListItemButton>
                             <ListItemIcon>
                                 <NoteAdd />
@@ -193,7 +185,7 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                             const iconColour = theme.palette.success.main;
 
                             return (
-                                <ListItem key={run.Meta.Id} disablePadding onClick={() => { setView(3); setSelectedRun(run);}}>
+                                <ListItem key={run.Meta.Id} disablePadding onClick={() => { setView(1); setSelectedRun(run);}}>
                                     <ListItemButton>
                                         <ListItemIcon>
                                             <Book style={{color: iconColour}} />
@@ -210,14 +202,11 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                 <DrawerHeader />
                 {
                     view === 0 ?
-                        <Summary />
+                        <Schedule />
                         :
-                        view === 1 ?
-                            <Schedule />
-                            :
-                            selectedRun == null ? 
-                                <p>Loading...</p> :
-                                <Result run={selectedRun} />
+                        selectedRun == null ?
+                            <p>Loading...</p> :
+                            <Result run={selectedRun} />
                 }
             </Main>
         </Box>
