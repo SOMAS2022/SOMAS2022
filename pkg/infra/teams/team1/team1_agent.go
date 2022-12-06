@@ -235,8 +235,8 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func NewSocialAgent() agent.Strategy {
+func NewSocialAgent(selfishness float64) agent.Strategy {
 	return &SocialAgent{
-		selfishness: rand.Float64(),
+		selfishness: selfishness,
 	}
 }

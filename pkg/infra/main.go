@@ -23,7 +23,7 @@ import (
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
-	"TEAM1":  team1.NewSocialAgent,
+	"TEAM1":  team1.CreateSocialAgent,
 }
 
 func main() {
