@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
+	"infra/game/stage/trade"
 	"infra/game/state"
 	"infra/teams/team1/internal"
 	"math/rand"
@@ -262,6 +263,13 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
+}
+
+func (r *SocialAgent) HandleTradeInit(agent agent.BaseAgent) trade.TradeNegotiation {
+	return trade.TradeNegotiation{}
+}
+func (r *SocialAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg trade.TradeNegotiation) message.TaggedMessage {
+	return message.TaggedMessage{}
 }
 
 func NewSocialAgent() agent.Strategy {

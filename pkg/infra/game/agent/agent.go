@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/stage/trade"
 	"infra/game/state"
 	"infra/logging"
 
@@ -171,4 +172,29 @@ func (a *Agent) handleLootRoundMessage(
 
 func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
+}
+
+func (a *Agent) HandleTrade(agentState state.AgentState, start <-chan interface{}) {
+	a.BaseAgent.latestState = agentState
+	for {
+		select {
+		case <-start:
+			negotiation := a.Strategy.HandleTradeInit(*a.BaseAgent)
+			counterParty, ok := negotiation.GetCounterParty(a.id)
+			if !ok {
+				logging.Log(logging.Error, nil, "Counterparty not found")
+			}
+			err := a.BaseAgent.SendBlockingMessage(counterParty, negotiation)
+			logging.Log(logging.Error, nil, err.Error())
+		case taggedMessage := <-a.BaseAgent.communication.receipt:
+			switch r := taggedMessage.Message().(type) {
+			case trade.TradeNegotiation:
+				r.UpdateRoundNum()
+				if r.GetRoundNum() == 0 {
+					return
+				}
+				a.Strategy.HandleTradeNegotiation(*a.BaseAgent, r)
+			}
+		}
+	}
 }

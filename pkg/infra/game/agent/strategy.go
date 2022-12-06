@@ -5,6 +5,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
+	"infra/game/stage/trade"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -51,4 +52,7 @@ type Loot interface {
 
 type HPPool interface {
 	DonateToHpPool(baseAgent BaseAgent) uint
+
+	HandleTradeInit(agent BaseAgent) trade.TradeNegotiation
+	HandleTradeNegotiation(agent BaseAgent, msg trade.TradeNegotiation) message.TaggedMessage
 }
