@@ -16,16 +16,14 @@ type ClashItem struct {
 
 // handles incomming message, whether
 func AllocMessageHandler(m *message.TaggedMessage, s *state.View) *message.TaggedMessage {
-	var clashSet []ClashItem
-	var winnerSet []ClashItem
+	clashSet := message2ClashLoot(m)
 	//function to be decided depending on the messaging method;
 	//-----------------------------//
 
 	//-----------------------------//
 	//AllocMessageHandle handles all allocation message and return allocation decisions.
 	//-----------------------------//
-	clashSet = FindClashLoot()
-	winnerSet = FindWinnerSet(s, clashSet)
+	winnerSet := FindWinnerSet(s, clashSet)
 	//-----------------------------//
 	AllocationMessage := clashLoot2Message(winnerSet)
 	return AllocationMessage
