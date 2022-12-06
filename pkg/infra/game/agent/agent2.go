@@ -34,6 +34,8 @@ func NewAgent2() Strategy {
 	return &Agent2{}
 }
 
+// Description: The function is used to extract the agents' decisions made in the previous rounds
+// Returns: If multi == true => array of multiple decisions maps (previous rounds), else => array with a single element (decision map of the last round)
 func (a *Agent2) getDecisionHelper(multi bool) []immutable.Map[commons.ID, decision.FightAction] {
 	if multi == true {
 		return a.decisionMap
@@ -42,6 +44,9 @@ func (a *Agent2) getDecisionHelper(multi bool) []immutable.Map[commons.ID, decis
 		return singleArray
 	}
 }
+
+// Description: The function returns our agent's (for a specific instance of our agent type) BaseAgent structures from the previous rounds
+// Returns: If multi ==  true => array of the previous BaseAgent structures, else => array with a single element (BaseAgent struct of the last round)
 func (a *Agent2) getBaseHelper(multi bool) []BaseAgent {
 	if multi == true {
 		return a.baseAgentMap
@@ -50,6 +55,9 @@ func (a *Agent2) getBaseHelper(multi bool) []BaseAgent {
 		return singleArray
 	}
 }
+
+// Description: The function is used to extract the general game info (a.k.a View) of the previous rounds
+// Returns: If multi => array of the previous View structures, else => array with a single element (View struct of the last round)
 func (a *Agent2) getViewHelper(multi bool) []state.View {
 	if multi == true {
 		return a.viewMap
@@ -59,6 +67,8 @@ func (a *Agent2) getViewHelper(multi bool) []state.View {
 	}
 }
 
+// Description: The function is used to extract the agents' HiddenAgentState struct of the previous rounds
+// Returns: if multi => array of the previous HiddenAgentState structures, else => array with a single element (HiddenAgentState struct of the last round)
 func (a *Agent2) getAgentStateHelper(multi bool) []immutable.Map[commons.ID, state.HiddenAgentState] {
 	if multi == true {
 		return a.agentStateMap
@@ -68,6 +78,8 @@ func (a *Agent2) getAgentStateHelper(multi bool) []immutable.Map[commons.ID, sta
 	}
 }
 
+// Description: The function is used to extract the previous leaders' ids
+// Returns: if multi => an array with all the previous leaders' ids, else => array with a single element (id of the last round's leader)
 func (a *Agent2) getLeaderHelper(multi bool) []commons.ID {
 	if multi == true {
 		return a.leaderMap
