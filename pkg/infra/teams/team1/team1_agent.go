@@ -1,7 +1,6 @@
 package team1
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -9,6 +8,8 @@ import (
 	"infra/game/message/proposal"
 	"infra/game/state"
 	"math/rand"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type SocialAgent struct {
@@ -98,13 +99,11 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 // Update social capital at end of each round
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
-
 	itr := fightResult.Iterator()
 	for !itr.Done() {
 		fightDecisions, _ := itr.Next()
 
 		s.updateSocialCapital(self, fightDecisions)
-
 	}
 
 	/*
