@@ -5,11 +5,17 @@ import (
 	"infra/game/state"
 )
 
+// import pool when its merged
+type Item struct {
+	id    commons.ItemID
+	value uint
+}
+
 type Loot struct {
-	Shields  map[commons.ID]uint
-	Weapons  map[commons.ID]uint
-	HPpotion []uint
-	STpotion []uint
+	weapons        *commons.ImmutableList[Item]
+	shields        *commons.ImmutableList[Item]
+	hpPotions      *commons.ImmutableList[Item]
+	staminaPotions *commons.ImmutableList[Item]
 }
 
 type Agents struct {
