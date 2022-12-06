@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Box, Tab, Tabs, Typography } from "@mui/material";
+import { Box, Tab, Tabs } from "@mui/material";
 import { Run } from "../../../common/types";
 import ResultsOverview from "./results/Overview";
 
