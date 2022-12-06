@@ -12,6 +12,9 @@ build:
 run: build
 		${BINARY_NAME}
 
+runWithID: build
+		${BINARY_NAME} -i ${ID}
+
 runWithJSON: build
 		${BINARY_NAME} -j
 
@@ -19,6 +22,7 @@ runDebug: build
 		${BINARY_NAME} -d
 clean:
 		go clean
+		rm -r logs/*
 		rm -rf ${BINARY_NAME}
 
 # formatting and linting

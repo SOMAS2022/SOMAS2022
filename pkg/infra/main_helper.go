@@ -170,7 +170,9 @@ func checkHpPool() {
 
 		globalState.HpPool -= globalState.MonsterHealth
 		globalState.MonsterHealth = 0
+		return true
 	}
+	return false
 }
 
 func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {

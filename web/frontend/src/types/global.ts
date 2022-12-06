@@ -1,4 +1,4 @@
-export enum team_names {
+export enum TeamNames {
     team1 = "Team1",
     team2 = "Team2",
     team3 = "Team3",
@@ -8,72 +8,73 @@ export enum team_names {
     randomAgent = "RandomAgent"
 }
 
-export interface team_score {
-    team_name: team_names,
-    wins: number
+export interface GameLog {
+    warnings: Array<Map<string, string|number>>
+    errors: Array<Map<string, string|number>>
+    Levels: Array<LevelStages>
 }
 
-export enum simulation_status {
-    Running = "Running",
-    In_Queue = "In Queue",
-    Finished = "Finished"
+export interface LevelStages {
+    LevelStats:    LevelStats
+	ElectionStage: ElectionStage
+	VONCStage:     VONCStage
+	FightStage:    FightStage
+	LootStage:     LootStage
+	HPPoolStage:   HPPoolStage
 }
 
-export enum run_result {
-    Win = "Win",
-    Loss = "Loss",
-    Error = "Error"
+export interface LevelStats {
+	NumberOfAgents:       number
+	SkippedThroughHpPool: boolean
+	CurrentLevel:         number
+	HPPool:               number
+	MonsterHealth:        number
+	MonsterAttack:        number
+	CurrentLeader:        string
 }
 
-export enum run_errors {
-    "Time Exceeded" = "Time Exceeded"
+export interface ElectionStage {
+    Occured:   boolean
+	Winner:    string
+	Team:      string
+	Manifesto: ManifestoLog
 }
 
-export interface simulation_config {
-    levels: number,
-    runs: number,
-    startingHP: number,
-    startingAT: number,
-    startingSH: number,
-    baseSTAM: number,
-    randomQty: number,
-    team1Qty: number,
-    team2Qty: number,
-    team3Qty: number,
-    team4Qty: number,
-    team5Qty: number,
-    team6Qty: number,
+export interface ManifestoLog {
+	FightImposition:     boolean
+	LootImposition:      boolean
+	TermLength:          number
+	ThresholdPercentage: number
 }
 
-export interface simulation_result {
-    name: string,
-    id: string,
-    onGITCommit: string,
-    time_queued: Date,
-    time_taken: number,
-    sim_status: simulation_status,
-    result: run_result | null,
-    error: run_errors | null,
-    winner: team_names | null,
-    config: simulation_config,
-    logs: Array<battle_summary>
+export interface VONCStage {
+	Occured:   boolean
+	For:       number
+	Against:   number
+	Abstain:   number
+	Threshold: number
 }
 
-export interface battle_summary {
-    level: string,
-    msg: string,
-    currentLevel: number,
-    monsterHealth: number,
-    monsterDamage: number,
-    numberOfAgents: number,
-    attackSum: number,
-    shieldSum: number,
-    battleResult: string,
-    time: Date
+export interface FightStage {
+	Occured: boolean
+    Rounds: Array<FightLog>
+} 
+
+export interface FightLog {
+    AttackingAgents: Array<string>
+    ShieldingAgents: Array<string>
+    CoweringAgents: Array<string>
+	AttackSum:       number
+	ShieldSum:       number
 }
 
-export interface game_summary {
-    level: string,
-    msg: string,
-    time: Date
+export interface LootStage {
+	Occured: boolean
+}
+
+export interface HPPoolStage {
+	Occured :         boolean
+	DonatedThisRound: number
+	OldHPPool:        number
+	NewHPPool:        number
 }

@@ -21,7 +21,7 @@ const (
 	Error
 )
 
-func InitLogger(useJSONFormatter bool, debug bool) {
+func InitLogger(useJSONFormatter bool, debug bool, id string) {
 	if useJSONFormatter {
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
@@ -29,11 +29,12 @@ func InitLogger(useJSONFormatter bool, debug bool) {
 	}
 
 	log.SetOutput(os.Stdout)
+	runID = id
 
 	if debug {
 		log.SetLevel(logrus.TraceLevel)
 	} else {
-		Log(Warn, nil, "'Trace' and 'Debug' messages hidden. Run with '-d' or 'make runDebug' to see these logs.")
+		LogToFile(Warn, nil, "'Trace' and 'Debug' messages hidden. Run with '-d' or 'make runDebug' to see these logs.", LevelStages{})
 		log.SetLevel(logrus.InfoLevel)
 	}
 }
