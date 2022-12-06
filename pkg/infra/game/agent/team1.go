@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/teams/team1"
 	"math"
 	"math/rand"
 	"time"
@@ -109,7 +110,10 @@ func makeIncremental(inputArray [3]float64) [3]float64 {
 
 type Team1Agent struct {
 	socialCapital    map[string][4]float64
-	lastLevelUpdated uint // The level at which the socialCapital was last updated
+	lastLevelUpdated uint       // The level at which the socialCapital was last updated
+	pCooperation     float64    // Probability that agent will cooperate
+	coopTable        [3]float64 // QTable for actions when agent cooperates towards the common goal
+	selfTable        [3]float64 // QTable for actions when the agent acts in its own self-interest
 
 	// Four metrics for each agent's perception of other agents. Three metrics are borrowed from Ostrom-Ahn
 	// social capital model: (The ordering below is the same as the ordering in the array)
@@ -120,7 +124,7 @@ type Team1Agent struct {
 	// the agent sending the message.
 	// 3. Trustworthiness: Measures how likely the agent is to cooperate based on historic decisions.
 	// Finally, our addition to the model is
-	// 4. Favours: A metric of how many favours an agent has done for another agent, compared to the amount of
+	// 4. Honour: A metric of how many favours an agent has done for another agent, compared to the amount of
 	//favours the other agent has done for them. This metric is supposed to capture social expectations, such
 	//as if I went out with the trash last time, then I feel that next time someone else should do it. The value
 	// of the  favours metric will over time impact the trustworthiness metric of another agent. In many ways,
@@ -223,20 +227,36 @@ func (r Team1Agent) Default() decision.FightAction {
 }
 
 func NewTeam1Agent() *Team1Agent {
-	return &Team1Agent{}
+
+	// Initialise a random seed
+	rand.Seed(time.Now().UnixNano())
+
+	// Check if environment variables exist for coopTable and selfTable
+	//coopTable        QTable  // QTable for actions when agent cooperates towards the common goal
+	//selfTable        QTable  // QTable for actions when the agent acts in its own self-interest
+	return &Team1Agent{
+		pCooperation: rand.Float64(),
+		coopTable:    [3]float64{0.0, 0.0, 0.0},
+		selfTable:    [3]float64{0.0, 0.0, 0.0},
+	}
 }
 
 func (r Team1Agent) HandleFightMessage(m message.TaggedMessage, view *state.View, agent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) decision.FightAction {
 
 	r.updateSocialCapital(m, view, agent, log)
 
-	// Calculate utility value of each action
-	utilCower := r.utilityValue(decision.Cower, view, agent)
-	utilAttack := r.utilityValue(decision.Attack, view, agent)
-	utilDefend := r.utilityValue(decision.Defend, view, agent)
+	// Decide if agent is going to cooperate or act in own self-interest
+	cooperate := rand.Float64() < r.pCooperation
+
+	var utilityValues [3]float64
+	if cooperate {
+		utilityValues = r.coopTable
+	} else {
+		utilityValues = r.selfTable
+	}
 
 	// Apply softmax to get probabilities
-	softArray := softmax([3]float64{utilCower, utilAttack, utilDefend})
+	softArray := softmax(utilityValues)
 
 	// Make number representation incremental
 	probArray := makeIncremental(softArray)
@@ -250,18 +270,20 @@ func (r Team1Agent) HandleFightMessage(m message.TaggedMessage, view *state.View
 		fmt.Println(probArray)
 	}*/
 
-	// Initialise a random seed
-	rand.Seed(time.Now().UnixNano())
-
 	// Do action with probability based on utility value
+	var action decision.FightAction
 	switch random := rand.Float64(); {
 	case 0.0 < random && random < probArray[0]:
-		return decision.Cower
+		action = decision.Cower
 	case probArray[0] < random && random < probArray[1]:
-		return decision.Attack
+		action = decision.Attack
 	case probArray[1] < random && random < probArray[2]:
-		return decision.Defend
-	default:
-		return decision.Attack
+		action = decision.Defend
 	}
+
+	// Maybe only log with a probability, otherwise logs become very long
+	team1.LogAction(view, agent.Id, action)
+	//team1.LogAction()
+
+	return action
 }
