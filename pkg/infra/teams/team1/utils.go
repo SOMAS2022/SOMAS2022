@@ -14,12 +14,6 @@ import (
 	"infra/game/message"
 )
 
-// This type will make it easier to extract from map, sort, and retrieve agent ID
-type SocialCapInfo struct {
-	ID  string
-	arr [4]float64
-}
-
 const (
 	MessagePraise int = iota
 	MessageDenounce
