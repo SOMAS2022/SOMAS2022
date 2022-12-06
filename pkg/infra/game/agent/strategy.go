@@ -20,7 +20,7 @@ type Strategy interface {
 	HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent) decision.Intent
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
-	FightAction() decision.FightAction
+	FightAction(baseAgent BaseAgent) decision.FightAction
 
 	HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent BaseAgent)
 	HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform

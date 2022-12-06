@@ -25,7 +25,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	predicate := proposal.ToSinglePredicate(prop)
 	if predicate == nil {
 		for id, a := range agentMap {
-			fightActions[id] = a.FightAction()
+			fightActions[id] = a.FightAction(*a.BaseAgent)
 		}
 	} else {
 		for id, a := range agentMap {
