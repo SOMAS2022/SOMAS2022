@@ -17,7 +17,7 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) FightAction() decision.FightAction {
+func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:

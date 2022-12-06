@@ -17,7 +17,7 @@ type SocialAgent struct {
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
 }
 
-func (s *SocialAgent) FightAction() decision.FightAction {
+func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:
