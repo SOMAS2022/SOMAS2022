@@ -88,7 +88,7 @@ export interface LevelStats {
 }
 
 export interface ElectionStage {
-    Occured: boolean
+    Occurred: boolean
     Winner: string
     Team: string
     Manifesto: ManifestoLog
@@ -102,7 +102,7 @@ export interface ManifestoLog {
 }
 
 export interface VONCStage {
-    Occured: boolean
+    Occurred: boolean
     For: number
     Against: number
     Abstain: number
@@ -110,7 +110,7 @@ export interface VONCStage {
 }
 
 export interface FightStage {
-    Occured: boolean
+    Occurred: boolean
     Rounds: Array<FightLog>
 }
 
@@ -124,11 +124,11 @@ export interface FightLog {
 }
 
 export interface LootStage {
-    Occured: boolean
+    Occurred: boolean
 }
 
 export interface HPPoolStage {
-    Occured: boolean
+    Occurred: boolean
     DonatedThisRound: number
     OldHPPool: number
     NewHPPool: number

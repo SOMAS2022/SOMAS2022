@@ -85,7 +85,7 @@ type LevelStats struct {
 }
 
 type ElectionStage struct {
-	Occured   bool
+	Occurred  bool
 	Winner    commons.ID
 	Team      string
 	Manifesto ManifestoLog
@@ -99,7 +99,7 @@ type ManifestoLog struct {
 }
 
 type VONCStage struct {
-	Occured   bool
+	Occurred  bool
 	For       uint
 	Against   uint
 	Abstain   uint
@@ -107,8 +107,8 @@ type VONCStage struct {
 }
 
 type FightStage struct {
-	Occured bool
-	Rounds  []FightLog
+	Occurred bool
+	Rounds   []FightLog
 }
 
 type FightLog struct {
@@ -121,11 +121,11 @@ type FightLog struct {
 }
 
 type LootStage struct {
-	Occured bool
+	Occurred bool
 }
 
 type HPPoolStage struct {
-	Occured          bool
+	Occurred         bool
 	DonatedThisRound uint
 	OldHPPool        uint
 	NewHPPool        uint
@@ -145,7 +145,6 @@ func LogToFile(lvl Level, fields LogField, msg string, level LevelStages) {
 		fileLog.Levels = append(fileLog.Levels, level)
 		// fmt.Print(level)
 		return
-
 	}
 }
 
