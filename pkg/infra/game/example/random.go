@@ -17,6 +17,10 @@ type RandomAgent struct {
 	bravery int
 }
 
+func (r *RandomAgent) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
+}
+
 func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
