@@ -2,7 +2,6 @@ package example
 
 import (
 	"infra/game/message/proposal"
-	"infra/game/stage/trade"
 	"infra/game/state"
 	"math/rand"
 
@@ -242,11 +241,11 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleTradeInit(agent agent.BaseAgent) trade.TradeNegotiation {
-	return trade.TradeNegotiation{}
+func (r *RandomAgent) HandleTradeInit(agent agent.BaseAgent) message.TradeNegotiation {
+	return message.TradeNegotiation{}
 }
-func (r *RandomAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg trade.TradeNegotiation) message.TaggedMessage {
-	return message.TaggedMessage{}
+func (r *RandomAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg message.TradeNegotiation) message.TradeNegotiation {
+	return message.TradeNegotiation{}
 }
 
 func NewRandomAgent() agent.Strategy {

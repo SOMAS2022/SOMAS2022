@@ -6,7 +6,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/stage/trade"
 	"infra/game/state"
 	"infra/logging"
 
@@ -174,10 +173,12 @@ func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
 }
 
-func (a *Agent) HandleTrade(agentState state.AgentState, start <-chan interface{}) {
+func (a *Agent) HandleTrade(agentState state.AgentState, start <-chan interface{}, closure <-chan interface{}) {
 	a.BaseAgent.latestState = agentState
 	for {
 		select {
+		case <-closure:
+			return
 		case <-start:
 			negotiation := a.Strategy.HandleTradeInit(*a.BaseAgent)
 			counterParty, ok := negotiation.GetCounterParty(a.id)
@@ -188,7 +189,7 @@ func (a *Agent) HandleTrade(agentState state.AgentState, start <-chan interface{
 			logging.Log(logging.Error, nil, err.Error())
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
 			switch r := taggedMessage.Message().(type) {
-			case trade.TradeNegotiation:
+			case message.TradeNegotiation:
 				r.UpdateRoundNum()
 				if r.GetRoundNum() == 0 {
 					return

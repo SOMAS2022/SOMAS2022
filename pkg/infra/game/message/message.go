@@ -3,37 +3,37 @@ package message
 import "infra/game/state"
 
 type Message interface {
-	SealedMessage()
+	sealedMessage()
 }
 
 type Inform interface {
 	Message
-	SealedInform()
+	sealedInform()
 }
 
 type Request interface {
 	Message
-	SealedRequest()
+	sealedRequest()
 }
 
 type FightRequest interface {
 	Request
-	SealedFightRequest()
+	sealedFightRequest()
 }
 
 type LootRequest interface {
 	Request
-	SealedLootRequest()
+	sealedLootRequest()
 }
 
 type FightInform interface {
 	Inform
-	SealedFightInform()
+	sealedFightInform()
 }
 
 type LootInform interface {
 	Inform
-	SealedLootInform()
+	sealedLootInform()
 }
 
 type StartLoot struct {
@@ -44,32 +44,32 @@ func NewStartLoot(lootPool state.LootPool) *StartLoot {
 	return &StartLoot{LootPool: lootPool}
 }
 
-func (s StartLoot) SealedMessage() {
+func (s StartLoot) sealedMessage() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StartLoot) SealedInform() {
+func (s StartLoot) sealedInform() {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s StartLoot) SealedLootInform() {
+func (s StartLoot) sealedLootInform() {
 	//TODO implement me
 	panic("implement me")
 }
 
 type StartFight struct{}
 
-func (s StartFight) SealedMessage() {
+func (s StartFight) sealedMessage() {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (s StartFight) SealedInform() {
+func (s StartFight) sealedInform() {
 	panic("implement me")
 }
 
-func (s StartFight) SealedFightInform() {
+func (s StartFight) sealedFightInform() {
 	panic("implement me")
 }

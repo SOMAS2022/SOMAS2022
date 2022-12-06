@@ -21,7 +21,7 @@ func (p Proposal[A]) Rules() commons.ImmutableList[proposal.Rule[A]] {
 	return p.rules
 }
 
-func (p Proposal[A]) SealedMessage() {
+func (p Proposal[A]) sealedMessage() {
 }
 
 func NewProposal[A decision.ProposalAction](rules commons.ImmutableList[proposal.Rule[A]]) *Proposal[A] {
