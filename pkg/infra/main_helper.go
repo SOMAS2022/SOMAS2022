@@ -175,14 +175,14 @@ func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.I
 */
 
 func checkHpPool() {
-	if globalState.HpPool >= globalState.MonsterAttack {
+	if globalState.HpPool >= globalState.MonsterHealth {
 		logging.Log(logging.Info, logging.LogField{
 			"Original HP Pool":  globalState.HpPool,
-			"Monster Damage":    globalState.MonsterAttack,
-			"HP Pool Remaining": globalState.HpPool - globalState.MonsterAttack,
+			"Monster Health":    globalState.MonsterHealth,
+			"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
 		}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
 
-		globalState.HpPool -= globalState.MonsterAttack
+		globalState.HpPool -= globalState.MonsterHealth
 		globalState.MonsterHealth = 0
 	}
 }
