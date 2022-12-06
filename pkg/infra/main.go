@@ -57,9 +57,9 @@ func startGameLoop() {
 			termLeft = runElection()
 			// fmt.Println(globalState.LeaderManifesto)
 			levelLog.ElectionStage = logging.ElectionStage{
-				Occured: true,
-				Winner:  globalState.CurrentLeader,
-				Team:    agentMap[globalState.CurrentLeader].BaseAgent.Name(),
+				Occurred: true,
+				Winner:   globalState.CurrentLeader,
+				Team:     agentMap[globalState.CurrentLeader].BaseAgent.Name(),
 				Manifesto: logging.ManifestoLog{
 					FightImposition:     globalState.LeaderManifesto.FightImposition(),
 					LootImposition:      globalState.LeaderManifesto.LootImposition(),
@@ -68,7 +68,7 @@ func startGameLoop() {
 				},
 			}
 		} else {
-			levelLog.VONCStage = logging.VONCStage{Occured: true, Threshold: globalState.LeaderManifesto.OverthrowThreshold()}
+			levelLog.VONCStage = logging.VONCStage{Occurred: true, Threshold: globalState.LeaderManifesto.OverthrowThreshold()}
 			termLeft, votes = runConfidenceVote(termLeft)
 			levelLog.VONCStage.For = votes[decision.Positive]
 			levelLog.VONCStage.Against = votes[decision.Negative]
@@ -95,7 +95,7 @@ func startGameLoop() {
 		fightResultSlice := make([]decision.ImmutableFightResult, 0)
 		roundNum := uint(0)
 		for globalState.MonsterHealth != 0 {
-			levelLog.FightStage.Occured = true
+			levelLog.FightStage.Occurred = true
 			// find out the maximum attack from alive agents
 			maxAttack := uint(0)
 			for _, agentState := range globalState.AgentState {
