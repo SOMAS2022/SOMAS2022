@@ -3,7 +3,9 @@ package team1
 import (
 	"infra/game/agent"
 	"infra/game/decision"
+	"infra/game/message"
 	"math"
+	"sort"
 )
 
 // Function which defines how an agent perceives an action
@@ -140,4 +142,86 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 	for key := range s.socialCapital {
 		s.socialCapital[key] = boundArray(s.socialCapital[key])
 	}
+}
+
+/**
+ * Tell other trusted agents above a threshold T about the A agents they admire the most,
+ * and the H agents they hate the most.
+ * Currently messages may be sent to recipients praising or denouncing the recipient
+ */
+func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
+	selfID := agent.Name()
+
+	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
+	for k, sc := range r.socialCapital {
+		if k == selfID { // Exclude self
+			continue
+		}
+		sci := SocialCapInfo{ID: k, arr: sc}
+		sortedSCTrustworthiness = append(sortedSCTrustworthiness, sci)
+	}
+
+	sort.Slice(sortedSCTrustworthiness, func(i int, j int) bool {
+		return sortedSCTrustworthiness[i].arr[2] > sortedSCTrustworthiness[j].arr[2]
+	})
+
+	numAdmire := int(r.propAdmire * float64(len(sortedSCTrustworthiness)))
+	numHate := int(r.propHate * float64(len(sortedSCTrustworthiness)))
+
+	admiredAgents := make([]string, 0, numAdmire)
+	hatedAgents := make([]string, 0, numHate)
+	for i, scit := range sortedSCTrustworthiness {
+		if i >= numAdmire {
+			break
+		}
+
+		admiredAgents = append(admiredAgents, scit.ID)
+	}
+
+	for i := len(sortedSCTrustworthiness) - 1; i >= 0; i-- {
+		if len(sortedSCTrustworthiness)-1-i >= numHate {
+			break
+		}
+
+		hatedAgents = append(hatedAgents, sortedSCTrustworthiness[i].ID)
+	}
+
+	for _, sci := range sortedSCTrustworthiness {
+		if sci.arr[1] < r.gossipThreshold {
+			continue
+		}
+		Gossip(agent, sci.ID, MessagePraise, admiredAgents)
+		Gossip(agent, sci.ID, MessageDenounce, hatedAgents)
+	}
+}
+
+/**
+ * On receiving gossip, scale the network value up/down by a constant and
+ * the senders overall perception to this agent. This means that someone
+ * with 0.2 network would become 0.22, and someone with 0.7 network would
+ * become 0.77, with a 10% increase
+ *
+ */
+func (r *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
+	// Will reverse if sender's perception is negative
+	senderPerception := OverallPerception(r.socialCapital[sender])
+	mtype := m.GetNum()
+	var sign float64
+	switch mtype {
+	case MessagePraise:
+		sign = 1.0
+	case MessageDenounce:
+		sign = -1.0
+	}
+
+	for _, about := range m.GetStringArr() {
+		sc := r.socialCapital[about]
+		sc[1] += sign * senderPerception * 0.1 * sc[1]
+		sc = boundArray(sc)
+		r.socialCapital[about] = sc
+	}
+}
+
+func OverallPerception(inputArray [4]float64) float64 {
+	return (inputArray[0] + inputArray[1] + inputArray[2] + inputArray[3]) * 0.25
 }
