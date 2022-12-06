@@ -1,40 +1,47 @@
 # Name of workflow
 name: agent_performance
+
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push events but only for the "main" branch
   push:
-    branches: ["main"]
+    branches: [ "main" ]
+
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         # Configurations with which the script will be run
-        levels: [60]
-        starting_hp: [10]
-        starting_attack: [100]
-        starting_shield: [100]
-        base_stamina: [400]
-        threshold_pct: [0.6]
-        agent_quantity: [25, 100]
-    name: Testing performance of ${{ matrix.agents }}
+        levels: [ 60 ]
+        starting_hp: [ 10 ]
+        starting_attack: [ 100 ]
+        starting_shield: [ 100 ]
+        base_stamina: [ 400 ]
+        threshold_pct: [ 0.6 ]
+        agent_quantity: [ 25, 100 ]
+
+    name: Testing performance of agents
     steps:
       - uses: actions/checkout@v3
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.19"
+          go-version-file: './pkg/infra/go.mod'
+
       - name: Build main.go to tmp directory
         run: go build -o /tmp/infra
         working-directory: pkg/infra
+
       # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
       # the game for your agent
-      - name: Run the compiled program
+      - name: Test performance of RANDOM agent
         run: ./infra
         working-directory: /tmp
         env:
@@ -45,3 +52,17 @@ jobs:
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
           AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
+
+      # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
+      # the game for your agent
+      - name: Test Performance of TEAM1 agent
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_TEAM1_QUANTITY: ${{ matrix.agent_quantity }}
