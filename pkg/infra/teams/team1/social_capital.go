@@ -150,7 +150,12 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
  * Currently messages may be sent to recipients praising or denouncing the recipient
  */
 func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
-	selfID := agent.Name()
+	// This type will make it easier to extract from map, sort, and retrieve agent ID
+	type SocialCapInfo struct {
+		ID  string
+		arr [4]float64
+	}
+	selfID := agent.ID()
 
 	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
 	for k, sc := range r.socialCapital {
