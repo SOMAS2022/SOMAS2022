@@ -26,6 +26,11 @@ type BaseAgent struct {
 	name          string
 	latestState   state.AgentState
 	view          *state.View
+	loot          state.LootPool
+}
+
+func (ba *BaseAgent) Loot() state.LootPool {
+	return ba.loot
 }
 
 func (ba *BaseAgent) setCommunication(communication *Communication) {
@@ -64,7 +69,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 	switch m.(type) {
 	case message.Proposal[decision.FightAction]:
 		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
-	case message.Proposal[decision.LootDecision]:
+	case message.Proposal[decision.LootAction]:
 		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
 	default:
 		channel, ok := ba.communication.peer.Get(id)

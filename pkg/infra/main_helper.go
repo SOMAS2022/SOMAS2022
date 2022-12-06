@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"sort"
 	"sync"
+
+	"github.com/google/uuid"
 
 	"infra/config"
 	"infra/game/agent"
@@ -181,4 +185,25 @@ func checkHpPool() {
 		globalState.HpPool -= globalState.MonsterAttack
 		globalState.MonsterHealth = 0
 	}
+}
+
+func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
+	makeItems := func() *commons.ImmutableList[state.Item] {
+		nItems := rand.Intn(numAgents)
+		items := make([]state.Item, nItems)
+		for i := 0; i < nItems; i++ {
+			items[i] = *state.NewItem(uuid.NewString(), currentLevel*uint(rand.Intn(3)+1))
+		}
+		sort.SliceStable(items, func(i, j int) bool {
+			return items[i].Value() > items[j].Value()
+		})
+		return commons.NewImmutableList(items)
+	}
+
+	return state.NewLootPool(
+		makeItems(),
+		makeItems(),
+		makeItems(),
+		makeItems(),
+	)
 }

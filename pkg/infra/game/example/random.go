@@ -2,6 +2,7 @@ package example
 
 import (
 	"infra/game/message/proposal"
+	"infra/game/state"
 	"math/rand"
 
 	"infra/game/agent"
@@ -14,6 +15,80 @@ import (
 
 type RandomAgent struct {
 	bravery int
+}
+
+func (r *RandomAgent) FightAction() decision.FightAction {
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		return decision.Cower
+	case 1:
+		return decision.Attack
+	default:
+		return decision.Defend
+	}
+}
+
+func (r *RandomAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+}
+
+func (r *RandomAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Positive
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Abstain
+	}
+}
+
+func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+func (r *RandomAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := ba.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	iterator := ba.Loot().Weapons().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().Shields().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().HpPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().StaminaPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
+	for id, itemIDS := range lootAllocation {
+		mMapped[id] = commons.ListToImmutable(itemIDS)
+	}
+	return commons.MapToImmutable(mMapped)
+}
+
+func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		toBeAllocated := ids[rand.Intn(len(ids))]
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
 }
 
 func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
@@ -46,7 +121,7 @@ func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[p
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 50)
+	manifesto := decision.NewManifesto(false, true, 10, 50)
 	return manifesto
 }
 
@@ -73,18 +148,6 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 
 func (r *RandomAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
-}
-
-func (r *RandomAgent) CurrentAction() decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
-	}
 }
 
 func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
@@ -138,7 +201,7 @@ func (r *RandomAgent) HandleFightProposalRequest(
 }
 
 func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().Weapons
+	// weapons := b.AgentState().weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
 	// 0th weapon has the greatest attack points

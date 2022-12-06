@@ -46,11 +46,11 @@ func removeItems(globalState *state.State, agentState state.AgentState) {
 	removeItemsFromMap(globalState.InventoryMap.Shields, agentState.Shields)
 }
 
-func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.InventoryItem]) {
+func removeItemsFromMap(m map[commons.ID]uint, l immutable.List[state.Item]) {
 	iterator := l.Iterator()
 	for !iterator.Done() {
 		_, v := iterator.Next()
-		delete(m, v.ID)
+		delete(m, v.Id())
 	}
 }
 
@@ -98,6 +98,7 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	}
 
 	tallyClosure <- struct{}{}
+	close(tallyClosure)
 	return propTally
 }
 

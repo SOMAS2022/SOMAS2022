@@ -69,7 +69,7 @@ func (a *Agent) HandleFight(agentState state.AgentState,
 	for {
 		select {
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
-			a.handleMessage(&log, taggedMessage, votes, submission)
+			a.handleFightRoundMessage(&log, taggedMessage, votes, submission)
 		case <-closure:
 			return
 		}
@@ -84,7 +84,7 @@ func (a *Agent) SetCommunication(communication *Communication) {
 	a.BaseAgent.setCommunication(communication)
 }
 
-func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightAction],
+func (a *Agent) handleFightRoundMessage(log *immutable.Map[commons.ID, decision.FightAction],
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
 	submission chan message.Proposal[decision.FightAction],
@@ -118,4 +118,57 @@ func (a *Agent) handleMessage(log *immutable.Map[commons.ID, decision.FightActio
 	default:
 		logging.Log(logging.Warn, nil, fmt.Sprintf("Unknown type, %T", r))
 	}
+}
+
+func (a *Agent) HandleLoot(agentState state.AgentState, votes chan commons.ProposalID, submission chan message.Proposal[decision.LootAction], closure chan struct{}, start <-chan message.StartLoot) {
+	a.BaseAgent.latestState = agentState
+	for {
+		select {
+		case loot := <-start:
+			a.addLoot(loot.LootPool)
+		case taggedMessage := <-a.BaseAgent.communication.receipt:
+			a.handleLootRoundMessage(taggedMessage, votes, submission)
+		case <-closure:
+			return
+		}
+	}
+}
+
+func (a *Agent) handleLootRoundMessage(
+	m message.TaggedMessage,
+	votes chan commons.ProposalID,
+	submission chan message.Proposal[decision.LootAction],
+) {
+	switch r := m.Message().(type) {
+	case message.LootRequest:
+		req := *message.NewTaggedRequestMessage[message.LootRequest](m.Sender(), r, m.MID())
+		resp := a.Strategy.HandleLootRequest(req)
+		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
+		logging.Log(logging.Error, nil, err.Error())
+	case message.LootInform:
+		inf := *message.NewTaggedInformMessage[message.LootInform](m.Sender(), r, m.MID())
+		a.Strategy.HandleLootInformation(inf, *a.BaseAgent)
+	case message.Proposal[decision.LootAction]:
+		if a.isLeader() {
+			if a.Strategy.HandleLootProposalRequest(r, *a.BaseAgent) {
+				submission <- r
+				iterator := a.BaseAgent.communication.peer.Iterator()
+				for !iterator.Done() {
+					_, value, _ := iterator.Next()
+					value <- m
+				}
+			}
+		}
+		switch a.Strategy.HandleLootProposal(r, *a.BaseAgent) {
+		case decision.Positive:
+			votes <- r.ProposalID()
+		default:
+		}
+	default:
+		logging.Log(logging.Warn, nil, fmt.Sprintf("Unknown type, %T", r))
+	}
+}
+
+func (a *Agent) addLoot(pool state.LootPool) {
+	a.BaseAgent.loot = pool
 }
