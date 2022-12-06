@@ -15,7 +15,7 @@ type ClashItem struct {
 	winner          commons.ID
 }
 
-// may not be neccessary depending on infra
+// may not be necessary depending on infra
 func FindClashLoot(s *state.View) []ClashItem {
 	var ClashLoot []ClashItem
 
