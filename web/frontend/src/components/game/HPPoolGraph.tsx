@@ -28,7 +28,7 @@ export const options = {
         },
         title: {
             display: true,
-            text: "Agents Remaining at the end of each level",
+            text: "HP Pool",
         },
     },
 };
@@ -39,13 +39,13 @@ const data = {
     labels: labels,
     datasets: [
         {
-            label: "Agents Remaining",
+            label: "HP Pool",
             data: [0],
             borderColor: "rgb(255, 99, 132)",
             backgroundColor: "rgba(255, 99, 132, 0.5)",
         },
         {
-            label: "Pass Threshold",
+            label: "Monster Resilience",
             data: [0],
             borderColor: "rgb(53, 162, 235)",
             backgroundColor: "rgba(53, 162, 235, 0.5)",
@@ -54,20 +54,17 @@ const data = {
 };
 
 interface AgentDeathGraphProps {
-    agents: Array<number>
-    threshold: number
+    pool: Array<number>
+    monsterHP: Array<number>
 }
 
-export function AgentDeathGraph({agents, threshold}: AgentDeathGraphProps) {
-    const xaxis = agents.map((_, idx) => {
-        return idx+1;
-    });
-    const thresholdArr = agents.map(() => {
-        return threshold;
+export function HPPoolGraph({ pool, monsterHP }: AgentDeathGraphProps) {
+    const xaxis = pool.map((_, idx) => {
+        return idx + 1;
     });
     data.labels = xaxis;
-    data.datasets[0].data = agents;
-    data.datasets[1].data= thresholdArr;
-    
+    data.datasets[0].data = pool;
+    data.datasets[1].data = monsterHP;
+
     return <Line options={options} data={data} />;
 }
