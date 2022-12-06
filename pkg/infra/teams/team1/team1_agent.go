@@ -17,6 +17,10 @@ type SocialAgent struct {
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
 }
 
+func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
+}
+
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
