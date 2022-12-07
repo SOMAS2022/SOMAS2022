@@ -4,13 +4,13 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
 	"infra/game/state"
 	_ "infra/game/state"
 	"math"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 // Agent2 type : private attributes of agent
@@ -38,6 +38,8 @@ type Agent2 struct {
 func NewAgent2() Strategy {
 	return &Agent2{}
 }
+
+/* ---- HELPER FUNCTIONS ----*/
 
 func (a *Agent2) updateBaseAgentPerLevel(agent BaseAgent) {
 	a.baseAgentPerLevel = append(a.baseAgentPerLevel, agent)
@@ -164,145 +166,38 @@ func (a *Agent2) updateLeaderHelper(leader commons.ID) {
 	a.leaderMap = append(a.leaderMap, leader)
 }
 
-// HandleFightInformation TODO: Implement me!
-// Description: Used to extract agent information
-// Return:		nil
-func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	// Update Logs
-	a.updateDecisionHelper(*log)
-
-	//v, ok := view.AgentState().Get("asdf")
-}
-
-// HandleFightRequest TODO: Implement me!
-// Description: Used for comms to request p2p message probably? Not Sure!
-// Return		Message Payload
-func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
-	return nil
-}
-
 // Logistic function
 func logistic(x float64, k float64, x0 float64) float64 {
 	return 1 / (1 + math.Exp(-k*(x-x0)))
 }
 
-/*
-==============
+/* ---- STRATEGY ---- */
 
-Work In Progress Tim
+// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons
+func (a *Agent2) HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx {
+	// weapons := b.AgentState().Weapons
+	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
-// Description : Compare defense and attack potential, output a decision
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) initialDecision() decision.FightAction {
-
-	// method to retrieve state ?
-
-	// Bravery is a function of health
-	bravery := logistic(Health, 0.1, 50)
-
-	// If current bravery is higher than parameter tendency, do something
-	if bravery >= a.personalTendency {
-		if Stamina >= Attack+AttackBonus {
-			return decision.Attack
-		} else if Stamina >= Defense+DefenseBonus {
-			return decision.Defend
-		}
-	}
-
-	return decision.Cower // Else cower
+	// 0th weapon has the greatest attack points
+	return decision.ItemIdx(0)
 }
 
-// Description : Compare current number of cowering agents to previous numbers
-// and possibly replace them
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) replaceDecision() decision.FightAction {
-	mean10LastRounds := ...
-	currentFighting := ...
-
-	bravery := logistic(Health, 0.1, 50)
-
-	if bravery >= a.replacementTendency {
-		if Stamina >= Attack+AttackBonus {
-			return decision.Attack
-		} else if Stamina >= Defense+DefenseBonus {
-			return decision.Defend
-		}
-	}
-
-	return decision.Cower
+// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
+func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
+	// shields := b.AgentState().Shields
+	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
+	return decision.ItemIdx(0)
 }
 
-// Description : Estimate current damage and possibly change decision
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) estimateDecision() decision.FightAction {
-	lastTotalAttack := ...
-	lastAgents := ...
-	lastTotalDefense := ...
-
-	currentAgents := ...
-	estimatedTotalAttack := currentAgents * lastTotalAttack / lastAgents
-	estimatedTotalDefense := currentAgents * lastTotalDefense / lastAgents
-
-	diffAttack = estimatedTotalAtack - lastTotalAttack
-	diffDefense = estimatedTotalDefense - lastTotalDefense
-
-	// Cower if there are more attackers and defenders
-	if(diffAttack > 0 && diffDefense > 0){
-		return decision.Cower
-	}
-
-	bravery := logistic(Health, 0.1, 50)
-
-	if bravery >= a.estimationTendency {
-		if Stamina >= Attack+AttackBonus {
-			return decision.Attack
-		} else if Stamina >= Defense+DefenseBonus {
-			return decision.Defend
-		}
-	}
+// UpdateInternalState TODO: Implement me!
+// Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
+func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
+	a.updateBaseAgentPerLevel(baseAgent)
+	a.updateFightResultPerLevel(*fightResult)
+	a.updateVoteResultPerLevel(*voteResult)
 }
 
-// CurrentAction TODO: Implement me!
-// Description: Logic of Fighting Action Decision-Making.
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) CurrentAction() decision.FightAction {
-
-	// If not enough Stamina, no choice
-	if Stamina < Attack+AttackBonus && Stamina < Defend+DefendBonus {
-		return decision.Cower
-	}
-
-	currentDecision := a.initialDecision()
-
-	if currentDecision == decision.Cower {
-		currentDecision = a.replaceDecision()
-	}
-	if currentDecision == decision.Cower {
-		currentDecision = a.estimateDecision()
-	}
-
-	return currentDecision
-}
-
-=============
-*/
-
-// DEFAULT FUNCTION (TO DELETE)
-// CurrentAction TODO: Implement me!
-// Description: Logic of Fighting Action Decision-Making.
-// Return:		Cower, Defend or Attack decision.
-
-func (a *Agent2) CurrentAction() decision.FightAction {
-	fight := rand.Intn(10)
-	switch {
-	case fight == 0:
-		return decision.Cower
-	case (fight <= 4) && (fight > 0):
-		return decision.Defend
-	default:
-		return decision.Attack
-	}
-}
+/* ---- ELECTION ---- */
 
 // CreateManifesto TODO: Implement me!
 // Description: Used to give Manifesto Information if elected Leader.
@@ -356,9 +251,50 @@ func (a *Agent2) HandleElectionBallot(baseAgent BaseAgent, params *decision.Elec
 	return ballot
 }
 
+/* ---- FIGHT ---- */
+
+// HandleFightInformation TODO: Implement me!
+// Description: Used to extract agent information
+// Return:		nil
+func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
+	a.updateDecisionHelper(*log)
+}
+
+// HandleFightRequest TODO: Implement me!
+// Description: Used for comms to request p2p message probably? Not Sure!
+// Return		Message Payload
+func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+	return nil
+}
+
+// FightResolution: TODO: Implement me!
+// Description: Through that function our agent provides a proposal
+func (a *Agent2) FightResolution(agent BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
+	rules := make([]proposal.Rule[decision.FightAction], 0)
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+	))
+
+	return *commons.NewImmutableList(rules)
+}
+
 // HandleFightProposal: TODO: Implement me!
 // Description: Throught that function our agent votes on a broadcastes proposal
-func (a *Agent2) HandleFightProposal(proposal message.FightProposalMessage, baseAgent BaseAgent) decision.Intent {
+func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -367,44 +303,10 @@ func (a *Agent2) HandleFightProposal(proposal message.FightProposalMessage, base
 	}
 }
 
-// FightResolution: TODO: Implement me!
-// Description: Through that function our agent provides a proposal
-func (a *Agent2) FightResolution(baseAgent BaseAgent) message.MapProposal[decision.FightAction] {
-
-	// Info update per round
-	view := baseAgent.View()
-	a.updateBaseHelper(baseAgent)
-	a.updateViewHelper(view)
-	a.updateAgentStateHelper(baseAgent.view.AgentState())
-	a.updateLeaderHelper(view.CurrentLeader())
-
-	actions := make(map[commons.ID]decision.FightAction)
-
-	agentState := view.AgentState()
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, _, ok := itr.Next()
-		if !ok {
-			break
-		}
-
-		switch rand.Intn(3) {
-		case 0:
-			actions[id] = decision.Attack
-		case 1:
-			actions[id] = decision.Defend
-		default:
-			actions[id] = decision.Cower
-		}
-	}
-	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
-	return *prop
-}
-
 // HandleFightProposalRequest TODO: Implement me!
 // Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
 // Return:		Bool: True/False
-func (a *Agent2) HandleFightProposalRequest(proposal message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (a *Agent2) HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -413,29 +315,190 @@ func (a *Agent2) HandleFightProposalRequest(proposal message.FightProposalMessag
 	}
 }
 
-// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons
-func (a *Agent2) HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().Weapons
-	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
+// FightAction TODO: Implement me!
+// Description: Logic of Fighting Action Decision-Making.
+// Return:		Cower, Defend or Attack decision.
+func (a *Agent2) FightAction(baseAgent BaseAgent) decision.FightAction {
+	/*
+		==============
 
-	// 0th weapon has the greatest attack points
-	return decision.ItemIdx(0)
+		Work In Progress Tim
+
+		// Description : Compare defense and attack potential, output a decision
+		// Return:		Cower, Defend or Attack decision.
+		func (a *Agent2) initialDecision() decision.FightAction {
+
+			// method to retrieve state ?
+
+			// Bravery is a function of health
+			bravery := logistic(Health, 0.1, 50)
+
+			// If current bravery is higher than parameter tendency, do something
+			if bravery >= a.personalTendency {
+				if Stamina >= Attack+AttackBonus {
+					return decision.Attack
+				} else if Stamina >= Defense+DefenseBonus {
+					return decision.Defend
+				}
+			}
+
+			return decision.Cower // Else cower
+		}
+
+		// Description : Compare current number of cowering agents to previous numbers
+		// and possibly replace them
+		// Return:		Cower, Defend or Attack decision.
+		func (a *Agent2) replaceDecision() decision.FightAction {
+			mean10LastRounds := ...
+			currentFighting := ...
+
+			bravery := logistic(Health, 0.1, 50)
+
+			if bravery >= a.replacementTendency {
+				if Stamina >= Attack+AttackBonus {
+					return decision.Attack
+				} else if Stamina >= Defense+DefenseBonus {
+					return decision.Defend
+				}
+			}
+
+			return decision.Cower
+		}
+
+		// Description : Estimate current damage and possibly change decision
+		// Return:		Cower, Defend or Attack decision.
+		func (a *Agent2) estimateDecision() decision.FightAction {
+			lastTotalAttack := ...
+			lastAgents := ...
+			lastTotalDefense := ...
+
+			currentAgents := ...
+			estimatedTotalAttack := currentAgents * lastTotalAttack / lastAgents
+			estimatedTotalDefense := currentAgents * lastTotalDefense / lastAgents
+
+			diffAttack = estimatedTotalAtack - lastTotalAttack
+			diffDefense = estimatedTotalDefense - lastTotalDefense
+
+			// Cower if there are more attackers and defenders
+			if(diffAttack > 0 && diffDefense > 0){
+				return decision.Cower
+			}
+
+			bravery := logistic(Health, 0.1, 50)
+
+			if bravery >= a.estimationTendency {
+				if Stamina >= Attack+AttackBonus {
+					return decision.Attack
+				} else if Stamina >= Defense+DefenseBonus {
+					return decision.Defend
+				}
+			}
+		}
+
+		// CurrentAction TODO: Implement me!
+		// Description: Logic of Fighting Action Decision-Making.
+		// Return:		Cower, Defend or Attack decision.
+		func (a *Agent2) CurrentAction() decision.FightAction {
+
+			// If not enough Stamina, no choice
+			if Stamina < Attack+AttackBonus && Stamina < Defend+DefendBonus {
+				return decision.Cower
+			}
+
+			currentDecision := a.initialDecision()
+
+			if currentDecision == decision.Cower {
+				currentDecision = a.replaceDecision()
+			}
+			if currentDecision == decision.Cower {
+				currentDecision = a.estimateDecision()
+			}
+
+			return currentDecision
+		}
+
+		=============
+	*/
+	fight := rand.Intn(10)
+	switch {
+	case fight == 0:
+		return decision.Cower
+	case (fight <= 4) && (fight > 0):
+		return decision.Defend
+	default:
+		return decision.Attack
+	}
 }
 
-// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
-func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
-	// shields := b.AgentState().Shields
-	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
-	return decision.ItemIdx(0)
+/* ---- LOOT ---- */
+
+func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent BaseAgent) {
 }
 
-// UpdateInternalState TODO: Implement me!
-// Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
-func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
-	a.updateBaseAgentPerLevel(baseAgent)
-	a.updateFightResultPerLevel(*fightResult)
-	a.updateVoteResultPerLevel(*voteResult)
+func (a *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	//TODO implement me
+	panic("implement me")
 }
+
+func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], agent BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Positive
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Abstain
+	}
+}
+
+func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent BaseAgent) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+func (a *Agent2) LootAllocation(agent BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := agent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	iterator := agent.Loot().Weapons().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = agent.Loot().Shields().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = agent.Loot().HpPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = agent.Loot().StaminaPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
+	for id, itemIDS := range lootAllocation {
+		mMapped[id] = commons.ListToImmutable(itemIDS)
+	}
+	return commons.MapToImmutable(mMapped)
+}
+
+func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		toBeAllocated := ids[rand.Intn(len(ids))]
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
+}
+
+func (a *Agent2) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
+}
+
+/* ---- HPPOOL ---- */
 
 // DonateToHpPool TODO: Implement me!
 // Description: The function returns the amount of Hp that our agent is willing to donate to the HpPool
