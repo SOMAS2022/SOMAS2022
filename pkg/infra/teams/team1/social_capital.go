@@ -7,6 +7,18 @@ import (
 	"sort"
 )
 
+// Called by own InitAgent function when running team experiment, before game starts
+func (r *SocialAgent) initSocialCapital(selfID string, allAgents []string) {
+	// Create empty map
+	r.socialCapital = map[string][4]float64{}
+	for _, s := range allAgents {
+		r.socialCapital[s] = [4]float64{0.0, 0.0, 0.0, 0.0}
+	}
+
+	// Delete the agents own id from the socialCapital array
+	delete(r.socialCapital, selfID)
+}
+
 // Called any time a message is received, initialises or updates the socialCapital map
 func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions decision.ImmutableFightResult) {
 	// For some reason had to split .Choices() and .Len() for Golang not to complain
