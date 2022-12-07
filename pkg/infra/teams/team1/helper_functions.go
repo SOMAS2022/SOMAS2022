@@ -1,7 +1,6 @@
 package team1
 
 func argmax(array []float64) int {
-
 	maxIndex := 0
 
 	for index, element := range array {
@@ -14,7 +13,6 @@ func argmax(array []float64) int {
 }
 
 func argmin(array []float64) int {
-
 	minIndex := 0
 
 	for index, element := range array {
@@ -27,7 +25,6 @@ func argmin(array []float64) int {
 }
 
 func max(array []float64) float64 {
-
 	if len(array) == 0 {
 		return 0
 	}
@@ -44,7 +41,6 @@ func max(array []float64) float64 {
 }
 
 func min(array []float64) float64 {
-
 	if len(array) == 0 {
 		return 0
 	}

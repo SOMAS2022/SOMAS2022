@@ -22,7 +22,6 @@ func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
-
 	// Get agentState from baseAgent
 	agentState := baseAgent.AgentState()
 

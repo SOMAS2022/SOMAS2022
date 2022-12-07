@@ -89,7 +89,6 @@ func makeIncremental(inputArray [3]float64) [3]float64 {
 
 // Make lowest value -1, highest 1 and everything else interpolation between
 func normalise(array [3]float64) [3]float64 {
-
 	max := max(array[:])
 	min := min(array[:])
 
@@ -111,7 +110,6 @@ func normalise(array [3]float64) [3]float64 {
 
 // Called any time a message is received, initialises or updates the socialCapital map
 func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions decision.ImmutableFightResult) {
-
 	// For some reason had to split .Choices() and .Len() for Golang not to complain
 	choices := fightDecisions.Choices()
 
@@ -150,7 +148,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 		// If agent did an action, update socialCapital based on action
 		action, exists := choices.Get(agentID)
 		if exists {
-
 			// Get hidden state of agent
 			otherAgentState, _ := agentState.Get(agentID)
 
@@ -168,7 +165,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 
 			// Update the socialCapital array based on calculated delta for trustworthiness and honour
 			s.socialCapital[agentID] = boundArray(addArrays(s.socialCapital[agentID], [4]float64{0.0, 0.0, deltaTrust, deltaHonour}))
-
 		}
 	}
 }
