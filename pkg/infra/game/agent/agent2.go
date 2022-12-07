@@ -217,33 +217,68 @@ func (a *Agent2) CreateManifesto(baseAgent BaseAgent) *decision.Manifesto {
 func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
 	// To decide how to vote in no-confidence vote at the end of each level, use a social capital framework with weighted factors and a binary activation function to decide yes/no
 	// These are:
-	// - fraction of agents alive compared to beginning of the leadership (+ve relationship)
-	// - likelihood of accepting one of our proposals to broadcast (+ve)
-	// - how many times (if any) were they voted in and out as leader (more specifically: fraction of levels they were voted leader (+ve), fraction of those times they were voted out (-ve))
-	// - likelihood of fight imposition being used on us (-ve)
-	// - loot?
-	// For these we need a history data helper function that returns an array of the form:
+	// - avg_survival_curr_term: average % of agents alive at the end of a level during current leadership term (+ve relationship, high weighting)
+	// - avg_survival_past_terms: average % of agents alive at the end of a level from past leadership terms of that agent (+ve)
+	// - avg_survival: average % of agents alive at the end of a level from all past leadership terms (for comparison - namely normalize by this amount)
+	// - avg_broadcast_rate_curr_term: % of the proposals we submitted that were actually accepted/broadcast by the leader, in current term (+ve, high weighting)
+	// - avg_broadcast_rate_past_terms: % of the proposals we submitted that were actually accepted/broadcast by the leader, from past terms of that leader (+ve)
+	// - avg_broadcast_rate: % of the proposals we submitted that were actually accepted/broadcast, from all past leadership terms (again, normalize by this)
+	// - leadership_xp: fraction of levels up to now that they were leader (+ve)
+	// - no_conf_rate: fraction of their terms they were voted out prematurely (-ve))
+	// - avg_leadership_xp: avg fraction of levels up to now that any one agent is leader
+	// - avg_no_conf_rate: avg fraction of an agent's leaderships terms that he is voted out
+	// - (fight imposition?) (-ve)
+	// - (loot?)
+	// These variables are marked with -- below
+	// For these, firstly we need a history data helper function that returns an array of the form:
 	// leader_timeline_array [{id, manifesto, duration, leader_stats}, {id, manifesto, duration, leader_stats}, ...]
-	// The object of type leader_stats will contain the following items for each elapsed leadership term:
-	// - 1. average % of agents alive at the end of a level, under their leadership (calculate for each level of their leadership and average)
-	// - 2. % of the proposals we submitted that were actually accepted/broadcast by the leader over the course of their term - redundant if infra scraps current proposals
-	// - 3. bool whether they were voted out
-	// - 4. (regarding fight/loot impositions, will this even happen in final infra?)
+	// The object of type leader_stats will contain the following items, corresponding JUST to that elapsed leadership term:
+	// - avg_term_survival (calculate for each level of their leadership and average)
+	// - avg_term_broadcast_rate (calculate for each round/level? of their leadership and average)
+	// - bool no_conf: whether they were voted out of that term
+	// - (fight/loot impositions?)
 	// This array is best created in the election function that is only called at the end of one leadership term / start of another
-	// It's best to have intermediate variables that accrue raw data, either in this function directly or on functions that run every round and every level, to be fed into the confidence and election functions
-	// Namely, from every round, we accrue the following raw data:
-	// - whether or not the leader broadcast our proposal (can we submit more than one per round?) (used to calc 2.)
-	// From every level, we have the following raw data:
-	// - (anything regarding loot distribution and trades?)
-	// - number of agents alive at the beginning and end (actually, do we only have list of agent IDs)
-	// From every leadership term, we have the following raw data:
-	// - number of agents alive now (for election function, can have a temporary variable, then calc difference btn that and its previous value every time election is called, to see diff in agents alive over the term)
-	// - result of confidence poll
-	// In the election function - and maybe elsewhere - we then calculate summative statistics to 'condense' all this raw data (also saves space complexity when storing array)
-	// For this function, these summative statistic for any current (i.e. not elapsed) leadership - which are continuously updated every round/level - need to be accessible, so should be written to private attributes
-	// The 'past' leader stats (in the form of the aforementioned array) should also be saved as a private attribute by the election function every time it is called, and used at the end of each level in the no-confidence poll
+	// It's best to have private attributes that accrue raw data and then reset - some every new term, some every new level
+	// These are used by the confidence function at the end of every level to actually yield the no conf vote, and by the election function at the end of a term to calculate stats and append to leader_timeline_array, and to vote
+	// Namely, the ones we reset after every level:
+	// - num_agents_begin_level (actually, do we only have list of agent IDs?)
+	// - num_agents_end_level
+	// - proposals_total: how many proposals we put forward that level (necessarily equal to rounds?)
+	// - proposals_broadcast: how many of these were broadcast
+	// - loot/trade info?
+	// And variables we re-calculate every level, but reset every election (no need for arrays for the raw data from which we calculate them):
+	// - survival_rates: array of % of agents alive at the end of each level (this array is appended to at the end of every level, and resets every election, so that each elem corresponds to a level in a leadership term)
+	// - broadcast_rates: % of the proposals we submitted during the level that were actually accepted/broadcast (ditto)
+	// -- avg_survival_curr_term: avg of survival_rates (updated at end of every level - used as main measure of confidence in the current leader)
+	// -- avg_broadcast_rate_curr_term: avg of broadcast_rates
+	// And variables we re-calculate every level but never reset:
+	// -- avg_survival: average % of agents alive at the end of a level from all levels
+	// -- avg_broadcast_rate: % of the proposals we submitted that were actually accepted/broadcast, from all levels
+	// Then the ones we reset every election:
+	// - term_begin_level: level at which the leadership term began (can read from viewMap every time election func is called)
+	// - term_end_level: level at which the leadership term ended (again, from viewMap, in election func)
+	// - no_conf (bool): whether or not the term ended bc of no-confidence vote (where access this from?)
+	// And variables we calculate every election (using all previous vars), to add to leader_timeline_array (esp leader_stats):
+	// - term_duration: number of levels that leadership term lasted before elapsed or deposed (term_end_level - term_begin_level)
+	// - avg_term_survival: survival_rates averaged over term_duration (which is actually the length of the survival_rates array - assertion?)
+	// - avg_term_broadcast_rate: broadcast_rates averaged over term_duration (also length of broadcast_rates array)
+	// - bool no_conf (no calculation needed)
+	// These statistics are the 'condensed', useful form of the raw data
+	// This leaves us, from all the vars involved in the confidence vote, with:
+	// -- avg_survival_past_terms: average % of agents alive at the end of a level from past leadership terms of that agent
+	// -- avg_broadcast_rate_past_terms: % of the proposals we submitted that were actually accepted/broadcast by the leader, from past terms of that leader
+	// -- leadership_xp: fraction of levels up to now that they were leader (+ve)
+	// -- no_conf_rate: fraction of their terms they were voted out prematurely (-ve))
+	// -- avg_leadership_xp: avg fraction of levels up to now that any one agent is leader
+	// -- avg_no_conf_rate: avg fraction of an agent's leaderships terms that he is voted out
+	// These will not be calculated as private attributes for every single agent, but rather by looping through leader_timeline_array on an ad-hoc basis
 
-	//var curr_leader_stats := priv_attribute
+	// Pseudocode for how stats are calculated from raw data:
+	// var avg_survival_curr_term float
+	// var avg_survival_past_terms float
+
+	//var curr_leader_stats := priv_attribute //
+	//
 	//var past_terms_of_curr_leader := make([]term_struct, 0)
 	//for leadership_term in leader_term_timeline_array {
 	//	if leadership_term[id] == curr_leader["id"] {
