@@ -1,27 +1,27 @@
-package example
+package team1
 
 import (
-	"infra/game/message/proposal"
-	"infra/game/state"
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
+	"infra/game/state"
+	"math/rand"
 
 	"github.com/benbjohnson/immutable"
 )
 
-type RandomAgent struct {
-	bravery int
+type SocialAgent struct {
+	socialCapital map[string][4]float64 // Institutions, Networks, Trustworthiness, Honour
+	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
 }
 
-func (r *RandomAgent) LootAction() immutable.List[commons.ItemID] {
+func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
 	return *immutable.NewList[commons.ItemID]()
 }
 
-func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
+func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:
@@ -33,15 +33,16 @@ func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent) decision.FightActio
 	}
 }
 
-func (r *RandomAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (s *SocialAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+	//agent.AgentState().Hp
 }
 
-func (r *RandomAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+func (s *SocialAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+func (s *SocialAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Positive
@@ -52,7 +53,7 @@ func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction]
 	}
 }
 
-func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -61,7 +62,7 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (r *RandomAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -95,19 +96,38 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 	}
 }
 
-func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	//return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+	return 0
 }
 
-func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+// Update social capital at end of each round
+func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+	itr := fightResult.Iterator()
+	for !itr.Done() {
+		fightDecisions, _ := itr.Next()
+
+		s.updateSocialCapital(self, fightDecisions)
+	}
+
+	/*
+		// For some reason had to split into two lines for Golang to not give error
+				tmp := fightDecisions.Choices()
+				itr2 := tmp.Iterator()
+				for !itr2.Done() {
+					key, value, _ := itr2.Next()
+					fmt.Println(key, value)
+				}
+	*/
+
+	//s.updateSelfishness()
 }
 
-func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
+func (s *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
@@ -125,12 +145,12 @@ func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[p
 	return *commons.NewImmutableList(rules)
 }
 
-func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(false, true, 10, 50)
 	return manifesto
 }
 
-func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -141,21 +161,21 @@ func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+func (s *SocialAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
 	if makesProposal > 80 {
-		prop := r.FightResolution(baseAgent)
+		prop := s.FightResolution(baseAgent)
 		_ = baseAgent.SendFightProposalToLeader(prop)
 	}
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
-func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
 	view := b.View()
 	agentState := view.AgentState()
@@ -183,7 +203,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (r *RandomAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+func (s *SocialAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -192,7 +212,7 @@ func (r *RandomAgent) HandleFightProposal(_ message.Proposal[decision.FightActio
 	}
 }
 
-func (r *RandomAgent) HandleFightProposalRequest(
+func (s *SocialAgent) HandleFightProposalRequest(
 	_ message.Proposal[decision.FightAction],
 	_ agent.BaseAgent,
 	_ *immutable.Map[commons.ID, decision.FightAction],
@@ -205,7 +225,7 @@ func (r *RandomAgent) HandleFightProposalRequest(
 	}
 }
 
-func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
+func (s *SocialAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
 	// weapons := b.AgentState().weapons
 	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
 
@@ -213,12 +233,14 @@ func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
+func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
 }
 
-func NewRandomAgent() agent.Strategy {
-	return &RandomAgent{bravery: 0}
+func NewSocialAgent() agent.Strategy {
+	return &SocialAgent{
+		selfishness: rand.Float64(),
+	}
 }

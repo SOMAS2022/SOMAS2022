@@ -3,9 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math"
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -18,12 +15,15 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
+	"infra/teams/team1"
+	"math"
 
 	"github.com/benbjohnson/immutable"
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
+	"TEAM1":  team1.NewSocialAgent,
 	"AGENT2": agent.NewAgent2,
 }
 
@@ -78,8 +78,8 @@ func startGameLoop() {
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
-			tally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
-			fightActions := discussion.ResolveFightDiscussion(agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, tally)
+			fightTally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
+			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, fightTally)
 			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
@@ -103,24 +103,18 @@ func startGameLoop() {
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				return
 			}
-			// agentsFighting := append(fightRoundResult.AttackingAgents, fightRoundResult.ShieldingAgents...)
 			fightResultSlice = append(fightResultSlice, *decision.NewImmutableFightResult(fightActions, roundNum))
 			roundNum++
 		}
 
 		// TODO: Loot Discussion Stage
-		numberOfItems := len(agentMap)
-		weaponLoot, shieldLoot := make([]uint, numberOfItems), make([]uint, numberOfItems)
-		HPpotionloot, STpotionloot := make([]uint, numberOfItems), make([]uint, numberOfItems)
 
-		for i := range weaponLoot {
-			weaponLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			shieldLoot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			HPpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-			STpotionloot[i] = globalState.CurrentLevel * uint(rand.Intn(3))
-		}
+		lootPool := generateLootPool(len(agentMap), globalState.CurrentLevel)
+		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
+		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
+		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)
 
-		globalState = stages.AgentLootDecisions(*globalState, weaponLoot, shieldLoot, HPpotionloot, STpotionloot)
+		channelsMap = addCommsChannels()
 
 		hppool.UpdateHpPool(agentMap, globalState)
 

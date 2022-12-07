@@ -7,10 +7,8 @@ import (
 )
 
 type ProposalAction interface {
-	FightAction | LootDecision
+	FightAction | LootAction
 }
-
-type LootDecision struct{}
 
 type HPPoolDecision struct{}
 
