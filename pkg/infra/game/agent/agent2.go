@@ -27,11 +27,27 @@ type Agent2 struct {
 	viewMap       []state.View
 	agentStateMap []immutable.Map[commons.ID, state.HiddenAgentState]
 	leaderMap     []commons.ID
+
+	// Updates per Level
+	baseAgentPerLevel   []BaseAgent
+	fightResultPerLevel []commons.ImmutableList[decision.ImmutableFightResult]
+	voteResultPerLevel  []immutable.Map[decision.Intent, uint]
 }
 
-// NewAgent2 : Constructor of Agent2
+// NewAgent2 : Constructor of Agent2 FIXME:!!!INITIALISE AGENT WITH VALUES!!!
 func NewAgent2() Strategy {
 	return &Agent2{}
+}
+
+func (a *Agent2) updateBaseAgentPerLevel(agent BaseAgent) {
+	a.baseAgentPerLevel = append(a.baseAgentPerLevel, agent)
+}
+
+func (a *Agent2) updateFightResultPerLevel(result commons.ImmutableList[decision.ImmutableFightResult]) {
+	a.fightResultPerLevel = append(a.fightResultPerLevel, result)
+}
+func (a *Agent2) updateVoteResultPerLevel(result immutable.Map[decision.Intent, uint]) {
+	a.voteResultPerLevel = append(a.voteResultPerLevel, result)
 }
 
 // Description: The function is used to extract the agents' decisions made in the previous rounds
@@ -416,6 +432,9 @@ func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
 // UpdateInternalState TODO: Implement me!
 // Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
 func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
+	a.updateBaseAgentPerLevel(baseAgent)
+	a.updateFightResultPerLevel(*fightResult)
+	a.updateVoteResultPerLevel(*voteResult)
 }
 
 // DonateToHpPool TODO: Implement me!
