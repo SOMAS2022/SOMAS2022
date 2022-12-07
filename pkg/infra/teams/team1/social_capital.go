@@ -81,25 +81,25 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	}
 	selfID := agent.ID()
 
-	sortedSCTrustworthiness := make([]SocialCapInfo, 0, len(r.socialCapital))
+	sortedSCTrustHonor := make([]SocialCapInfo, 0, len(r.socialCapital))
 	for k, sc := range r.socialCapital {
 		if k == selfID { // Exclude self
 			continue
 		}
 		sci := SocialCapInfo{ID: k, arr: sc}
-		sortedSCTrustworthiness = append(sortedSCTrustworthiness, sci)
+		sortedSCTrustHonor = append(sortedSCTrustHonor, sci)
 	}
 
-	sort.Slice(sortedSCTrustworthiness, func(i int, j int) bool {
-		return sortedSCTrustworthiness[i].arr[2] > sortedSCTrustworthiness[j].arr[2]
+	sort.Slice(sortedSCTrustHonor, func(i int, j int) bool {
+		return (sortedSCTrustHonor[i].arr[2] + sortedSCTrustHonor[i].arr[3]) > (sortedSCTrustHonor[j].arr[2] + sortedSCTrustHonor[j].arr[3])
 	})
 
-	numAdmire := int(r.propAdmire * float64(len(sortedSCTrustworthiness)))
-	numHate := int(r.propHate * float64(len(sortedSCTrustworthiness)))
+	numAdmire := int(r.propAdmire * float64(len(sortedSCTrustHonor)))
+	numHate := int(r.propHate * float64(len(sortedSCTrustHonor)))
 
 	admiredAgents := make([]string, 0, numAdmire)
 	hatedAgents := make([]string, 0, numHate)
-	for i, scit := range sortedSCTrustworthiness {
+	for i, scit := range sortedSCTrustHonor {
 		if i >= numAdmire {
 			break
 		}
@@ -107,15 +107,15 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 		admiredAgents = append(admiredAgents, scit.ID)
 	}
 
-	for i := len(sortedSCTrustworthiness) - 1; i >= 0; i-- {
-		if len(sortedSCTrustworthiness)-1-i >= numHate {
+	for i := len(sortedSCTrustHonor) - 1; i >= 0; i-- {
+		if len(sortedSCTrustHonor)-1-i >= numHate {
 			break
 		}
 
-		hatedAgents = append(hatedAgents, sortedSCTrustworthiness[i].ID)
+		hatedAgents = append(hatedAgents, sortedSCTrustHonor[i].ID)
 	}
 
-	for _, sci := range sortedSCTrustworthiness {
+	for _, sci := range sortedSCTrustHonor {
 		if sci.arr[1] < r.gossipThreshold {
 			continue
 		}
