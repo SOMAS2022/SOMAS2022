@@ -14,8 +14,8 @@ type AgentState struct {
 	Defense     uint
 	WeaponInUse commons.ItemID
 	ShieldInUse commons.ItemID
-	Weapons     immutable.List[InventoryItem]
-	Shields     immutable.List[InventoryItem]
+	Weapons     immutable.List[Item]
+	Shields     immutable.List[Item]
 }
 
 func (s *AgentState) BonusAttack(state State) uint {
@@ -40,23 +40,23 @@ func (s *AgentState) TotalDefense(state State) uint {
 	return s.Defense + s.BonusDefense(state)
 }
 
-func (s *AgentState) AddWeapon(weapon InventoryItem) {
+func (s *AgentState) AddWeapon(weapon Item) {
 	s.Weapons = addToInventory(s.Weapons, weapon)
 }
 
-func (s *AgentState) AddShield(shield InventoryItem) {
+func (s *AgentState) AddShield(shield Item) {
 	s.Shields = addToInventory(s.Shields, shield)
 }
 
 func (s *AgentState) ChangeWeaponInUse(weaponIdx decision.ItemIdx) {
 	if int(weaponIdx) < s.Weapons.Len() {
-		s.WeaponInUse = s.Weapons.Get(int(weaponIdx)).ID
+		s.WeaponInUse = s.Weapons.Get(int(weaponIdx)).Id()
 	}
 }
 
 func (s *AgentState) ChangeShieldInUse(shieldIdx decision.ItemIdx) {
 	if int(shieldIdx) < s.Shields.Len() {
-		s.ShieldInUse = s.Shields.Get(int(shieldIdx)).ID
+		s.ShieldInUse = s.Shields.Get(int(shieldIdx)).Id()
 	}
 }
 

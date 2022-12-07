@@ -9,20 +9,15 @@ import (
 )
 
 type InventoryMap struct {
-	Shields map[commons.ID]uint
-	Weapons map[commons.ID]uint
-}
-
-type InventoryItem struct {
-	ID    commons.ItemID
-	Value uint
+	Shields map[commons.ItemID]uint
+	Weapons map[commons.ItemID]uint
 }
 
 // Add an InventoryItem to an immutable list of InventoryItem.
 // return a sorted immutable.List with 0th InventoryItem has the greatest value.
-func addToInventory(items immutable.List[InventoryItem], item InventoryItem) immutable.List[InventoryItem] {
+func addToInventory(items immutable.List[Item], item Item) immutable.List[Item] {
 	// convert immutable.List to slice
-	itemList := []InventoryItem{item}
+	itemList := []Item{item}
 	itr := items.Iterator()
 	for !itr.Done() {
 		_, inventoryItem := itr.Next()
@@ -31,11 +26,11 @@ func addToInventory(items immutable.List[InventoryItem], item InventoryItem) imm
 
 	// sort slice
 	sort.SliceStable(itemList, func(i, j int) bool {
-		return itemList[i].Value > itemList[j].Value
+		return itemList[i].value > itemList[j].value
 	})
 
 	// convert sorted slice to immutable
-	b := immutable.NewListBuilder[InventoryItem]()
+	b := immutable.NewListBuilder[Item]()
 	for _, w := range itemList {
 		b.Append(w)
 	}
@@ -45,14 +40,14 @@ func addToInventory(items immutable.List[InventoryItem], item InventoryItem) imm
 
 // Remove an InventoryItem from an immutable list of InventoryItem.
 // return a sorted immutable.List with 0th InventoryItem has the greatest value.
-func removeFromInventory(items immutable.List[InventoryItem], itemID commons.ItemID) immutable.List[InventoryItem] {
-	b := immutable.NewListBuilder[InventoryItem]()
+func removeFromInventory(items immutable.List[Item], itemID commons.ItemID) immutable.List[Item] {
+	b := immutable.NewListBuilder[Item]()
 
 	// filter inventoryItem with ID == itemID
 	itr := items.Iterator()
 	for !itr.Done() {
 		_, item := itr.Next()
-		if item.ID != itemID {
+		if item.id != itemID {
 			b.Append(item)
 		}
 	}

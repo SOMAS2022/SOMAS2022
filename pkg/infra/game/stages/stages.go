@@ -46,13 +46,10 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	}
 }
 
-// AgentLootDecisions TODO: Change to using views.
-func AgentLootDecisions(globalState state.State, weaponLoot []uint, shieldLoot []uint, hpPotionLoot []uint, stPotionLoot []uint) *state.State {
+func AgentLootDecisions(globalState state.State, availableLoot state.LootPool, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage) *tally.Tally[decision.LootAction] {
 	switch Mode {
-	case "0":
-		return t0.AllocateLoot(globalState, weaponLoot, shieldLoot, hpPotionLoot, stPotionLoot)
 	default:
-		return loot.AllocateLoot(globalState, weaponLoot, shieldLoot, hpPotionLoot, stPotionLoot)
+		return loot.AgentLootDecisions(globalState, availableLoot, agents, channelsMap)
 	}
 }
 
