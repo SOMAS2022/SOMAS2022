@@ -97,27 +97,22 @@ func ResolveLootDiscussion(
 		buildAllocation(pool.HpPotions(), getsHealthPotion, m)
 		buildAllocation(pool.StaminaPotions(), getsStaminaPotion, m)
 
-		mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-
-		anyDetractors := false
 		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
 
 		for id, itemIDS := range m {
-			mMapped[id] = commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
-			agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, mMapped[id])
-			addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
-			if !commons.ImmutableSetEquality(mMapped[id], agentLoot) {
-				anyDetractors = true
-				defector := gs.AgentState[id].Defector
-				defector.SetLoot(true)
+			alloc := commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
+			if gs.Defection {
+				agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc)
+				addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
+				if !commons.ImmutableSetEquality(alloc, agentLoot) {
+					defector := gs.AgentState[id].Defector
+					defector.SetLoot(true)
+				}
+			} else {
+				addWantedLootToItemAllocMap(alloc, wantedItems, id)
 			}
 		}
-
-		if !anyDetractors {
-			return commons.MapToImmutable(mMapped)
-		} else {
-			return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
-		}
+		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
 	}
 }
 
