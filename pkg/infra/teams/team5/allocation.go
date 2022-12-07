@@ -1,5 +1,4 @@
-package allocation
-
+package team5
 import (
 	"infra/game/commons"
 	"infra/game/message"
