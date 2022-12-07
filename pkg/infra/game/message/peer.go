@@ -11,8 +11,8 @@ type ArrayInfo struct {
 
 func NewArrayInfo(num int, strArr []string) ArrayInfo {
 	builder := immutable.NewListBuilder[string]()
-	for i, str := range strArr {
-		builder.Set(i, str)
+	for _, str := range strArr {
+		builder.Append(str)
 	}
 
 	return ArrayInfo{num: num, stringArr: *builder.List()}
