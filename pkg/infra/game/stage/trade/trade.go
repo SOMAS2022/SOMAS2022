@@ -94,7 +94,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 				// add new negotiation to ongoing negotiations
 				negotiation := message.NewTradeNegotiation(agentID, counterPartyID, offer, demand)
 				negotiations[negotiation.GetID()] = negotiation
-				// remove offered item from avaiable items
+				// remove offered item from available items
 				if offer.ItemType == commons.Weapon {
 					availableWeapons[agentID] = RemoveItem(availableWeapons[agentID], offer.Item)
 				} else {
