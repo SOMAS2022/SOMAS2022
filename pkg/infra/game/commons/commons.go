@@ -91,6 +91,22 @@ func ImmutableListEquality[I comparable](a immutable.List[I], b immutable.List[I
 	return true
 }
 
+func ImmutableSetEquality[I constraints.Ordered](a immutable.SortedMap[I, struct{}], b immutable.SortedMap[I, struct{}]) bool {
+	if a.Len() != b.Len() {
+		return false
+	}
+	iteratorA := a.Iterator()
+	iteratorB := b.Iterator()
+	for !iteratorA.Done() && !iteratorB.Done() {
+		vA, _, _ := iteratorA.Next()
+		vB, _, _ := iteratorB.Next()
+		if vA != vB {
+			return false
+		}
+	}
+	return true
+}
+
 type ID = string
 
 type ProposalID = string
