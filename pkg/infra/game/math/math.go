@@ -8,18 +8,21 @@ import (
 	"infra/config"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 // Enemy Resilience Modifier
 func CalculateDelta() float64 {
 	min := 0.8
 	max := 1.2
-	rand.Seed(time.Now().UnixNano())
 	return min + rand.Float64()*(max-min)
 }
 
 // X, the monster’s resilience
 func CalculateMonsterHealth(nAgent uint, stamina uint, nLevel uint, currentLevel uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * 10 * (float64(currentLevel)/float64(nLevel) + (1 / 10))))
+	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * (2.0*float64(currentLevel)/float64(nLevel) + 0.5)))
 }
 
 // Y, monster’s damage rating
