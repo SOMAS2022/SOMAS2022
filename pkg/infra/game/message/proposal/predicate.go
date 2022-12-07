@@ -73,10 +73,11 @@ func makePredicate(cond Condition) func(s state.State, agentState state.AgentSta
 		return orEval(*condT)
 	case OrCondition:
 		return orEval(condT)
+	case DefectorCondition:
+		return defectorEval()
 	default:
-		return func(s state.State, agentState state.AgentState) bool {
-			//todo: use state/agentState to check if in recent defector set
-			return false
+		return func(_ state.State, _ state.AgentState) bool {
+			return true
 		}
 	}
 }
@@ -90,6 +91,12 @@ func andEval(cond AndCondition) func(state.State, state.AgentState) bool {
 func orEval(cond OrCondition) func(state.State, state.AgentState) bool {
 	return func(s state.State, agentState state.AgentState) bool {
 		return makePredicate(cond.CondA())(s, agentState) || makePredicate(cond.CondB())(s, agentState)
+	}
+}
+
+func defectorEval() func(state.State, state.AgentState) bool {
+	return func(_ state.State, agentState state.AgentState) bool {
+		return agentState.Defector.IsDefector()
 	}
 }
 

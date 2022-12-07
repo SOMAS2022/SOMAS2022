@@ -49,13 +49,62 @@ func MapToImmutable[K constraints.Ordered, V any](m map[K]V) immutable.Map[K, V]
 	return *builder.Map()
 }
 
-func ListToImmutable[I constraints.Ordered](l []I) immutable.List[I] {
+func ListToImmutableList[I comparable](l []I) immutable.List[I] {
 	v := immutable.NewListBuilder[I]()
 
 	for _, x := range l {
 		v.Append(x)
 	}
 	return *v.List()
+}
+
+func ListToImmutableSortedSet[I constraints.Ordered](l []I) immutable.SortedMap[I, struct{}] {
+	builder := immutable.NewSortedMapBuilder[I, struct{}](nil)
+	for _, elem := range l {
+		builder.Set(elem, struct{}{})
+	}
+	return *builder.Map()
+}
+
+func MapToSortedImmutable[K constraints.Ordered, V any](m map[K]V) immutable.SortedMap[K, V] {
+	builder := immutable.NewSortedMapBuilder[K, V](nil)
+	for k, v := range m {
+		builder.Set(k, v)
+	}
+	return *builder.Map()
+}
+
+func ImmutableListEquality[I comparable](a immutable.List[I], b immutable.List[I]) bool {
+	if a.Len() != b.Len() {
+		return false
+	}
+	iteratorA := a.Iterator()
+	iteratorB := b.Iterator()
+
+	for !iteratorA.Done() && !iteratorB.Done() {
+		_, a := iteratorA.Next()
+		_, b := iteratorB.Next()
+		if a != b {
+			return false
+		}
+	}
+	return true
+}
+
+func ImmutableSetEquality[I constraints.Ordered](a immutable.SortedMap[I, struct{}], b immutable.SortedMap[I, struct{}]) bool {
+	if a.Len() != b.Len() {
+		return false
+	}
+	iteratorA := a.Iterator()
+	iteratorB := b.Iterator()
+	for !iteratorA.Done() && !iteratorB.Done() {
+		vA, _, _ := iteratorA.Next()
+		vB, _, _ := iteratorB.Next()
+		if vA != vB {
+			return false
+		}
+	}
+	return true
 }
 
 type ID = string

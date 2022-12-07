@@ -40,3 +40,13 @@ func EnvToString(key string, def string) string {
 
 	return s
 }
+
+func EnvToBool(key string, def bool) bool {
+	b, err := strconv.ParseBool(os.Getenv(key))
+	if err != nil {
+		logging.Log(logging.Warn, nil, fmt.Sprintf("%s unset, defaulting to %d\n", key, def))
+
+		return def
+	}
+	return b
+}
