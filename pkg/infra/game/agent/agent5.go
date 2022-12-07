@@ -1,12 +1,11 @@
-package agent5
+package agent
 
 import (
-	"infra/agent5/commons5"
-	//"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
+	"infra/teams/team5/commons5"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -50,10 +49,13 @@ func (t *agent5) HandleFightProposalRequest(proposal message.Proposal[decision.F
 	var returnType bool
 	return returnType
 }
-func (t *agent5) FightAction() decision.FightAction {
-	var returnType decision.FightAction
-	return returnType
-}
+
+//This signature function is gone in the new infra update
+
+// func (t *agent5) FightAction() decision.FightAction {
+// 	var returnType decision.FightAction
+// 	return returnType
+// }
 
 func (t *agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent BaseAgent) {
 }
@@ -100,6 +102,5 @@ type internalState struct {
 }
 
 func NewAgen5() Strategy {
-	return &Agen5{
-	}
+	return &agent5{}
 }
