@@ -46,13 +46,13 @@ func connectAgents(agentMap map[commons.ID]agent.Agent) {
 	grid := build.Grid(gridHeight, gridWidth)
 	// Create a complete bipartite graph. Meaning that 10 agents
 	// are each connected to another 40 agents
-	veryConnectedAgents := int(0.05 * float32(numAgents))
-	quiteConnectedAgents := int(0.2 * float32(numAgents))
-	g1 := build.Kmn(veryConnectedAgents, quiteConnectedAgents)
-	combined := grid.Union(g1)
+	// veryConnectedAgents := int(0.05 * float32(numAgents))
+	// quiteConnectedAgents := int(0.2 * float32(numAgents))
+	// g1 := build.Kmn(veryConnectedAgents, quiteConnectedAgents)
+	// combined := grid.Union(g1)
 	// Uncomment to print out graph:
 	// fmt.Println(combined.String())
-
+	combined := grid
 	agentIDs := make([]string, 0, len(agentMap))
 	for k := range agentMap {
 		agentIDs = append(agentIDs, k)

@@ -169,10 +169,15 @@ func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	}
 }
 
-func (s *SocialAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
+	switch m.Message().(type) {
+	case *message.StartFight:
+		s.sendGossip(baseAgent)
+	case message.ArrayInfo:
+		s.receiveGossip(m.Message().(message.ArrayInfo), m.Sender())
+	}
 	makesProposal := rand.Intn(100)
-
 	if makesProposal > 80 {
 		prop := s.FightResolution(baseAgent)
 		_ = baseAgent.SendFightProposalToLeader(prop)
