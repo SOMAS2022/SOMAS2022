@@ -19,7 +19,7 @@ type FivAgent struct {
 // --------------------------------- Election Stage ---------------------------------
 
 func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(true, false, 10, 50)
+	manifesto := decision.NewManifesto(false, true, 10, 50)
 	return manifesto
 }
 
@@ -82,7 +82,8 @@ func (fiv *FivAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[pr
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
@@ -123,7 +124,7 @@ func (fiv *FivAgent) HandleFightProposalRequest(
 	}
 }
 
-func (fiv *FivAgent) FightAction() decision.FightAction {
+func (fiv *FivAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:
@@ -164,6 +165,10 @@ func (fiv *FivAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootA
 	default:
 		return false
 	}
+}
+
+func (fiv *FivAgent) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
 }
 
 func (fiv *FivAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
