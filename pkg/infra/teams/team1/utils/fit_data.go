@@ -30,10 +30,10 @@ Output:
 	w (Optimal weights)
 */
 func FitLinReg(X [][]float64, y []float64) []float64 {
-
+	// Note: need >2 data points
+	// TODO reduce precision of types
 	r := new(regression.Regression)
 
-	fmt.Println(X)
 	datapoints := make(regression.DataPoints, 0, len(y))
 	for i, row := range X {
 		datapoints = append(datapoints, regression.DataPoint(y[i], row))

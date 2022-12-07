@@ -15,13 +15,16 @@ import (
 )
 
 func TestLinReg(t *testing.T) {
+	// Test w=[0,1,1] (first term is bias)
 	X := [][]float64{
 		{1, 3},
 		{2, 4},
+		{5, 8},
 	}
-	y := []float64{4, 6}
+	y := []float64{4, 6, 13}
 
 	w := FitLinReg(X, y)
-	assert.InDelta(t, w[0], 0.5, 0.001)
-	assert.InDelta(t, w[1], 0.5, 0.001)
+	assert.InDelta(t, w[0], 0, 0.001)
+	assert.InDelta(t, w[1], 1, 0.001)
+	assert.InDelta(t, w[2], 1, 0.001)
 }
