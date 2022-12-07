@@ -106,7 +106,8 @@ func (r *RandomAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[p
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,

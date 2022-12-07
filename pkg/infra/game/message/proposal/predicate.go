@@ -61,11 +61,21 @@ func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rul
 
 func makePredicate(cond Condition) func(s state.State, agentState state.AgentState) bool {
 	switch condT := cond.(type) {
+	case *ComparativeCondition:
+		return buildCompPredicate(*condT)
 	case ComparativeCondition:
 		return buildCompPredicate(condT)
+	case *AndCondition:
+		return func(s state.State, agentState state.AgentState) bool {
+			return makePredicate(condT.CondA())(s, agentState) && makePredicate(condT.CondB())(s, agentState)
+		}
 	case AndCondition:
 		return func(s state.State, agentState state.AgentState) bool {
 			return makePredicate(condT.CondA())(s, agentState) && makePredicate(condT.CondB())(s, agentState)
+		}
+	case *OrCondition:
+		return func(s state.State, agentState state.AgentState) bool {
+			return makePredicate(condT.CondA())(s, agentState) || makePredicate(condT.CondB())(s, agentState)
 		}
 	case OrCondition:
 		return func(s state.State, agentState state.AgentState) bool {
