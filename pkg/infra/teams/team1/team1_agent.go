@@ -25,11 +25,7 @@ type SocialAgent struct {
 	graphID int // for logging
 }
 
-func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
-	return *immutable.NewList[commons.ItemID]()
-}
-
-func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
+func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
 	// Get agentState from baseAgent
 	agentState := baseAgent.AgentState()
 
@@ -39,6 +35,14 @@ func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightActio
 	// TODO: Maybe make non-deterministic
 	// Return index of best action (assumes array ordering in same order as decision.FightAction
 	return decision.FightAction(argmax(coopTable[:]))
+}
+
+func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
+}
+
+func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+	return s.FightActionNoProposal(baseAgent)
 }
 
 func (s *SocialAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {

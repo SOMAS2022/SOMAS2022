@@ -41,6 +41,7 @@ type HiddenAgentState struct {
 	Defense      uint
 	BonusAttack  uint
 	BonusDefense uint
+	Defector     bool
 }
 
 func (v *View) CurrentLevel() uint {
@@ -98,6 +99,7 @@ func (s *State) ToView() View {
 			Defense:      state.Defense,
 			BonusAttack:  state.BonusAttack(*s),
 			BonusDefense: state.BonusDefense(*s),
+			Defector:     state.Defector,
 		})
 	}
 

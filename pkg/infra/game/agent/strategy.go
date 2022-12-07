@@ -35,7 +35,8 @@ type Fight interface {
 	HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent) decision.Intent
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
-	FightAction(baseAgent BaseAgent) decision.FightAction
+	FightActionNoProposal(baseAgent BaseAgent) decision.FightAction
+	FightAction(baseAgent BaseAgent, proposedAction decision.FightAction) decision.FightAction
 }
 
 type Loot interface {

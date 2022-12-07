@@ -61,6 +61,7 @@ func initGame() {
 		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 1),
 		AgentState:    agentStateMap,
 		InventoryMap:  inventoryMap,
+		Defection:     gameConfig.Defection,
 	}
 	agentMap = agents
 }

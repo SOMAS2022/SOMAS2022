@@ -28,11 +28,21 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	predicate := proposal.ToSinglePredicate(prop)
 	if predicate == nil {
 		for id, a := range agentMap {
-			fightActions[id] = a.FightAction(*a.BaseAgent)
+			fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
 		}
 	} else {
 		for id, a := range agentMap {
-			fightActions[id] = predicate(gs, a.AgentState())
+			expectedFightAction := predicate(gs, a.AgentState())
+			if gs.Defection {
+				fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
+				if expectedFightAction != fightActions[id] {
+					agentState := gs.AgentState[id]
+					agentState.Defector = true
+					gs.AgentState[id] = agentState
+				}
+			} else {
+				fightActions[id] = expectedFightAction
+			}
 		}
 	}
 

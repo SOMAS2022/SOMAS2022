@@ -16,6 +16,7 @@ type AgentState struct {
 	ShieldInUse commons.ItemID
 	Weapons     immutable.List[Item]
 	Shields     immutable.List[Item]
+	Defector    bool
 }
 
 func (s *AgentState) BonusAttack(state State) uint {
@@ -69,4 +70,5 @@ type State struct {
 	InventoryMap    InventoryMap
 	CurrentLeader   commons.ID
 	LeaderManifesto decision.Manifesto
+	Defection       bool
 }
