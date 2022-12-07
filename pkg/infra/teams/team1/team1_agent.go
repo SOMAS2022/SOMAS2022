@@ -15,6 +15,12 @@ import (
 type SocialAgent struct {
 	socialCapital map[string][4]float64 // agentID -> [Institutions, Networks, Trustworthiness, Honour]
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
+	// Will gosip to all agents who's network value is above this
+	gossipThreshold float64
+	// Proportion of agents to talk badly about
+	propHate float64
+	// Proportion of agents to talk well about
+	propAdmire float64
 }
 
 func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
@@ -229,6 +235,9 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 
 func NewSocialAgent() agent.Strategy {
 	return &SocialAgent{
-		selfishness: rand.Float64(),
+		selfishness:     rand.Float64(),
+		gossipThreshold: 0.5,
+		propAdmire:      0.1,
+		propHate:        0.1,
 	}
 }
