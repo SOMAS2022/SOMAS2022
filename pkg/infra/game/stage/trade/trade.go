@@ -65,8 +65,11 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 		}
 		// timeout for agents to respond
 		time.Sleep(100 * time.Millisecond)
-		for _, closeMessage := range closures {
-			closeMessage <- nil
+		for id, closure := range closures {
+			closure <- nil
+			close(closure)
+			close(starts[id])
+			close(responses[id])
 		}
 		// filter out outdated negotiations
 		for id, negotiation := range negotiations {
