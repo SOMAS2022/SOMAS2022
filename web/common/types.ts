@@ -36,12 +36,12 @@ export interface GameLog {
 
 export interface Warnings {
     msg: string
-    [key:string]: string
+    [key: string]: string
 }
 
 export interface Errors {
     msg: string,
-    [key:string]: string
+    [key: string]: string
 }
 
 export enum VotingStrategy {
@@ -84,7 +84,12 @@ export interface LevelStats {
     HPPool: number
     MonsterHealth: number
     MonsterAttack: number
-    CurrentLeader: string
+    LeaderBeforeElection: string
+    LeaderAfterElection: string
+    AverageAgentHealth: number
+    AverageAgentStamina: number
+    AverageAgentShield: number
+    AverageAgentAttack: number
 }
 
 export interface ElectionStage {

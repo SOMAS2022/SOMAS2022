@@ -81,7 +81,12 @@ type LevelStats struct {
 	HPPool               uint
 	MonsterHealth        uint
 	MonsterAttack        uint
-	CurrentLeader        commons.ID
+	LeaderBeforeElection commons.ID
+	LeaderAfterElection  commons.ID
+	AverageAgentHealth   uint
+	AverageAgentStamina  uint
+	AverageAgentShield   uint
+	AverageAgentAttack   uint
 }
 
 type ElectionStage struct {

@@ -128,7 +128,7 @@ func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.Immutabl
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, true, 10, 50)
+	manifesto := decision.NewManifesto(false, false, 10, 5)
 	return manifesto
 }
 

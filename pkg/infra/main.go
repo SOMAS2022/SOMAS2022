@@ -53,6 +53,7 @@ func startGameLoop() {
 		// Election Stage
 		_, alive := agentMap[globalState.CurrentLeader]
 		var votes map[decision.Intent]uint
+		leaderBeforeElection := globalState.CurrentLeader
 		if termLeft == 0 || !alive {
 			termLeft = runElection()
 			// fmt.Println(globalState.LeaderManifesto)
@@ -75,13 +76,28 @@ func startGameLoop() {
 			levelLog.VONCStage.Abstain = votes[decision.Abstain]
 		}
 
+		avgHP, avgAT, avgSH, avgST := uint(0), uint(0), uint(0), uint(0)
+		for _, a := range agentMap {
+			avgHP += a.AgentState().Hp
+			avgAT += a.AgentState().Attack
+			avgSH += a.AgentState().Defense
+			avgST += a.AgentState().Stamina
+		}
+		agents := uint(len(agentMap))
+		avgHP, avgAT, avgSH, avgST = avgHP/agents, avgAT/agents, avgSH/agents, avgST/agents
+
 		levelLog.LevelStats = logging.LevelStats{
-			NumberOfAgents: uint(len(agentMap)),
-			CurrentLevel:   globalState.CurrentLevel,
-			CurrentLeader:  globalState.CurrentLeader,
-			HPPool:         globalState.HpPool,
-			MonsterHealth:  globalState.MonsterHealth,
-			MonsterAttack:  globalState.MonsterAttack,
+			NumberOfAgents:       uint(len(agentMap)),
+			CurrentLevel:         globalState.CurrentLevel,
+			LeaderBeforeElection: leaderBeforeElection,
+			LeaderAfterElection:  globalState.CurrentLeader,
+			HPPool:               globalState.HpPool,
+			MonsterHealth:        globalState.MonsterHealth,
+			MonsterAttack:        globalState.MonsterAttack,
+			AverageAgentHealth:   avgHP,
+			AverageAgentAttack:   avgAT,
+			AverageAgentShield:   avgSH,
+			AverageAgentStamina:  avgST,
 		}
 
 		levelLog.LevelStats.SkippedThroughHpPool = checkHpPool()
