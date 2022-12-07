@@ -15,7 +15,7 @@ import (
 	"infra/game/stage/loot"
 	"infra/game/stages"
 	"infra/logging"
-	"infra/teams/team1"
+	"infra/teams/team5"
 	"math"
 
 	"github.com/benbjohnson/immutable"
@@ -23,7 +23,8 @@ import (
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
-	"TEAM1":  team1.NewSocialAgent,
+	// "TEAM1":  team1.NewSocialAgent,
+	"TEAM5": team5.NewFivAgent,
 }
 
 func main() {
