@@ -13,11 +13,9 @@ import (
 // A complete trading stage contains several rounds.
 // In each round, the following steps take place in order:
 // 1. Each agent can response to one of the trading negotiations it is involved in OR propose a new trade to another agent.
-// 2. Main thread collects all trade messages from all agents, and updated the state accordingly.
+// 2. Main thread collects trade messages from all agents, and updated the state accordingly.
 // 3. Collected message will be forwarded to corresponding target agents in the start of next round.
-func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage,
-	roundLimit uint, perRoundLimit uint,
-) {
+func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, roundLimit uint) {
 	// track offers made by each agent, no repeated offers are allowed
 	// i.e. only one offer of a specific item from an agent to another agent is allowed to exist simultaneously
 	availableWeapons := make(map[commons.ID][]state.Item)
@@ -152,7 +150,7 @@ func HandleTradeResponse(agentID commons.ID, msg message.TradeResponse,
 	case message.TradeReject:
 		negotiation := negotiations[resp.TradeID]
 		RemoveFromeNegotiation(resp.TradeID, agentID, newNegotiations)
-		newAvailWeapons, newAvailShields = PutBackFromNegotiation(newAvailWeapons, newAvailShields, negotiation)
+		newAvailWeapons, newAvailShields = PutBackItems(newAvailWeapons, newAvailShields, negotiation)
 	case message.TradeBargain:
 		negotiation := negotiations[resp.TradeID]
 		if !negotiation.IsInvolved(agentID) {
@@ -208,7 +206,7 @@ func AddItem(available map[commons.ID][]state.Item, agentID commons.ID, item sta
 
 func RemoveItem(available []state.Item, item state.Item) []state.Item {
 	for idx, availableItem := range available {
-		if availableItem == item {
+		if availableItem.Id() == item.Id() {
 			available = append(available[:idx], available[idx+1:]...)
 			return available
 		}
@@ -216,7 +214,7 @@ func RemoveItem(available []state.Item, item state.Item) []state.Item {
 	return available
 }
 
-func PutBackFromNegotiation(weapons map[commons.ID][]state.Item, shields map[commons.ID][]state.Item, negotiation message.TradeNegotiation) (newWeapons map[commons.ID][]state.Item, newShields map[commons.ID][]state.Item) {
+func PutBackItems(weapons map[commons.ID][]state.Item, shields map[commons.ID][]state.Item, negotiation message.TradeNegotiation) (newWeapons map[commons.ID][]state.Item, newShields map[commons.ID][]state.Item) {
 	conditions := negotiation.GetConditions()
 	iter := conditions.Iterator()
 	for !iter.Done() {
