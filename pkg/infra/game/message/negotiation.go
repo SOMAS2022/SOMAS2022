@@ -30,7 +30,7 @@ func NewTradeOffer(itemType commons.ItemType, idx uint, isEmpty bool, weapon imm
 		return TradeOffer{}, false
 	}
 	item := inventory.Get(int(idx))
-	return TradeOffer{itemtype: itemType, id: item.Id(), value: item.Value()}, true
+	return TradeOffer{itemtype: itemType, item: item, isEmpty: false}, true
 }
 
 func NewTradeDemand(itemType commons.ItemType, minValue uint) TradeDemand {
@@ -51,6 +51,11 @@ func NewTradeNegotiation(agentID commons.ID, offer TradeOffer, demand TradeDeman
 
 func (negotiation TradeNegotiation) sealedMessage() {}
 
+func (negotiation TradeNegotiation) IsInvolved(agentID commons.ID) bool {
+	_, ok := negotiation.conditions.Get(agentID)
+	return ok
+}
+
 func (negotiation TradeNegotiation) GetID() commons.TradeID {
 	return negotiation.id
 }
@@ -67,9 +72,16 @@ func (negotiation TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bo
 	return TradeOffer{}, false
 }
 
-func (negotiation TradeNegotiation) IsInvolved(agentID commons.ID) bool {
-	_, ok := negotiation.conditions.Get(agentID)
-	return ok
+func (negotiation TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeDemand, ok bool) {
+	condition, ok := negotiation.conditions.Get(agentID)
+	if ok {
+		return condition.demand, true
+	}
+	return TradeDemand{}, false
+}
+
+func (negotiation TradeNegotiation) GetConditions() immutable.Map[commons.ID, TradeCondition] {
+	return negotiation.conditions
 }
 
 func (negotiation TradeNegotiation) GetCounterParty(agentID commons.ID) (commons.ID, bool) {
@@ -91,14 +103,6 @@ func (negotiation TradeNegotiation) GetCounterParty(agentID commons.ID) (commons
 	}
 }
 
-func (negotiation TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeDemand, ok bool) {
-	condition, ok := negotiation.conditions.Get(agentID)
-	if ok {
-		return condition.demand, true
-	}
-	return TradeDemand{}, false
-}
-
 // A trade is valid iff:
 // 1. exactly 2 agents are involved
 // 2. both agents are valid
@@ -113,7 +117,7 @@ func (negotiation *TradeNegotiation) Notarize(agents map[commons.ID]state.AgentS
 		agent, ok := agents[id]
 		if ok {
 			numberOfValidAgents++
-			if !agent.HasItem(condition.offer.itemtype, condition.offer.id) {
+			if !agent.HasItem(condition.offer.itemtype, condition.offer.item.Id()) {
 				return false
 			}
 		}
@@ -144,4 +148,12 @@ func (negotiation *TradeNegotiation) UpdateDemand(agentID commons.ID, demand Tra
 			demand: demand,
 		})
 	}
+}
+
+func (condition TradeCondition) GetItemType() commons.ItemType {
+	return condition.offer.itemtype
+}
+
+func (condition TradeCondition) GetItem() state.Item {
+	return condition.offer.item
 }

@@ -264,7 +264,7 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, offeredItems *immutable.List[commons.ItemID], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage {
+func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, availableWeapons *immutable.List[state.Item], availableShields *immutable.List[state.Item], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage {
 	return message.TradeRequest{}
 }
 

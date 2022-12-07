@@ -176,7 +176,8 @@ func (a *Agent) addLoot(pool state.LootPool) {
 func (a *Agent) HandleTrade(
 	agentState state.AgentState,
 	roundLimit uint,
-	offeredItems *immutable.List[commons.ItemID],
+	availableWeapons *immutable.List[state.Item],
+	availableShields *immutable.List[state.Item],
 	requests *immutable.Map[commons.ID, message.TradeNegotiation],
 	next <-chan interface{},
 	closure <-chan interface{},
@@ -188,7 +189,7 @@ func (a *Agent) HandleTrade(
 		case <-closure:
 			return
 		case <-next:
-			message := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, offeredItems, requests)
+			message := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, availableWeapons, availableShields, requests)
 			responseChannel <- message
 		}
 	}

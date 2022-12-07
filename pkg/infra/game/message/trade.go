@@ -2,6 +2,7 @@ package message
 
 import (
 	"infra/game/commons"
+	"infra/game/state"
 )
 
 type TradeMessage interface {
@@ -34,9 +35,8 @@ type TradeReject struct {
 }
 
 type TradeOffer struct {
-	id       commons.ItemID
 	itemtype commons.ItemType
-	value    uint
+	item     state.Item
 	isEmpty  bool
 }
 
@@ -57,6 +57,12 @@ func (t TradeBargain) sealedTradeResponse() {}
 
 func (t TradeAccept) sealedTradeMessage()  {}
 func (t TradeAccept) sealedTradeResponse() {}
+func (t TradeAccept) GetTradeID() commons.TradeID {
+	return t.tradeID
+}
 
 func (t TradeReject) sealedTradeMessage()  {}
 func (t TradeReject) sealedTradeResponse() {}
+func (t TradeReject) GetTradeID() commons.TradeID {
+	return t.tradeID
+}
