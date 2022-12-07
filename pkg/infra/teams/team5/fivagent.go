@@ -227,7 +227,8 @@ func (fiv *FivAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 // --------------------------------- Hp pool Stage ---------------------------------
 
 func (fiv *FivAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+	// return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+	return uint(int(0.012 * float32(baseAgent.AgentState().Hp)))
 }
 
 // --------------------------------- Misc ---------------------------------
