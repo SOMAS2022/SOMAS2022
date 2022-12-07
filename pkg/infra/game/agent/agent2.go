@@ -113,6 +113,24 @@ func (a *Agent2) getCurrentAttack() uint {
 	return a.getBaseHelper(false)[0].latestState.Attack
 }
 
+// Description: The function is used to return the current Agent's bonus defense points
+// Returns: uint
+func (a *Agent2) getBonusDefense() uint {
+	AllAgentStates := a.getAgentStateHelper(false)[0]
+	AgentID := a.getBaseHelper(false)[0].id
+	AgentState, _ := AllAgentStates.Get(AgentID)
+	return AgentState.BonusDefense
+}
+
+// Description: The function is used to return the current Agent's bonus attack points
+// Returns: uint
+func (a *Agent2) getBonusAttack() uint {
+	AllAgentStates := a.getAgentStateHelper(false)[0]
+	AgentID := a.getBaseHelper(false)[0].id
+	AgentState, _ := AllAgentStates.Get(AgentID)
+	return AgentState.BonusAttack
+}
+
 func (a *Agent2) updateDecisionHelper(log immutable.Map[commons.ID, decision.FightAction]) {
 	a.decisionMap = append(a.decisionMap, log)
 }
