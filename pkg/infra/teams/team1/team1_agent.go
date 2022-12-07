@@ -23,11 +23,15 @@ func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
 
-	// Calculate best action based on current state and selfishness
-	coopTable := cooperationQ()
+	// Get agentState from baseAgent
+	agentState := baseAgent.AgentState()
 
+	// Calculate best action based on current state and selfishness
+	coopTable := cooperationQ(agentState)
+
+	// TODO: Maybe make non-deterministic
 	// Return index of best action (assumes array ordering in same order as decision.FightAction
-	return argmax()
+	return decision.FightAction(argmax(coopTable[:]))
 }
 
 func (s *SocialAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {

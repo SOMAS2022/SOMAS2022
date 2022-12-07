@@ -87,8 +87,26 @@ func makeIncremental(inputArray [3]float64) [3]float64 {
 	return outputArray
 }
 
-func normalise(inputArray [3]float64) [3]float64 {
-	// TODO
+// Make lowest value -1, highest 1 and everything else interpolation between
+func normalise(array [3]float64) [3]float64 {
+
+	max := max(array[:])
+	min := min(array[:])
+
+	var normArray [3]float64
+
+	for index, value := range array {
+		if value == max {
+			normArray[index] = 1.0
+		} else if value == min {
+			normArray[index] = -1.0
+		} else {
+			// Interpolate between -1 and 1
+			normArray[index] = (value - (max+min)/2) / (max - min)
+		}
+	}
+
+	return normArray
 }
 
 // Called any time a message is received, initialises or updates the socialCapital map
@@ -118,6 +136,12 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 	view := self.View()
 	agentState := view.AgentState()
 
+	// Calculate how cooperative agents own action was
+	cooperativeQ := cooperationQ(self.AgentState())
+	cooperationScale := normalise(cooperativeQ)
+	selfAction, _ := choices.Get(self.ID())
+	selfCooperation := cooperationScale[int(selfAction)]
+
 	// Update socialCapital values
 	for agentID := range s.socialCapital {
 		// Decay existing socialCapital values
@@ -137,13 +161,13 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			cooperationScale := normalise(cooperativeQ)
 
 			// Calculate update of trustworthiness based on how cooperative action was
-			deltaTrust :=
+			deltaTrust := 0.1 * cooperationScale[int(action)]
 
 			// Calculate update of based on how cooperative action was compared to the agents own action
-			deltaHonour :=
+			deltaHonour := 0.1 * (cooperationScale[int(action)] - selfCooperation)
 
 			// Update the socialCapital array based on calculated delta for trustworthiness and honour
-			s.socialCapital[agentID] = boundArray(addArrays(s.socialCapital[agentID], actionSentiment(action)))
+			s.socialCapital[agentID] = boundArray(addArrays(s.socialCapital[agentID], [4]float64{0.0, 0.0, deltaTrust, deltaHonour}))
 
 		}
 	}
