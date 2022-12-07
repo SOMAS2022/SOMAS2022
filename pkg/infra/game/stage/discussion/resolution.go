@@ -66,7 +66,24 @@ func ResolveLootDiscussion(
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	if manifesto.LootImposition() && leader.Strategy != nil {
 		// todo: eliminate double allocations here
-		return leader.Strategy.LootAllocation(*leader.BaseAgent)
+		leaderAllocation := leader.Strategy.LootAllocation(*leader.BaseAgent)
+		iterator := leaderAllocation.Iterator()
+		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
+		for !iterator.Done() {
+			agentID, items, _ := iterator.Next()
+			itemIterator := items.Iterator()
+			for !itemIterator.Done() {
+				item, _, _ := itemIterator.Next()
+				if m, ok := wantedItems[item]; ok {
+					m[agentID] = struct{}{}
+				} else {
+					m := make(map[commons.ID]struct{})
+					m[agentID] = struct{}{}
+					wantedItems[item] = m
+				}
+			}
+		}
+		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
 	} else {
 		predicate := proposal.ToMultiPredicate(tally.GetMax().Rules())
 		if predicate == nil {
@@ -87,8 +104,8 @@ func ResolveLootDiscussion(
 
 		for id, itemIDS := range m {
 			mMapped[id] = commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
-			addWantedLootToItemAllocMap(mMapped[id], wantedItems, id)
 			agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, mMapped[id])
+			addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
 			if !commons.ImmutableSetEquality(mMapped[id], agentLoot) {
 				anyDetractors = true
 				defector := gs.AgentState[id].Defector
