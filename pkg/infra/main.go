@@ -125,7 +125,7 @@ func startGameLoop() {
 
 		immutableFightRounds := commons.NewImmutableList(fightResultSlice)
 		votesResult := commons.MapToImmutable(votes)
-		updateInternalStates(immutableFightRounds, &votesResult)
+		stages.UpdateInternalStates(agentMap, globalState, immutableFightRounds, &votesResult)
 	}
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"sync"
 
 	"github.com/google/uuid"
 
@@ -154,20 +153,6 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 		fight.DealDamage(damageTaken, fightRoundResult.CoweringAgents, agentMap, globalState)
 	}
 	*viewPtr = globalState.ToView()
-}
-
-func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
-	var wg sync.WaitGroup
-	for id, a := range agentMap {
-		id := id
-		a := a
-		wg.Add(1)
-		go func(wait *sync.WaitGroup) {
-			a.HandleUpdateInternalState(globalState.AgentState[id], immutableFightRounds, votesResult)
-			wait.Done()
-		}(&wg)
-	}
-	wg.Wait()
 }
 
 /*
