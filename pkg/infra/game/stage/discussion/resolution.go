@@ -17,31 +17,36 @@ import (
 func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
 	// todo: cleanup the nil check that acts to check if the leader died in combat
-	var prop commons.ImmutableList[proposal.Rule[decision.FightAction]]
+	prop := tally.GetMax().Rules()
 	if manifesto.FightImposition() && currentLeader.Strategy != nil {
-		prop = currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent)
-	} else {
-		// get proposal with most votes
-		prop = tally.GetMax().Rules()
-	}
-
-	predicate := proposal.ToSinglePredicate(prop)
-	if predicate == nil {
+		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, prop)
 		for id, a := range agentMap {
-			fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
+			value, ok := resolution.Get(id)
+			if ok {
+				fightActions[id] = value
+			} else {
+				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
+			}
 		}
 	} else {
-		for id, a := range agentMap {
-			expectedFightAction := predicate(gs, a.AgentState())
-			if gs.Defection {
-				fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
-				if expectedFightAction != fightActions[id] {
-					agentState := gs.AgentState[id]
-					agentState.Defector.SetFight(true)
-					gs.AgentState[id] = agentState
+		predicate := proposal.ToSinglePredicate(prop)
+		if predicate == nil {
+			for id, a := range agentMap {
+				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
+			}
+		} else {
+			for id, a := range agentMap {
+				expectedFightAction := predicate(gs, a.AgentState())
+				if gs.Defection {
+					fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
+					if expectedFightAction != fightActions[id] {
+						agentState := gs.AgentState[id]
+						agentState.Defector.SetFight(true)
+						gs.AgentState[id] = agentState
+					}
+				} else {
+					fightActions[id] = expectedFightAction
 				}
-			} else {
-				fightActions[id] = expectedFightAction
 			}
 		}
 	}
