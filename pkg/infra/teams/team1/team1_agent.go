@@ -21,6 +21,8 @@ type SocialAgent struct {
 	propHate float64
 	// Proportion of agents to talk well about
 	propAdmire float64
+
+	graphID int // for logging
 }
 
 func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
