@@ -261,6 +261,33 @@ func (a *Agent2) CreateManifesto(baseAgent BaseAgent) *decision.Manifesto {
 // Description: Used for voting on confidence for Leader.
 // Return:		Positive, Negative, or Abstain decision.
 func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
+	// To decide how to vote in no-confidence vote at the end of each level, use a social capital framework with weighted factors and a binary activation function to decide yes/no
+	// These are:
+	// - fraction of agents alive compared to beginning of the leadership (+ve relationship)
+	// - likelihood of accepting one of our proposals to broadcast (+ve)
+	// - how many times (if any) were they voted in and out as leader (more specifically: fraction of levels they were voted leader (+ve), fraction of those times they were voted out (-ve))
+	// - likelihood of fight imposition being used on us (-ve)
+	// - loot?
+	// For these we need a history data helper function that returns an array of the form:
+	// leader_timeline_array [{id, manifesto, duration, leader_stats}, {id, manifesto, duration, leader_stats}, ...]
+	// The object of type leader_stats will contain the following items:
+	// - 1. average % of agents alive at the end of a level, under their leadership (calculate for each level of their leadership and average)
+	// - 2. % of the proposals we submitted that were actually accepted/broadcast by the leader over the course of their term - redundant if infra scraps current proposals
+	// - 3. bool whether they were voted out
+	// - 4. (regarding fight/loot impositions, will this even happen in final infra?)
+	// This array is best created in the election function that is only called at the end of one leadership term / start of another
+	// It's best to have intermediate variables that accrue raw data, either in this function directly or on functions that run every round and every level, to be fed into the election function
+	// Namely, from every round, we accrue the following raw data:
+	// - whether or not the leader broadcast our proposal (can we submit more than one per round?) (used to calc 2.)
+	// From every level, we have the following raw data:
+	// - (anything regarding loot distribution and trades?)
+	// - number of agents alive at the beginning and end (actually, do we only have list of agent IDs)
+	// From every leadership term, we have the following raw data:
+	// - number of agents alive now (for election function, can have a temporary variable, then calc difference btn that and its previous value every time election is called, to see diff in agents alive over the term)
+	// - result of confidence poll
+	// In the election function, we then calculate summative statistics to 'condense' all this raw data (also saves space complexity when storing array)
+	// These leader stats (in the form of the aforementioned array) can then be saved as private attributes, and used at the end of each level in the no-confidence poll
+
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
