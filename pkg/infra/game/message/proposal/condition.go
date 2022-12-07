@@ -22,6 +22,46 @@ type Condition interface {
 	sealedCondition()
 }
 
+type AndCondition struct {
+	condA Condition
+	condB Condition
+}
+
+func (a AndCondition) CondA() Condition {
+	return a.condA
+}
+
+func (a AndCondition) CondB() Condition {
+	return a.condB
+}
+
+func NewAndCondition(condA Condition, condB Condition) *AndCondition {
+	return &AndCondition{condA: condA, condB: condB}
+}
+
+func (a AndCondition) sealedCondition() {
+}
+
+type OrCondition struct {
+	condA Condition
+	condB Condition
+}
+
+func (a OrCondition) CondA() Condition {
+	return a.condA
+}
+
+func (a OrCondition) CondB() Condition {
+	return a.condB
+}
+
+func NewOrCondition(condA Condition, condB Condition) *OrCondition {
+	return &OrCondition{condA: condA, condB: condB}
+}
+
+func (a OrCondition) sealedCondition() {
+}
+
 type ComparativeCondition struct {
 	Attribute
 	Comparator
