@@ -220,13 +220,13 @@ func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
 	// - loot?
 	// For these we need a history data helper function that returns an array of the form:
 	// leader_timeline_array [{id, manifesto, duration, leader_stats}, {id, manifesto, duration, leader_stats}, ...]
-	// The object of type leader_stats will contain the following items:
+	// The object of type leader_stats will contain the following items for each elapsed leadership term:
 	// - 1. average % of agents alive at the end of a level, under their leadership (calculate for each level of their leadership and average)
 	// - 2. % of the proposals we submitted that were actually accepted/broadcast by the leader over the course of their term - redundant if infra scraps current proposals
 	// - 3. bool whether they were voted out
 	// - 4. (regarding fight/loot impositions, will this even happen in final infra?)
 	// This array is best created in the election function that is only called at the end of one leadership term / start of another
-	// It's best to have intermediate variables that accrue raw data, either in this function directly or on functions that run every round and every level, to be fed into the election function
+	// It's best to have intermediate variables that accrue raw data, either in this function directly or on functions that run every round and every level, to be fed into the confidence and election functions
 	// Namely, from every round, we accrue the following raw data:
 	// - whether or not the leader broadcast our proposal (can we submit more than one per round?) (used to calc 2.)
 	// From every level, we have the following raw data:
@@ -235,8 +235,18 @@ func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
 	// From every leadership term, we have the following raw data:
 	// - number of agents alive now (for election function, can have a temporary variable, then calc difference btn that and its previous value every time election is called, to see diff in agents alive over the term)
 	// - result of confidence poll
-	// In the election function, we then calculate summative statistics to 'condense' all this raw data (also saves space complexity when storing array)
-	// These leader stats (in the form of the aforementioned array) can then be saved as private attributes, and used at the end of each level in the no-confidence poll
+	// In the election function - and maybe elsewhere - we then calculate summative statistics to 'condense' all this raw data (also saves space complexity when storing array)
+	// For this function, these summative statistic for any current (i.e. not elapsed) leadership - which are continuously updated every round/level - need to be accessible, so should be written to private attributes
+	// The 'past' leader stats (in the form of the aforementioned array) should also be saved as a private attribute by the election function every time it is called, and used at the end of each level in the no-confidence poll
+
+	//var curr_leader_stats := priv_attribute
+	var past_terms_of_curr_leader := make([]term_struct, 0)
+	for leadership_term in leader_term_timeline_array {
+		if leadership_term[id] == curr_leader["id"] {
+			past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
+		}
+	}
+
 
 	switch rand.Intn(3) {
 	case 0:
