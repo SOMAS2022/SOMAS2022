@@ -7,18 +7,21 @@ import (
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
+	"github.com/google/uuid"
 )
 
 type TradeNegotiation struct {
 	// terminate negotiation when this number decrement to 0
-	id         commons.TradeID
-	roundNum   uint
-	conditions immutable.Map[commons.ID, TradeCondition]
+	id           commons.TradeID
+	initiator    commons.ID
+	counterParty commons.ID
+	roundNum     uint
+	conditions   immutable.Map[commons.ID, TradeCondition]
 }
 
 func NewTradeOffer(itemType commons.ItemType, idx uint, isEmpty bool, weapon immutable.List[state.Item], shield immutable.List[state.Item]) (offer TradeOffer, ok bool) {
 	if isEmpty {
-		return TradeOffer{isEmpty: true}, true
+		return TradeOffer{IsEmpty: true}, true
 	}
 	var inventory immutable.List[state.Item]
 	if itemType == commons.Weapon {
@@ -30,22 +33,25 @@ func NewTradeOffer(itemType commons.ItemType, idx uint, isEmpty bool, weapon imm
 		return TradeOffer{}, false
 	}
 	item := inventory.Get(int(idx))
-	return TradeOffer{itemtype: itemType, item: item, isEmpty: false}, true
+	return TradeOffer{ItemType: itemType, Item: item, IsEmpty: false}, true
 }
 
 func NewTradeDemand(itemType commons.ItemType, minValue uint) TradeDemand {
-	return TradeDemand{itemType: itemType, minValue: minValue}
+	return TradeDemand{ItemType: itemType, MinValue: minValue}
 }
 
-func NewTradeNegotiation(agentID commons.ID, offer TradeOffer, demand TradeDemand) TradeNegotiation {
+func NewTradeNegotiation(agentID commons.ID, counterPartyID commons.ID, offer TradeOffer, demand TradeDemand) TradeNegotiation {
 	conditions := immutable.NewMap[commons.ID, TradeCondition](nil)
 	conditions = conditions.Set(agentID, TradeCondition{
-		offer:  offer,
-		demand: demand,
+		Offer:  offer,
+		Demand: demand,
 	})
 	return TradeNegotiation{
-		roundNum:   0,
-		conditions: *conditions,
+		id:           uuid.New().String(),
+		initiator:    agentID,
+		counterParty: counterPartyID,
+		roundNum:     0,
+		conditions:   *conditions,
 	}
 }
 
@@ -67,7 +73,7 @@ func (negotiation TradeNegotiation) GetRoundNum() uint {
 func (negotiation TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bool) {
 	condition, ok := negotiation.conditions.Get(agentID)
 	if ok {
-		return condition.offer, true
+		return condition.Offer, true
 	}
 	return TradeOffer{}, false
 }
@@ -75,7 +81,7 @@ func (negotiation TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bo
 func (negotiation TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeDemand, ok bool) {
 	condition, ok := negotiation.conditions.Get(agentID)
 	if ok {
-		return condition.demand, true
+		return condition.Demand, true
 	}
 	return TradeDemand{}, false
 }
@@ -115,9 +121,10 @@ func (negotiation *TradeNegotiation) Notarize(agents map[commons.ID]state.AgentS
 	for !itr.Done() {
 		id, condition, _ := itr.Next()
 		agent, ok := agents[id]
+		ok = ok && (id == negotiation.initiator || id == negotiation.counterParty)
 		if ok {
 			numberOfValidAgents++
-			if !agent.HasItem(condition.offer.itemtype, condition.offer.item.Id()) {
+			if !agent.HasItem(condition.Offer.ItemType, condition.Offer.Item.Id()) {
 				return false
 			}
 		}
@@ -130,30 +137,40 @@ func (negotiation *TradeNegotiation) UpdateRoundNum() uint {
 	return negotiation.roundNum
 }
 
-func (negotiation *TradeNegotiation) UpdateOffer(agentID commons.ID, offer TradeOffer) {
+func (negotiation *TradeNegotiation) UpdateOffer(agentID commons.ID, offer TradeOffer) (oldOffer TradeOffer, ok bool) {
+	if agentID != negotiation.initiator || agentID != negotiation.counterParty {
+		return TradeOffer{}, false
+	}
 	condition, ok := negotiation.conditions.Get(agentID)
 	if ok {
 		negotiation.conditions.Set(agentID, TradeCondition{
-			offer:  offer,
-			demand: condition.demand,
+			Offer:  offer,
+			Demand: condition.Demand,
 		})
+		return condition.Offer, true
 	}
+	return TradeOffer{}, false
 }
 
-func (negotiation *TradeNegotiation) UpdateDemand(agentID commons.ID, demand TradeDemand) {
+func (negotiation *TradeNegotiation) UpdateDemand(agentID commons.ID, demand TradeDemand) (oldDemand TradeDemand, ok bool) {
+	if agentID != negotiation.initiator || agentID != negotiation.counterParty {
+		return TradeDemand{}, false
+	}
 	condition, ok := negotiation.conditions.Get(agentID)
 	if ok {
 		negotiation.conditions.Set(agentID, TradeCondition{
-			offer:  condition.offer,
-			demand: demand,
+			Offer:  condition.Offer,
+			Demand: demand,
 		})
+		return condition.Demand, true
 	}
+	return TradeDemand{}, false
 }
 
 func (condition TradeCondition) GetItemType() commons.ItemType {
-	return condition.offer.itemtype
+	return condition.Offer.ItemType
 }
 
 func (condition TradeCondition) GetItem() state.Item {
-	return condition.offer.item
+	return condition.Offer.Item
 }

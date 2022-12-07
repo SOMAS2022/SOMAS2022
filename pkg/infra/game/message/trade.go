@@ -10,9 +10,9 @@ type TradeMessage interface {
 }
 
 type TradeRequest struct {
-	counterPartyID commons.ID
-	offer          TradeOffer
-	demand         TradeDemand
+	CounterPartyID commons.ID
+	Offer          TradeOffer
+	Demand         TradeDemand
 }
 
 type TradeResponse interface {
@@ -21,33 +21,33 @@ type TradeResponse interface {
 }
 
 type TradeBargain struct {
-	tradeID commons.TradeID
-	offer   TradeOffer
-	demand  TradeDemand
+	TradeID commons.TradeID
+	Offer   TradeOffer
+	Demand  TradeDemand
 }
 
 type TradeAccept struct {
-	tradeID commons.TradeID
+	TradeID commons.TradeID
 }
 
 type TradeReject struct {
-	tradeID commons.TradeID
+	TradeID commons.TradeID
 }
 
 type TradeOffer struct {
-	itemtype commons.ItemType
-	item     state.Item
-	isEmpty  bool
+	ItemType commons.ItemType
+	Item     state.Item
+	IsEmpty  bool
 }
 
 type TradeDemand struct {
-	itemType commons.ItemType
-	minValue uint
+	ItemType commons.ItemType
+	MinValue uint
 }
 
 type TradeCondition struct {
-	offer  TradeOffer
-	demand TradeDemand
+	Offer  TradeOffer
+	Demand TradeDemand
 }
 
 func (t TradeRequest) sealedTradeMessage() {}
@@ -57,12 +57,6 @@ func (t TradeBargain) sealedTradeResponse() {}
 
 func (t TradeAccept) sealedTradeMessage()  {}
 func (t TradeAccept) sealedTradeResponse() {}
-func (t TradeAccept) GetTradeID() commons.TradeID {
-	return t.tradeID
-}
 
 func (t TradeReject) sealedTradeMessage()  {}
 func (t TradeReject) sealedTradeResponse() {}
-func (t TradeReject) GetTradeID() commons.TradeID {
-	return t.tradeID
-}
