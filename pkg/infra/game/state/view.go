@@ -41,7 +41,7 @@ type HiddenAgentState struct {
 	Defense      uint
 	BonusAttack  uint
 	BonusDefense uint
-	Defector     bool
+	Defector     Defector
 }
 
 func (v *View) CurrentLevel() uint {

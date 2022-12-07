@@ -112,11 +112,7 @@ func AgentLootDecisions(
 	return propTally
 }
 
-func HandleLootAllocation(
-	globalState state.State,
-	allocation *immutable.Map[commons.ID, immutable.List[commons.ItemID]],
-	pool *state.LootPool,
-) *state.State {
+func HandleLootAllocation(globalState state.State, allocation *immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]], pool *state.LootPool) *state.State {
 	weaponSet := itemListToSet(pool.Weapons())
 	shieldSet := itemListToSet(pool.Shields())
 	hpPotionSet := itemListToSet(pool.HpPotions())
@@ -128,7 +124,7 @@ func HandleLootAllocation(
 		agentID, items, _ := allocationIterator.Next()
 		itemIterator := items.Iterator()
 		for !itemIterator.Done() {
-			_, item := itemIterator.Next()
+			item, _, _ := itemIterator.Next()
 			agentState := globalState.AgentState[agentID]
 
 			if val, ok := weaponSet[item]; ok {

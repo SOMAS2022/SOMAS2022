@@ -96,7 +96,7 @@ func orEval(cond OrCondition) func(state.State, state.AgentState) bool {
 
 func defectorEval() func(state.State, state.AgentState) bool {
 	return func(_ state.State, agentState state.AgentState) bool {
-		return agentState.Defector
+		return agentState.Defector.IsDefector()
 	}
 }
 

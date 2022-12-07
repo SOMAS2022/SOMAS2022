@@ -56,9 +56,9 @@ func (ifr *ImmutableFightResult) Round() uint {
 func NewImmutableFightResult(fightResult FightResult, round uint) *ImmutableFightResult {
 	return &ImmutableFightResult{
 		choices:         commons.MapToImmutable(fightResult.Choices),
-		attackingAgents: commons.ListToImmutable(fightResult.AttackingAgents),
-		shieldingAgents: commons.ListToImmutable(fightResult.ShieldingAgents),
-		coweringAgents:  commons.ListToImmutable(fightResult.CoweringAgents),
+		attackingAgents: commons.ListToImmutableList(fightResult.AttackingAgents),
+		shieldingAgents: commons.ListToImmutableList(fightResult.ShieldingAgents),
+		coweringAgents:  commons.ListToImmutableList(fightResult.CoweringAgents),
 		attackSum:       fightResult.AttackSum,
 		shieldSum:       fightResult.ShieldSum,
 		round:           round,

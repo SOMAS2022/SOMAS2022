@@ -25,6 +25,14 @@ type SocialAgent struct {
 	graphID int // for logging
 }
 
+func (s *SocialAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
+}
+
+func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+	return proposedLoot
+}
+
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
 	// Get agentState from baseAgent
 	agentState := baseAgent.AgentState()
@@ -35,10 +43,6 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	// TODO: Maybe make non-deterministic
 	// Return index of best action (assumes array ordering in same order as decision.FightAction
 	return decision.FightAction(argmax(coopTable[:]))
-}
-
-func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
-	return *immutable.NewList[commons.ItemID]()
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
@@ -74,7 +78,7 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -86,9 +90,9 @@ func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.I
 	allocateRandomly(iterator, ids, lootAllocation)
 	iterator = ba.Loot().StaminaPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
+	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
-		mMapped[id] = commons.ListToImmutable(itemIDS)
+		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
 	}
 	return commons.MapToImmutable(mMapped)
 }

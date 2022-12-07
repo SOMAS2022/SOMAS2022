@@ -7,6 +7,27 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+type Defector struct {
+	fight bool
+	loot  bool
+}
+
+func (d *Defector) SetFight(fight bool) {
+	d.fight = fight
+}
+
+func (d *Defector) SetLoot(loot bool) {
+	d.loot = loot
+}
+
+func NewDefector() *Defector {
+	return &Defector{}
+}
+
+func (d *Defector) IsDefector() bool {
+	return d.fight || d.loot
+}
+
 type AgentState struct {
 	Hp          uint
 	Stamina     uint
@@ -16,7 +37,7 @@ type AgentState struct {
 	ShieldInUse commons.ItemID
 	Weapons     immutable.List[Item]
 	Shields     immutable.List[Item]
-	Defector    bool
+	Defector    Defector
 }
 
 func (s *AgentState) BonusAttack(state State) uint {
