@@ -1,10 +1,12 @@
 package trade
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/logging"
 	"time"
 
 	"github.com/benbjohnson/immutable"
@@ -15,7 +17,7 @@ import (
 // 1. Each agent can response to one of the trading negotiations it is involved in OR propose a new trade to another agent.
 // 2. Main thread collects trade messages from all agents, and updated the state accordingly.
 // 3. Collected message will be forwarded to corresponding target agents in the start of next round.
-func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, roundLimit uint) {
+func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, round uint, roundLimit uint) {
 	// track offers made by each agent, no repeated offers are allowed
 	// i.e. only one offer of a specific item from an agent to another agent is allowed to exist simultaneously
 	availableWeapons := make(map[commons.ID][]state.Item)
@@ -29,7 +31,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 		availableShields[agentID] = ImmutableListToSlice(agentState.Shields)
 	}
 
-	for round := uint(0); round < roundLimit; round++ {
+	for r := uint(0); r < round; r++ {
 		starts := make(map[commons.ID]chan interface{})
 		closures := make(map[commons.ID]chan interface{})
 		responses := make(map[commons.ID]chan message.TradeMessage)
@@ -66,10 +68,18 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 		}
 		// filterout outdated negotiations
 		for id, negotiation := range negotiations {
-			if negotiation.UpdateRoundNum() >= roundLimit {
+			negotiation.RoundNum++
+			if negotiation.RoundNum > roundLimit {
+				logging.Log(logging.Trace, nil, fmt.Sprintf("Negotiation %s between %s and %s is outdated", id, negotiation.Initiator, negotiation.CounterParty))
 				delete(negotiations, id)
+			} else {
+				negotiations[id] = negotiation
 			}
 		}
+		logging.Log(logging.Info, logging.LogField{
+			"round":          r,
+			"numNegotiation": len(negotiations),
+		}, fmt.Sprintf("Round %d: %d ongoing negotiations", r, len(negotiations)))
 	}
 
 	// End of trade stage, update agent inventory
@@ -94,6 +104,7 @@ func HandleTradeMessage(agentID commons.ID, negotiation message.TradeMessage,
 	newAvailShields = availableShields
 
 	switch msg := negotiation.(type) {
+	case message.TradeAbstain:
 	case message.TradeResponse:
 		newNegotiations, newAvailWeapons, newAvailShields = HandleTradeResponse(agentID, msg, negotiations, availableWeapons, availableShields)
 	case message.TradeRequest:
@@ -118,7 +129,7 @@ func HandleTradeRequest(agentID commons.ID, msg message.TradeRequest,
 
 	// add new negotiation to ongoing negotiations
 	negotiation := message.NewTradeNegotiation(agentID, msg.CounterPartyID, msg.Offer, msg.Demand)
-	newNegotiations[negotiation.GetID()] = negotiation
+	newNegotiations[negotiation.Id] = negotiation
 	// remove offered item from available items
 	if msg.Offer.ItemType == commons.Weapon {
 		newAvailWeapons[agentID] = RemoveItem(newAvailWeapons[agentID], msg.Offer.Item)
@@ -219,11 +230,11 @@ func PutBackItems(weapons map[commons.ID][]state.Item, shields map[commons.ID][]
 	iter := conditions.Iterator()
 	for !iter.Done() {
 		agentID, condition, _ := iter.Next()
-		switch condition.GetItemType() {
+		switch condition.GetOfferType() {
 		case commons.Weapon:
-			newWeapons = AddItem(weapons, agentID, condition.GetItem())
+			newWeapons = AddItem(weapons, agentID, condition.GetOfferItem())
 		case commons.Shield:
-			newShields = AddItem(shields, agentID, condition.GetItem())
+			newShields = AddItem(shields, agentID, condition.GetOfferItem())
 		}
 	}
 
@@ -244,19 +255,19 @@ func ExecuteTrade(weapons map[commons.ID][]state.Item, shields map[commons.ID][]
 	agentID2 := agentIDs[1]
 
 	condition1, _ := conditions.Get(agentID1)
-	switch condition1.GetItemType() {
+	switch condition1.GetOfferType() {
 	case commons.Weapon:
-		newWeapons = AddItem(weapons, agentID2, condition1.GetItem())
+		newWeapons = AddItem(weapons, agentID2, condition1.GetOfferItem())
 	case commons.Shield:
-		newShields = AddItem(shields, agentID2, condition1.GetItem())
+		newShields = AddItem(shields, agentID2, condition1.GetOfferItem())
 	}
 
 	condition2, _ := conditions.Get(agentID2)
-	switch condition2.GetItemType() {
+	switch condition2.GetOfferType() {
 	case commons.Weapon:
-		newWeapons = AddItem(weapons, agentID2, condition2.GetItem())
+		newWeapons = AddItem(weapons, agentID2, condition2.GetOfferItem())
 	case commons.Shield:
-		newShields = AddItem(shields, agentID2, condition2.GetItem())
+		newShields = AddItem(shields, agentID2, condition2.GetOfferItem())
 	}
 
 	return newWeapons, newShields

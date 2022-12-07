@@ -9,6 +9,10 @@ type TradeMessage interface {
 	sealedTradeMessage()
 }
 
+type TradeAbstain struct {
+	TradeMessage
+}
+
 type TradeRequest struct {
 	CounterPartyID commons.ID
 	Offer          TradeOffer
@@ -49,6 +53,8 @@ type TradeCondition struct {
 	Offer  TradeOffer
 	Demand TradeDemand
 }
+
+func (t TradeAbstain) sealedTradeMessage() {}
 
 func (t TradeRequest) sealedTradeMessage() {}
 
