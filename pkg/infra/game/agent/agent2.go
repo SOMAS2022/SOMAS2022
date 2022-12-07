@@ -322,6 +322,8 @@ func (a *Agent2) HandleElectionBallot(baseAgent BaseAgent, params *decision.Elec
 	return ballot
 }
 
+// HandleFightProposal: TODO: Implement me!
+// Description: Throught that function our agent votes on a broadcastes proposal
 func (a *Agent2) HandleFightProposal(proposal message.FightProposalMessage, baseAgent BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
@@ -331,6 +333,8 @@ func (a *Agent2) HandleFightProposal(proposal message.FightProposalMessage, base
 	}
 }
 
+// FightResolution: TODO: Implement me!
+// Description: Through that function our agent provides a proposal
 func (a *Agent2) FightResolution(baseAgent BaseAgent) message.MapProposal[decision.FightAction] {
 
 	// Info update per round
@@ -363,7 +367,9 @@ func (a *Agent2) FightResolution(baseAgent BaseAgent) message.MapProposal[decisi
 	return *prop
 }
 
-// HandleFightProposalRequest only called as leader
+// HandleFightProposalRequest TODO: Implement me!
+// Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
+// Return:		Bool: True/False
 func (a *Agent2) HandleFightProposalRequest(proposal message.FightProposalMessage, baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
 	switch rand.Intn(2) {
 	case 0:
@@ -389,9 +395,13 @@ func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-// UpdateInternalState return the
+// UpdateInternalState TODO: Implement me!
+// Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
 func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
 }
+
+// DonateToHpPool TODO: Implement me!
+// Description: The function returns the amount of Hp that our agent is willing to donate to the HpPool
 func (a *Agent2) DonateToHpPool(baseAgent BaseAgent) uint {
 	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 }
