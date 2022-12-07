@@ -70,7 +70,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 	case message.Proposal[decision.FightAction]:
 		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
 	case message.Proposal[decision.LootAction]:
-		return communicationError("Illegal attempt to send proposal - use SendFightProposalToLeader() instead")
+		return communicationError("Illegal attempt to send proposal - use SendLootProposalToLeader() instead")
 	default:
 		channel, ok := ba.communication.peer.Get(id)
 		if ok {
@@ -83,6 +83,15 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 }
 
 func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.FightAction]]) error {
+	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
+	if ok {
+		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules), uuid.New())
+		return nil
+	}
+	return communicationError("Leader not available for messaging, dead or bad!")
+}
+
+func (ba *BaseAgent) SendLootProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.LootAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
 		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules), uuid.New())
