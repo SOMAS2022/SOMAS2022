@@ -9,6 +9,7 @@ import (
 	"infra/game/stage/fight"
 	"infra/game/stage/initialise"
 	"infra/game/stage/loot"
+	"infra/game/stage/update"
 	"infra/game/state"
 	"infra/game/tally"
 
@@ -68,4 +69,15 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	default:
 		return fight.AgentFightDecisions(state, agents, previousDecisions, channelsMap)
 	}
+}
+
+func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *state.State, immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
+	switch Mode {
+	// case "0":
+
+	default:
+		update.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
+	}
+
+	return
 }
