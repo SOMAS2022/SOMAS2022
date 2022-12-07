@@ -290,14 +290,21 @@ func (a *Agent2) HandleElectionBallot(baseAgent BaseAgent, params *decision.Elec
 /* ---- FIGHT ---- */
 
 // HandleFightInformation TODO: Implement me!
-// Description: Used to extract agent information
+// Description: Called every time a fight information message is received (I believe it could be from a leader for providing a proposal or another agent for providing fight info (e.g proposal directly to them?)
 // Return:		nil
 func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	a.updateDecisionHelper(*log)
+
+	makesProposal := rand.Intn(100)
+
+	if makesProposal > 80 {
+		prop := a.FightResolution(baseAgent)
+		_ = baseAgent.SendFightProposalToLeader(prop)
+	}
 }
 
 // HandleFightRequest TODO: Implement me!
-// Description: Used for comms to request p2p message probably? Not Sure!
+// Description: Called every time a fight request message is received
 // Return		Message Payload
 func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
