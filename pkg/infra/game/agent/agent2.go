@@ -240,13 +240,12 @@ func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
 	// The 'past' leader stats (in the form of the aforementioned array) should also be saved as a private attribute by the election function every time it is called, and used at the end of each level in the no-confidence poll
 
 	//var curr_leader_stats := priv_attribute
-	var past_terms_of_curr_leader := make([]term_struct, 0)
-	for leadership_term in leader_term_timeline_array {
-		if leadership_term[id] == curr_leader["id"] {
-			past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
-		}
-	}
-
+	//var past_terms_of_curr_leader := make([]term_struct, 0)
+	//for leadership_term in leader_term_timeline_array {
+	//	if leadership_term[id] == curr_leader["id"] {
+	//		past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
+	//	}
+	//}
 
 	switch rand.Intn(3) {
 	case 0:
