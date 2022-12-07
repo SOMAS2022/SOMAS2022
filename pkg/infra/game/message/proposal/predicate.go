@@ -61,21 +61,35 @@ func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rul
 
 func makePredicate(cond Condition) func(s state.State, agentState state.AgentState) bool {
 	switch condT := cond.(type) {
+	case *ComparativeCondition:
+		return buildCompPredicate(*condT)
 	case ComparativeCondition:
 		return buildCompPredicate(condT)
+	case *AndCondition:
+		return andEval(*condT)
 	case AndCondition:
-		return func(s state.State, agentState state.AgentState) bool {
-			return makePredicate(condT.CondA())(s, agentState) && makePredicate(condT.CondB())(s, agentState)
-		}
+		return andEval(condT)
+	case *OrCondition:
+		return orEval(*condT)
 	case OrCondition:
-		return func(s state.State, agentState state.AgentState) bool {
-			return makePredicate(condT.CondA())(s, agentState) || makePredicate(condT.CondB())(s, agentState)
-		}
+		return orEval(condT)
 	default:
 		return func(s state.State, agentState state.AgentState) bool {
 			//todo: use state/agentState to check if in recent defector set
 			return false
 		}
+	}
+}
+
+func andEval(cond AndCondition) func(state.State, state.AgentState) bool {
+	return func(s state.State, agentState state.AgentState) bool {
+		return makePredicate(cond.CondA())(s, agentState) && makePredicate(cond.CondB())(s, agentState)
+	}
+}
+
+func orEval(cond OrCondition) func(state.State, state.AgentState) bool {
+	return func(s state.State, agentState state.AgentState) bool {
+		return makePredicate(cond.CondA())(s, agentState) || makePredicate(cond.CondB())(s, agentState)
 	}
 }
 
