@@ -241,13 +241,8 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleTradeInit(agent agent.BaseAgent) (counterParyID commons.ID, offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand) {
-	view := agent.View()
-	return view.CurrentLeader(), commons.Shield, 1, true, message.TradeDemand{}
-}
-
-func (r *RandomAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg message.TradeNegotiation) (offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand, accept bool) {
-	return commons.Weapon, 1, true, message.TradeDemand{}, false
+func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, offeredItems *immutable.List[commons.ItemID], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage {
+	return message.TradeRequest{}
 }
 
 func NewRandomAgent() agent.Strategy {

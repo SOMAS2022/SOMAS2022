@@ -115,7 +115,7 @@ func startGameLoop() {
 		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)
 
 		channelsMap = addCommsChannels()
-		trade.HandleTrade(*globalState, agentMap, channelsMap, 5)
+		trade.HandleTrade(*globalState, agentMap, channelsMap, 5, 1)
 
 		channelsMap = addCommsChannels()
 

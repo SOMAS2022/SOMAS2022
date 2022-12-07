@@ -119,3 +119,5 @@ type ID = string
 type ProposalID = string
 
 type ItemID = string
+
+type TradeID = string
