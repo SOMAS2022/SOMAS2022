@@ -25,6 +25,24 @@ type SocialAgent struct {
 	graphID int // for logging
 }
 
+func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+	view := agent.View()
+	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
+		var fightAction decision.FightAction
+		switch rand.Intn(3) {
+		case 0:
+			fightAction = decision.Attack
+		case 1:
+			fightAction = decision.Defend
+		default:
+			fightAction = decision.Cower
+		}
+		builder.Set(id, fightAction)
+	}
+	return *builder.Map()
+}
+
 func (s *SocialAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
 	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
 }
@@ -127,28 +145,6 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 	}
 }
 
-func (s *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
-	rules := make([]proposal.Rule[decision.FightAction], 0)
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-	))
-
-	return *commons.NewImmutableList(rules)
-}
-
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(false, true, 10, 50)
 	return manifesto
@@ -175,7 +171,26 @@ func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[messa
 	}
 	makesProposal := rand.Intn(100)
 	if makesProposal > 80 {
-		prop := s.FightResolution(baseAgent)
+		rules := make([]proposal.Rule[decision.FightAction], 0)
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+		))
+
+		prop := *commons.NewImmutableList(rules)
 		_ = baseAgent.SendFightProposalToLeader(prop)
 	}
 }

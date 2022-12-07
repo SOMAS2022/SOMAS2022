@@ -8,15 +8,15 @@ import (
 )
 
 // Called by own InitAgent function when running team experiment, before game starts
-func (r *SocialAgent) initSocialCapital(selfID string, allAgents []string) {
+func (s *SocialAgent) initSocialCapital(selfID string, allAgents []string) {
 	// Create empty map
-	r.socialCapital = map[string][4]float64{}
-	for _, s := range allAgents {
-		r.socialCapital[s] = [4]float64{0.0, 0.0, 0.0, 0.0}
+	s.socialCapital = map[string][4]float64{}
+	for _, id := range allAgents {
+		s.socialCapital[id] = [4]float64{0.0, 0.0, 0.0, 0.0}
 	}
 
 	// Delete the agents own id from the socialCapital array
-	delete(r.socialCapital, selfID)
+	delete(s.socialCapital, selfID)
 }
 
 // Called any time a message is received, initialises or updates the socialCapital map
@@ -85,7 +85,7 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
  * and the H agents they hate the most.
  * Currently messages may be sent to recipients praising or denouncing the recipient
  */
-func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
+func (s *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	// This type will make it easier to extract from map, sort, and retrieve agent ID
 	type SocialCapInfo struct {
 		ID  string
@@ -93,8 +93,8 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	}
 	selfID := agent.ID()
 
-	sortedSCTrustHonor := make([]SocialCapInfo, 0, len(r.socialCapital))
-	for k, sc := range r.socialCapital {
+	sortedSCTrustHonor := make([]SocialCapInfo, 0, len(s.socialCapital))
+	for k, sc := range s.socialCapital {
 		if k == selfID { // Exclude self
 			continue
 		}
@@ -106,8 +106,8 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 		return (sortedSCTrustHonor[i].arr[2] + sortedSCTrustHonor[i].arr[3]) > (sortedSCTrustHonor[j].arr[2] + sortedSCTrustHonor[j].arr[3])
 	})
 
-	numAdmire := int(r.propAdmire * float64(len(sortedSCTrustHonor)))
-	numHate := int(r.propHate * float64(len(sortedSCTrustHonor)))
+	numAdmire := int(s.propAdmire * float64(len(sortedSCTrustHonor)))
+	numHate := int(s.propHate * float64(len(sortedSCTrustHonor)))
 
 	admiredAgents := make([]string, 0, numAdmire)
 	hatedAgents := make([]string, 0, numHate)
@@ -128,7 +128,7 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
 	}
 
 	for _, sci := range sortedSCTrustHonor {
-		if sci.arr[1] < r.gossipThreshold {
+		if sci.arr[1] < s.gossipThreshold {
 			continue
 		}
 		Gossip(agent, sci.ID, MessagePraise, admiredAgents)
@@ -143,9 +143,9 @@ func (r *SocialAgent) sendGossip(agent agent.BaseAgent) {
  * become 0.77, with a 10% increase
  *
  */
-func (r *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
+func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 	// Will reverse if sender's perception is negative
-	senderPerception := OverallPerception(r.socialCapital[sender])
+	senderPerception := OverallPerception(s.socialCapital[sender])
 	mtype := m.GetNum()
 	var sign float64
 	switch mtype {
@@ -156,10 +156,10 @@ func (r *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 	}
 
 	for _, about := range m.GetStringArr() {
-		sc := r.socialCapital[about]
+		sc := s.socialCapital[about]
 		sc[1] += sign * senderPerception * 0.1 * sc[1]
 		sc = boundArray(sc)
-		r.socialCapital[about] = sc
+		s.socialCapital[about] = sc
 	}
 }
 
