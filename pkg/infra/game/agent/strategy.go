@@ -52,6 +52,6 @@ type Loot interface {
 type HPPool interface {
 	DonateToHpPool(baseAgent BaseAgent) uint
 
-	HandleTradeInit(agent BaseAgent) message.TradeNegotiation
-	HandleTradeNegotiation(agent BaseAgent, msg message.TradeNegotiation) message.TradeNegotiation
+	HandleTradeInit(agent BaseAgent) (counterParyID commons.ID, offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand)
+	HandleTradeNegotiation(agent BaseAgent, msg message.TradeNegotiation) (offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand, accept bool)
 }

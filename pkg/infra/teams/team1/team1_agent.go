@@ -264,11 +264,13 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *SocialAgent) HandleTradeInit(agent agent.BaseAgent) message.TradeNegotiation {
-	return message.TradeNegotiation{}
+func (r *SocialAgent) HandleTradeInit(agent agent.BaseAgent) (counterParyID commons.ID, offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand) {
+	view := agent.View()
+	return view.CurrentLeader(), commons.Shield, 1, true, message.TradeDemand{}
 }
-func (r *SocialAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg message.TradeNegotiation) message.TradeNegotiation {
-	return message.TradeNegotiation{}
+
+func (r *SocialAgent) HandleTradeNegotiation(agent agent.BaseAgent, msg message.TradeNegotiation) (offerType commons.ItemType, offeredItemIdx uint, emptyOffer bool, demand message.TradeDemand, accept bool) {
+	return commons.Weapon, 1, true, message.TradeDemand{}, false
 }
 
 func NewSocialAgent() agent.Strategy {

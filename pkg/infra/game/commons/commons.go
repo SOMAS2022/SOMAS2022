@@ -107,6 +107,13 @@ func ImmutableSetEquality[I constraints.Ordered](a immutable.SortedMap[I, struct
 	return true
 }
 
+type ItemType uint
+
+const (
+	Shield ItemType = iota
+	Weapon
+)
+
 type ID = string
 
 type ProposalID = string

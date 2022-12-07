@@ -16,7 +16,7 @@ import (
 // 4. Target agents response if they want to accept the proposal and what they are willing to offer in return.
 // 5. Agents initiated the exchange decide whether to accept the exchange.
 
-func HandleTrade(state state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage) {
+func HandleTrade(state state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, roundLimit uint) {
 	starts := make(map[commons.ID]chan<- interface{})
 	closures := make(map[commons.ID]chan<- interface{})
 
@@ -29,11 +29,7 @@ func HandleTrade(state state.State, agents map[commons.ID]agent.Agent, channelsM
 		closure := make(chan interface{})
 		closures[id] = closure
 
-		if a.BaseAgent.ID() == state.CurrentLeader {
-			go (&a).HandleTrade(agentState, start, closure)
-		} else {
-			go (&a).HandleTrade(agentState, start, closure)
-		}
+		go (&a).HandleTrade(agentState, roundLimit, start, closure)
 	}
 	for _, startMessage := range starts {
 		startMessage <- nil

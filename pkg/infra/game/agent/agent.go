@@ -173,28 +173,49 @@ func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
 }
 
-func (a *Agent) HandleTrade(agentState state.AgentState, start <-chan interface{}, closure <-chan interface{}) {
+func (a *Agent) HandleTrade(agentState state.AgentState, roundLimit uint, start <-chan interface{}, closure <-chan interface{}) {
 	a.BaseAgent.latestState = agentState
 	for {
 		select {
 		case <-closure:
 			return
 		case <-start:
-			negotiation := a.Strategy.HandleTradeInit(*a.BaseAgent)
-			counterParty, ok := negotiation.GetCounterParty(a.id)
+			counterParty, offerType, offeredItemIdx, emptyOffer, demand := a.Strategy.HandleTradeInit(*a.BaseAgent)
+			offer, ok := message.NewTradeOffer(offerType, offeredItemIdx, emptyOffer, a.latestState.Weapons, a.latestState.Shields)
+			// check if offer is valid
 			if !ok {
-				logging.Log(logging.Error, nil, "Counterparty not found")
+				logging.Log(logging.Error, nil, "Invalid trade offer")
 			}
+			logging.Log(logging.Debug, nil, fmt.Sprintf("Sending trade negotiation from %s to %s", a.id, counterParty))
+			negotiation := message.NewTradeNegotiation(a.id, offer, demand)
 			err := a.BaseAgent.SendBlockingMessage(counterParty, negotiation)
 			logging.Log(logging.Error, nil, err.Error())
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
 			switch r := taggedMessage.Message().(type) {
 			case message.TradeNegotiation:
-				r.UpdateRoundNum()
-				if r.GetRoundNum() == 0 {
+				// decrement round number, terminate if round number reaches 0
+				if r.UpdateRoundNum() >= roundLimit {
 					return
 				}
-				a.Strategy.HandleTradeNegotiation(*a.BaseAgent, r)
+				// check if counter party exists
+				counterParty, ok := r.GetCounterParty(a.id)
+				if !ok {
+					logging.Log(logging.Error, nil, "Counterparty not found")
+				}
+				offerType, offeredItemIdx, emptyOffer, demand, accept := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, r)
+				offer, ok := message.NewTradeOffer(offerType, offeredItemIdx, emptyOffer, a.latestState.Weapons, a.latestState.Shields)
+				// check if offer is valid
+				if !ok {
+					logging.Log(logging.Error, nil, "Invalid trade offer")
+				}
+				if accept {
+					// TODO update inventory for both parties
+					return
+				}
+				r.UpdateOffer(a.id, offer)
+				r.UpdateDemand(a.id, demand)
+				err := a.BaseAgent.SendBlockingMessage(counterParty, r)
+				logging.Log(logging.Error, nil, err.Error())
 			}
 		}
 	}
