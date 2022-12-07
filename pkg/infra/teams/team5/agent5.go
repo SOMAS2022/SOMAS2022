@@ -77,11 +77,6 @@ func (t *agent5) LootAllocation(agent agent.BaseAgent) immutable.Map[commons.ID,
 	return returnType
 }
 
-func (t *agent5) LootAction() immutable.List[commons.ItemID] {
-	var returnType immutable.List[commons.ItemID]
-	return returnType
-}
-
 // HandleUpdateWeapon return the index of the weapon you want to use in AgentState.weapons
 func (t *agent5) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {
 	var returnType decision.ItemIdx
