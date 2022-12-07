@@ -15,12 +15,11 @@ import (
 )
 
 func TestLinReg(t *testing.T) {
-	// assert := assert.New(t)
 	X := [][]float64{
-		{1, 1},
-		{2, 2},
+		{1, 3},
+		{2, 4},
 	}
-	y := []float64{1, 2}
+	y := []float64{4, 6}
 
 	w := FitLinReg(X, y)
 	assert.InDelta(t, w[0], 0.5, 0.001)
