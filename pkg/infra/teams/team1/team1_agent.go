@@ -13,7 +13,7 @@ import (
 )
 
 type SocialAgent struct {
-	socialCapital map[string][4]float64 // Institutions, Networks, Trustworthiness, Honour
+	socialCapital map[string][4]float64 // agentID -> [Institutions, Networks, Trustworthiness, Honour]
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
 }
 
@@ -22,15 +22,15 @@ func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
-	}
+	// Get agentState from baseAgent
+	agentState := baseAgent.AgentState()
+
+	// Calculate best action based on current state and selfishness
+	coopTable := cooperationQ(agentState)
+
+	// TODO: Maybe make non-deterministic
+	// Return index of best action (assumes array ordering in same order as decision.FightAction
+	return decision.FightAction(argmax(coopTable[:]))
 }
 
 func (s *SocialAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
@@ -101,26 +101,14 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
-// Update social capital at end of each round
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+	// Update socialCapital at end of each round
 	itr := fightResult.Iterator()
-	for !itr.Done() {
+	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()
 
 		s.updateSocialCapital(self, fightDecisions)
 	}
-
-	/*
-		// For some reason had to split into two lines for Golang to not give error
-				tmp := fightDecisions.Choices()
-				itr2 := tmp.Iterator()
-				for !itr2.Done() {
-					key, value, _ := itr2.Next()
-					fmt.Println(key, value)
-				}
-	*/
-
-	//s.updateSelfishness()
 }
 
 func (s *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
