@@ -132,7 +132,7 @@ func HandleLootAllocation(globalState state.State, allocation *immutable.Map[com
 				agentState.AddWeapon(*state.NewItem(item, val))
 			} else if val, ok := shieldSet[item]; ok {
 				globalState.InventoryMap.Shields[item] = val
-				agentState.AddWeapon(*state.NewItem(item, val))
+				agentState.AddShield(*state.NewItem(item, val))
 			} else if val, ok := hpPotionSet[item]; ok {
 				agentState.Hp += val
 			} else if val, ok := staminaPotionSet[item]; ok {
