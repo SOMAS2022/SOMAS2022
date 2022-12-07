@@ -173,24 +173,15 @@ func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
 }
 
-func (a *Agent) HandleTrade(
-	agentState state.AgentState,
-	roundLimit uint,
-	availableWeapons *immutable.List[state.Item],
-	availableShields *immutable.List[state.Item],
-	requests *immutable.Map[commons.ID, message.TradeNegotiation],
-	next <-chan interface{},
-	closure <-chan interface{},
-	responseChannel chan<- message.TradeMessage,
-) {
+func (a *Agent) HandleTrade(agentState state.AgentState, availableWeapons *immutable.List[state.Item], availableShields *immutable.List[state.Item], requests *immutable.Map[commons.ID, message.TradeNegotiation], next <-chan interface{}, closure <-chan interface{}, responseChannel chan<- message.TradeMessage) {
 	a.BaseAgent.latestState = agentState
 	for {
 		select {
 		case <-closure:
 			return
 		case <-next:
-			message := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, availableWeapons, availableShields, requests)
-			responseChannel <- message
+			tradeMessage := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, availableWeapons, availableShields, requests)
+			responseChannel <- tradeMessage
 		}
 	}
 }

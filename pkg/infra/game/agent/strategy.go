@@ -56,6 +56,11 @@ type HPPool interface {
 }
 
 type Trade interface {
-	// given a map of trade negotiations, response to one of them or start a new trade negotiation
-	HandleTradeNegotiation(agent BaseAgent, availableWeapons *immutable.List[state.Item], availableShields *immutable.List[state.Item], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage
+	// HandleTradeNegotiation given a map of trade negotiations, respond to one of them or start a new trade negotiation
+	HandleTradeNegotiation(
+		agent BaseAgent,
+		availableWeapons *immutable.List[state.Item],
+		availableShields *immutable.List[state.Item],
+		negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation],
+	) message.TradeMessage
 }

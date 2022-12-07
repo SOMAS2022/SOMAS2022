@@ -31,13 +31,13 @@ func NewTradeNegotiation(agentID commons.ID, counterPartyID commons.ID, offer Tr
 	}
 }
 
-func (negotiation TradeNegotiation) sealedMessage() {}
+func (negotiation *TradeNegotiation) sealedMessage() {}
 
-func (negotiation TradeNegotiation) IsInvolved(agentID commons.ID) bool {
+func (negotiation *TradeNegotiation) IsInvolved(agentID commons.ID) bool {
 	return negotiation.Agent1 == agentID || negotiation.Agent2 == agentID
 }
 
-func (negotiation TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bool) {
+func (negotiation *TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bool) {
 	switch agentID {
 	case negotiation.Agent1:
 		return negotiation.Condition1.Offer, true
@@ -48,7 +48,7 @@ func (negotiation TradeNegotiation) GetOffer(agentID commons.ID) (TradeOffer, bo
 	}
 }
 
-func (negotiation TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeDemand, ok bool) {
+func (negotiation *TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeDemand, ok bool) {
 	switch agentID {
 	case negotiation.Agent1:
 		return negotiation.Condition1.Demand, true
@@ -59,7 +59,7 @@ func (negotiation TradeNegotiation) GetDemand(agentID commons.ID) (demand TradeD
 	}
 }
 
-func (negotiation TradeNegotiation) GetCounterParty(agentID commons.ID) (commons.ID, bool) {
+func (negotiation *TradeNegotiation) GetCounterParty(agentID commons.ID) (commons.ID, bool) {
 	switch agentID {
 	case negotiation.Agent1:
 		return negotiation.Agent2, true
@@ -70,6 +70,7 @@ func (negotiation TradeNegotiation) GetCounterParty(agentID commons.ID) (commons
 	}
 }
 
+// Notarize
 // A trade is valid iff:
 // 1. exactly 2 agents are involved
 // 2. both agents are valid

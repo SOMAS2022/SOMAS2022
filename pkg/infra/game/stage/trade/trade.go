@@ -12,9 +12,10 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+// HandleTrade
 // A complete trading stage contains several rounds.
 // In each round, the following steps take place in order:
-// 1. Each agent can response to one of the trading negotiations it is involved in OR propose a new trade to another agent.
+// 1. Each agent can respond to one of the trading negotiations it is involved in OR propose a new trade to another agent.
 // 2. Main thread collects trade messages from all agents, and updated the state accordingly.
 // 3. Collected message will be forwarded to corresponding target agents in the start of next round.
 func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, round uint, roundLimit uint) {
@@ -27,8 +28,8 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 
 	// extract inventory from agents
 	for agentID, agentState := range s.AgentState {
-		availableWeapons[agentID] = ImmutableListToSlice(agentState.Weapons)
-		availableShields[agentID] = ImmutableListToSlice(agentState.Shields)
+		availableWeapons[agentID] = commons.ImmutableListToSlice(agentState.Weapons)
+		availableShields[agentID] = commons.ImmutableListToSlice(agentState.Shields)
 	}
 
 	for r := uint(0); r < round; r++ {
@@ -39,8 +40,8 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 		for id, a := range agents {
 			a := a
 			agentState := s.AgentState[a.BaseAgent.ID()]
-			availWeapons := SliceToImmutableList(availableWeapons[id])
-			availShields := SliceToImmutableList(availableShields[id])
+			availWeapons := commons.SliceToImmutableList(availableWeapons[id])
+			availShields := commons.SliceToImmutableList(availableShields[id])
 			requests := FindNegotiations(id, negotiations)
 
 			start := make(chan interface{})
@@ -50,7 +51,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 			response := make(chan message.TradeMessage)
 			responses[id] = response
 
-			go (&a).HandleTrade(agentState, roundLimit, availWeapons, availShields, &requests, start, closure, response)
+			go (&a).HandleTrade(agentState, availWeapons, availShields, &requests, start, closure, response)
 		}
 		// start all agents
 		for _, startMessage := range starts {
@@ -66,7 +67,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 		for _, closeMessage := range closures {
 			closeMessage <- nil
 		}
-		// filterout outdated negotiations
+		// filter out outdated negotiations
 		for id, negotiation := range negotiations {
 			negotiation.RoundNum++
 			if negotiation.RoundNum > roundLimit {
@@ -85,8 +86,8 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 	// End of trade stage, update agent inventory
 	for agentID := range agents {
 		agentState := s.AgentState[agentID]
-		agentState.Weapons = *SliceToImmutableList(availableWeapons[agentID])
-		agentState.Shields = *SliceToImmutableList(availableShields[agentID])
+		agentState.Weapons = *commons.SliceToImmutableList(availableWeapons[agentID])
+		agentState.Shields = *commons.SliceToImmutableList(availableShields[agentID])
 		s.AgentState[agentID] = agentState
 	}
 }
@@ -161,10 +162,10 @@ func HandleTradeResponse(agentID commons.ID, msg message.TradeResponse,
 		if negotiation.Notarize(agentState) {
 			newAvailWeapons, newAvailShields = ExecuteTrade(newAvailWeapons, newAvailShields, negotiation)
 		}
-		RemoveFromeNegotiation(resp.TradeID, agentID, newNegotiations)
+		RemoveFromNegotiation(resp.TradeID, agentID, newNegotiations)
 	case message.TradeReject:
 		negotiation := negotiations[resp.TradeID]
-		RemoveFromeNegotiation(resp.TradeID, agentID, newNegotiations)
+		RemoveFromNegotiation(resp.TradeID, agentID, newNegotiations)
 		newAvailWeapons, newAvailShields = PutBackItems(newAvailWeapons, newAvailShields, negotiation)
 	case message.TradeBargain:
 		negotiation := negotiations[resp.TradeID]
@@ -189,27 +190,11 @@ func HandleTradeResponse(agentID commons.ID, msg message.TradeResponse,
 	return newNegotiations, newAvailWeapons, newAvailShields
 }
 
-func RemoveFromeNegotiation(tradeID commons.TradeID, agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) {
+func RemoveFromNegotiation(tradeID commons.TradeID, agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) {
 	negotiation := negotiations[tradeID]
 	if negotiation.IsInvolved(agentID) {
 		delete(negotiations, tradeID)
 	}
-}
-
-func ImmutableListToSlice(list immutable.List[state.Item]) []state.Item {
-	slice := make([]state.Item, list.Len())
-	for i := 0; i < list.Len(); i++ {
-		slice[i] = list.Get(i)
-	}
-	return slice
-}
-
-func SliceToImmutableList(slice []state.Item) *immutable.List[state.Item] {
-	list := immutable.NewListBuilder[state.Item]()
-	for _, item := range slice {
-		list.Append(item)
-	}
-	return list.List()
 }
 
 func AddItem(available map[commons.ID][]state.Item, agentID commons.ID, item state.Item) map[commons.ID][]state.Item {

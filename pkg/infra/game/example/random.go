@@ -241,7 +241,12 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, availableWeapons *immutable.List[state.Item], availableShields *immutable.List[state.Item], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage {
+func (r *RandomAgent) HandleTradeNegotiation(
+	_ agent.BaseAgent,
+	availableWeapons *immutable.List[state.Item],
+	availableShields *immutable.List[state.Item],
+	negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation],
+) message.TradeMessage {
 	return message.TradeRequest{}
 }
 
