@@ -3,6 +3,8 @@ package message
 import (
 	"infra/game/commons"
 	"infra/game/state"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type TradeMessage interface {
@@ -41,7 +43,7 @@ type TradeReject struct {
 type TradeOffer struct {
 	ItemType commons.ItemType
 	Item     state.Item
-	IsEmpty  bool
+	IsValid  bool
 }
 
 type TradeDemand struct {
@@ -66,3 +68,21 @@ func (t TradeAccept) sealedTradeResponse() {}
 
 func (t TradeReject) sealedTradeMessage()  {}
 func (t TradeReject) sealedTradeResponse() {}
+
+func NewTradeOffer(itemType commons.ItemType, idx uint, weapon immutable.List[state.Item], shield immutable.List[state.Item]) (offer TradeOffer, ok bool) {
+	var inventory immutable.List[state.Item]
+	if itemType == commons.Weapon {
+		inventory = weapon
+	} else if itemType == commons.Shield {
+		inventory = shield
+	}
+	if idx > uint(inventory.Len()) {
+		return TradeOffer{}, false
+	}
+	item := inventory.Get(int(idx))
+	return TradeOffer{ItemType: itemType, Item: item, IsValid: true}, true
+}
+
+func NewTradeDemand(itemType commons.ItemType, minValue uint) TradeDemand {
+	return TradeDemand{ItemType: itemType, MinValue: minValue}
+}
