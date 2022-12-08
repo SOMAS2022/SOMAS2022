@@ -53,7 +53,6 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 }
 
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-
 	qState := internal.BaseAgentToQState(baseAgent)
 
 	// Calculate best action based on current state and selfishness

@@ -186,7 +186,6 @@ func QStateToArray(state QState) [8]float64 {
 }
 
 func BaseAgentToQState(agent agent.BaseAgent) QState {
-
 	// Get agentState from baseAgent
 	agentState := agent.AgentState()
 
@@ -205,7 +204,6 @@ func BaseAgentToQState(agent agent.BaseAgent) QState {
 }
 
 func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
-
 	return QState{
 		float64(agent.Hp),
 		float64(agent.Stamina),
