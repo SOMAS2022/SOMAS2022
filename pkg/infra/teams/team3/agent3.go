@@ -7,10 +7,11 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
+	"infra/game/state"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
-	"github.com/google/uuid"
 )
 
 const PERCENTAGE = 500
@@ -45,6 +46,7 @@ func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	}
 }
 
+// Update internal parameters at the end of each lvl!?
 func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
 	a.UpdateUtility(baseAgent)
 	a.HP = int(baseAgent.AgentState().Hp)
@@ -72,43 +74,82 @@ func (a *AgentThree) UpdateUtility(baseAgent agent.BaseAgent) {
 	// sort.Sort(a.utilityScore)
 }
 
-// Create proposal for fight decisions
-func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
-	actions := make(map[commons.ID]decision.FightAction)
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, _, ok := itr.Next()
-		if !ok {
-			break
-		}
+func (a *AgentThree) LootAction() immutable.List[commons.ItemID] {
+	return *immutable.NewList[commons.ItemID]()
+}
 
-		// Check for our agent and assign what we want to do
-		if id == baseAgent.ID() {
-			actions[id] = a.CurrentAction()
-			baseAgent.Log(logging.Trace, logging.LogField{"bravery": a.bravery, "hp": a.HP, "choice": a.CurrentAction(), "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
-		} else {
-			// Send some messages to other agents
-			// send := rand.Intn(5)
-			// if send == 0 {
-			// 	m := message.FightInform()
-			// 	_ = baseAgent.SendBlockingMessage(id, m)
-			// }
-			rNum := rand.Intn(3)
-			switch rNum {
-			case 0:
-				actions[id] = decision.Attack
-			case 1:
-				actions[id] = decision.Defend
-			default:
-				actions[id] = decision.Cower
-			}
-		}
+func (a *AgentThree) FightAction(baseAgent agent.BaseAgent) decision.FightAction {
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		return decision.Cower
+	case 1:
+		return decision.Attack
+	default:
+		return decision.Defend
 	}
+}
 
-	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
-	return *prop
+// Create proposal for fight decisions
+// func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent) message.MapProposal[decision.FightAction] {
+// 	actions := make(map[commons.ID]decision.FightAction)
+// 	view := baseAgent.View()
+// 	agentState := view.AgentState()
+// 	itr := agentState.Iterator()
+// 	for !itr.Done() {
+// 		id, _, ok := itr.Next()
+// 		if !ok {
+// 			break
+// 		}
+
+// 		// Check for our agent and assign what we want to do
+// 		if id == baseAgent.ID() {
+// 			actions[id] = a.CurrentAction()
+// 			baseAgent.Log(logging.Trace, logging.LogField{"bravery": a.bravery, "hp": a.HP, "choice": a.CurrentAction(), "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
+// 		} else {
+// 			// Send some messages to other agents
+// 			// send := rand.Intn(5)
+// 			// if send == 0 {
+// 			// 	m := message.FightInform()
+// 			// 	_ = baseAgent.SendBlockingMessage(id, m)
+// 			// }
+// 			rNum := rand.Intn(3)
+// 			switch rNum {
+// 			case 0:
+// 				actions[id] = decision.Attack
+// 			case 1:
+// 				actions[id] = decision.Defend
+// 			default:
+// 				actions[id] = decision.Cower
+// 			}
+// 		}
+// 	}
+
+// 	prop := message.NewProposal(uuid.NewString(), commons.MapToImmutable(actions))
+// 	return *prop
+// }
+
+func (a *AgentThree) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
+	rules := make([]proposal.Rule[decision.FightAction], 0)
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+	))
+
+	return *commons.NewImmutableList(rules)
 }
 
 // Manifesto
@@ -141,7 +182,7 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	// Well, not everytime. Just sometimes
 	if makesProposal > 80 {
 		prop := a.FightResolution(baseAgent)
-		_ = baseAgent.SendProposalToLeader(prop)
+		_ = baseAgent.SendFightProposalToLeader(prop)
 	}
 }
 
@@ -190,12 +231,18 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision
 }
 
 // Vote on proposal
-func (a *AgentThree) HandleFightProposal(m message.FightProposalMessage, baseAgent agent.BaseAgent) decision.Intent {
-	prop := m.Proposal()
-	act, _ := prop.Get(baseAgent.ID())
+func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	agree := true
+
+	rules := m.Rules()
+	itr := rules.Iterator()
+	for !itr.Done() {
+		rule, _ := itr.Next()
+		baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
+	}
 
 	// Selfish, only agree if our decision is ok
-	if act == a.CurrentAction() {
+	if agree {
 		return decision.Positive
 	} else {
 		return decision.Negative
@@ -217,7 +264,7 @@ func (a *AgentThree) HandleUpdateShield(baseAgent agent.BaseAgent) decision.Item
 }
 
 // Leader function to grant the floor
-func (a *AgentThree) HandleFightProposalRequest(_ message.FightProposalMessage, _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (a *AgentThree) HandleFightProposalRequest(_ message.Proposal[decision.FightAction], _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -228,6 +275,68 @@ func (a *AgentThree) HandleFightProposalRequest(_ message.FightProposalMessage, 
 
 func (a *AgentThree) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
+}
+
+func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+}
+
+func (a *AgentThree) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (a *AgentThree) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Positive
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Abstain
+	}
+}
+
+func (a *AgentThree) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+func (a *AgentThree) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := ba.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	iterator := ba.Loot().Weapons().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().Shields().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().HpPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = ba.Loot().StaminaPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
+	for id, itemIDS := range lootAllocation {
+		mMapped[id] = commons.ListToImmutable(itemIDS)
+	}
+	return commons.MapToImmutable(mMapped)
+}
+
+func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		toBeAllocated := ids[rand.Intn(len(ids))]
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
 }
 
 func NewAgentThree() agent.Strategy {
