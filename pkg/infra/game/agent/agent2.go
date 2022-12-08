@@ -273,18 +273,38 @@ func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
 	// -- avg_no_conf_rate: avg fraction of an agent's leaderships terms that he is voted out
 	// These will not be calculated as private attributes for every single agent, but rather by looping through leader_timeline_array on an ad-hoc basis
 
-	// Pseudocode for how stats are calculated from raw data:
-	// var avg_survival_curr_term float
-	// var avg_survival_past_terms float
+	// Pseudocode for how stats are calculated from raw data, elsewhere in the program:
+	// In a function that runs at the end of a every level:
+	// - a.survival_rates = append(a.survival_rates, num_agents_end_level/num_agents_begin_level)
+	// - a.broadcast_rates = append(a.broadcast_rates, proposals_broadcast/proposals_total)
+	// - a.avg_survival_curr_term = avg(survival_rates)
+	// - a.avg_broadcast_rate_curr_term = avg(broadcast_rates)
+	// - a.avg_survival = (avg_survival*prev_level + num_agents_end_level/num_agents_begin_level)/level // where can get level?
+	// - a.avg_broadcast_rate = (avg_broadcast_rate*prev_level + proposals_broadcast/proposals_total)/level
+	// In election function:
+	// - a.term_end_level = level //level_temp is another priv attribute initialized to 0/1?
+	// - a.term_duration = level - term_begin_level // term_begin_level was last updated at the beginning of the term that is now ending
+	// - a.term_begin_level = level // now that it has been used, can reset to track new leadership
+	// - a.avg_term_survival = a.avg_survival_curr_term //(assert len(a.survival_rates)==term_duration )
+	// - a.avg_term_broadcast_rate = a.avg_broadcast_rate_curr_term //(assert len(a.broadcast_rates)==term_duration )
+	// - a.no_conf = // how get result of confidence poll? Do we need to calculate using if (manifesto_term!=term_duration) ?
+	// Then need to construct leader_timeline_array...
 
-	//var curr_leader_stats := priv_attribute //
-	//
 	//var past_terms_of_curr_leader := make([]term_struct, 0)
 	//for leadership_term in leader_term_timeline_array {
 	//	if leadership_term[id] == curr_leader["id"] {
 	//		past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
 	//	}
 	//}
+
+	// avg_survival_curr_term_norm := (avg_survival_curr_term-avg_survival)/avg_survival
+	// avg_survival_past_terms_norm := (avg_survival_past_terms-avg_survival)/avg_survival
+	// avg_broadcast_rate_curr_term_norm := (avg_broadcast_rate_curr_term-avg_broadcast_rate)/avg_broadcast_rate
+	// avg_broadcast_rate_past_terms_norm := (avg_broadcast_rate_past_terms-avg_broadcast_rate)/avg_broadcast_rate
+	// leadership_xp_norm := (leadership_xp-avg_leadership_xp)/avg_leadership_xp
+	// no_conf_rate_norm := (no_conf_rate-avg_no_conf_rate)/avg_no_conf_rate
+	// Hm maybe tweak vars so that all count as +ve contrib to confidence
+	// sum = w0*avg_survival_curr_term_norm + w1*avg_survival_past_terms_norm + w2*avg_broadcast_rate_curr_term_norm + w3*avg_broadcast_rate_past_terms_norm + w4*leadership_xp_norm + w5*no_conf_rate_norm
 
 	switch rand.Intn(3) {
 	case 0:
