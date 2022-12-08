@@ -142,7 +142,18 @@ func HandleTradeResponse(agentID commons.ID, msg message.TradeResponse,
 	case message.TradeBargain:
 		negotiation := info.Negotiations()[resp.TradeID]
 		if !negotiation.IsInvolved(agentID) {
-			break
+			return
+		}
+		// check if offered item is still available
+		switch resp.Offer.ItemType {
+		case commons.Weapon:
+			if !ContainsItem(info.Shields()[agentID], agentID, resp.Offer.Item) {
+				return
+			}
+		case commons.Shield:
+			if !ContainsItem(info.Shields()[agentID], agentID, resp.Offer.Item) {
+				return
+			}
 		}
 		// update ongoing negotiations
 		negotiation.UpdateDemand(agentID, resp.Demand)
@@ -166,6 +177,16 @@ func RemoveFromNegotiation(tradeID commons.TradeID, agentID commons.ID, negotiat
 	if negotiation.IsInvolved(agentID) {
 		delete(negotiations, tradeID)
 	}
+}
+
+func ContainsItem(inventory []state.Item, agentID commons.ID, item state.Item) bool {
+	for _, v := range inventory {
+		if v.Id() == item.Id() {
+			return true
+		}
+	}
+
+	return false
 }
 
 func AddItem(available map[commons.ID][]state.Item, agentID commons.ID, item state.Item) {
