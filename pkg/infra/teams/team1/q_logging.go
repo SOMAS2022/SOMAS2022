@@ -6,11 +6,14 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
+	"infra/teams/team1/internal"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 )
+
+var logPath string = "teams/team1/"
 
 func meanAbove(levelSlice []int, level int) float64 {
 
@@ -49,7 +52,7 @@ func LogDecisions(decisions map[commons.ID]decision.FightAction, gs state.State)
 	}
 
 	// If logging file doesn't exist, create it, or append to the file
-	f, err := os.OpenFile("pkg/infra/teams/team1/log.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(logPath+"log.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,7 +104,7 @@ func PostprocessLog() {
 	roundTracker := make(map[gameAgent]int)
 
 	// Open log log file
-	logFile, err := os.Open("pkg/infra/teams/team1/log.csv")
+	logFile, err := os.Open(logPath + "log.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -134,7 +137,7 @@ func PostprocessLog() {
 
 	logFile.Close()
 	// Open log log file
-	logFile, err = os.Open("pkg/infra/teams/team1/log.csv")
+	logFile, err = os.Open(logPath + "log.csv")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -142,7 +145,7 @@ func PostprocessLog() {
 	scanner = bufio.NewScanner(logFile)
 
 	// Open a new file to store post processed logs
-	postLogFile, err := os.OpenFile("pkg/infra/teams/team1/post_log.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	postLogFile, err := os.OpenFile(logPath+"post_log.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,6 +172,94 @@ func PostprocessLog() {
 	postLogFile.Close()
 
 	// Delete unprocessed log-logFile
-	os.Remove("pkg/infra/teams/team1/log.csv")
+	os.Remove(logPath + "log.csv")
 
+}
+
+func LearnStrategies() {
+	// Read from post_log.csv to get data
+
+	// Check if logging is turned on
+	if os.Getenv("QLOGGING") != "true" {
+		// Logging is not turned on so return
+		return
+	}
+
+	// Arrays to keep track of data for each action
+	// For each of 3 actions, associated table with rows of experience
+	var action_data [3][][]float64
+
+	// Array of observations
+	var coop_obs [3][]float64
+	var self_obs [3][]float64
+
+	// Open log file
+	logFile, err := os.Open(logPath + "post_log.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+
+	// Create a new scanner on logFile
+	scanner := bufio.NewScanner(logFile)
+
+	// Scan through log to find out when each agent died
+	for scanner.Scan() {
+		snapshotString := scanner.Text()
+		snapshot := strings.Split(snapshotString, ",")
+
+		decision, _ := strconv.Atoi(snapshot[3])
+		action_data[decision] = append(action_data[decision], getStateFromSnapshot(snapshot))
+
+		// TODO Should really write these arrays directly instead of writing to csv first
+		//Cooperative: Mean round
+		coop_obs[decision] = append(coop_obs[decision], internal.StringToFloat(snapshot[12]))
+		//Selfish: Agent round
+		self_obs[decision] = append(coop_obs[decision], internal.StringToFloat(snapshot[11]))
+	}
+
+	logFile.Close()
+
+	// Writing to weights.csv
+
+	// If logging file doesn't exist, create it, or append to the file
+	weightFile, err := os.OpenFile(logPath+"weights.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Train q function and write weights to csv
+	// Coop then selfish
+	for action := 0; action < 3; action++ {
+		coop_w := internal.FitLinReg(action_data[action], coop_obs[action])
+		self_w := internal.FitLinReg(action_data[action], self_obs[action])
+
+		for _, weight := range coop_w {
+			weightFile.Write([]byte(fmt.Sprintf("%f", weight)))
+		}
+
+		weightFile.Write([]byte("\n"))
+
+		for _, weight := range self_w {
+			weightFile.Write([]byte(fmt.Sprintf("%f", weight)))
+		}
+
+		weightFile.Write([]byte("\n"))
+	}
+
+	weightFile.Close()
+
+}
+
+func getStateFromSnapshot(snapshot []string) []float64 {
+	// Collect csv string experience values to a float array
+	return []float64{
+		internal.StringToFloat(snapshot[6]), // Hp
+		internal.StringToFloat(snapshot[7]), // Stamina
+		internal.StringToFloat(snapshot[8]), // TotalAttack
+		internal.StringToFloat(snapshot[9]), // TotalDefense
+		internal.StringToFloat(snapshot[3]), // CurrLevel
+		internal.StringToFloat(snapshot[5]), // MonsterHealth
+		internal.StringToFloat(snapshot[4]), // MonsterAttack
+	}
 }

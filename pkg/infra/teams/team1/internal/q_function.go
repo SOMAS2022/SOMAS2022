@@ -15,7 +15,7 @@ type QState struct {
 	Stamina       float64
 	TotalAttack   float64
 	TotalDefense  float64
-	LevelsToWin   float64
+	CurrLevel     float64
 	MonsterHealth float64
 	MonsterAttack float64
 }

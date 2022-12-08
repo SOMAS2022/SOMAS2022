@@ -12,6 +12,7 @@ import (
 	"infra/game/agent"
 	"infra/game/state"
 	"math"
+	"strconv"
 )
 
 func Argmax(array []float64) int {
@@ -179,7 +180,7 @@ func QStateToArray(state QState) [8]float64 {
 		state.Stamina,
 		state.TotalAttack,
 		state.TotalDefense,
-		state.LevelsToWin,
+		state.CurrLevel,
 		state.MonsterHealth,
 		state.MonsterAttack,
 	}
@@ -235,4 +236,9 @@ func AddSlices(a []float64, b []float64) []float64 {
 	}
 
 	return a
+}
+
+func StringToFloat(str string) float64 {
+	val1, _ := strconv.ParseFloat(str, 64)
+	return val1
 }

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/google/uuid"
 	"infra/teams/team1"
 	"os"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestFoo(t *testing.T) {
@@ -35,6 +36,9 @@ func TestTrainQ(t *testing.T) {
 
 		// Postprocess the logs from that specific game
 		team1.PostprocessLog()
+
+		// Write learned weights from data to csv
+		// team1.LearnStrategies()
 	}
 
 }
