@@ -47,12 +47,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, round uint, r
 			response := make(chan message.TradeMessage)
 			responses[id] = response
 
-			go (&a).HandleTrade(
-				s.AgentState[a.BaseAgent.ID()],
-				commons.SliceToImmutableList(info.Weapons()[id]),
-				commons.SliceToImmutableList(info.Shields()[id]),
-				FindNegotiations(id, info.Negotiations()),
-				start, closure, response)
+			go (&a).HandleTrade(s.AgentState[a.BaseAgent.ID()], *info, start, closure, response)
 		}
 		// start all agents
 		for _, startMessage := range starts {
@@ -233,12 +228,12 @@ func ExecuteTrade(inventory *internal.Inventory, negotiation message.TradeNegoti
 
 // FindNegotiations
 // Find all negotiations that the given agent is involved in
-func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) *immutable.Map[commons.TradeID, message.TradeNegotiation] {
+func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) immutable.Map[commons.TradeID, message.TradeNegotiation] {
 	b := immutable.NewMapBuilder[commons.TradeID, message.TradeNegotiation](nil)
 	for tradeID, negotiation := range negotiations {
 		if negotiation.IsInvolved(agentID) {
 			b.Set(tradeID, negotiation)
 		}
 	}
-	return b.Map()
+	return *b.Map()
 }

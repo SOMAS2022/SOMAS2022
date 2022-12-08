@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
+	"infra/game/stage/trade/internal"
 	"infra/game/state"
 	"infra/teams/team1/internal"
 	"math/rand"
@@ -264,7 +265,7 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, availableWeapons *immutable.List[state.Item], availableShields *immutable.List[state.Item], negotiations *immutable.Map[commons.TradeID, message.TradeNegotiation]) message.TradeMessage {
+func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ internal.Info) message.TradeMessage {
 	return message.TradeRequest{}
 }
 

@@ -107,11 +107,11 @@ func ImmutableSetEquality[I constraints.Ordered](a immutable.SortedMap[I, struct
 	return true
 }
 
-type ItemType uint
+type ItemType bool
 
 const (
-	Shield ItemType = iota
-	Weapon
+	Shield ItemType = true
+	Weapon ItemType = false
 )
 
 type ID = string

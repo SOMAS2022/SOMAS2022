@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/stage/trade/internal"
 	"infra/game/state"
 	"infra/logging"
 
@@ -175,9 +176,7 @@ func (a *Agent) addLoot(pool state.LootPool) {
 
 func (a *Agent) HandleTrade(
 	agentState state.AgentState,
-	availableWeapons *immutable.List[state.Item],
-	availableShields *immutable.List[state.Item],
-	requests *immutable.Map[commons.ID, message.TradeNegotiation],
+	info internal.Info,
 	next <-chan interface{},
 	closure <-chan interface{},
 	responseChannel chan<- message.TradeMessage,
@@ -188,7 +187,7 @@ func (a *Agent) HandleTrade(
 		case <-closure:
 			return
 		case <-next:
-			tradeMessage := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, availableWeapons, availableShields, requests)
+			tradeMessage := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, info)
 			responseChannel <- tradeMessage
 		}
 	}
