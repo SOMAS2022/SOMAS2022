@@ -175,7 +175,7 @@ func checkHpPool() {
 
 func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
 	makeItems := func() *commons.ImmutableList[state.Item] {
-		nItems := rand.Intn(numAgents)
+		nItems := rand.Intn(numAgents) / 10
 		items := make([]state.Item, nItems)
 		for i := 0; i < nItems; i++ {
 			items[i] = *state.NewItem(uuid.NewString(), currentLevel*uint(rand.Intn(3)+1))
