@@ -12,14 +12,21 @@ package team1
 import (
 	"infra/game/agent"
 	"infra/game/commons"
+	"infra/game/state"
+	"os"
 	"sort"
+	"strconv"
 
+	"github.com/dominikbraun/graph"
+	"github.com/dominikbraun/graph/draw"
 	"github.com/yourbasic/graph/build"
 )
 
 var currentAgent *SocialAgent
 var sortedAgentIDs []string
 var agents map[commons.ID]agent.Agent
+
+var gridWidth int
 
 func createConnection(w int, _ int64) bool {
 	if w < len(sortedAgentIDs) {
@@ -38,11 +45,10 @@ func connectAgents(agentMap map[commons.ID]agent.Agent) {
 	// Create a grid graph of all the agents. Most agents would
 	// be connected to 4 other agents
 	gridHeight := 10
-	gridWidth := numAgents / gridHeight
+	gridWidth = numAgents / gridHeight
 	if numAgents%gridHeight != 0 {
 		gridWidth++
 	}
-	gridWidth += 20
 	grid := build.Grid(gridHeight, gridWidth)
 	// Create a complete bipartite graph. Meaning that 10 agents
 	// are each connected to another 40 agents
@@ -64,4 +70,59 @@ func connectAgents(agentMap map[commons.ID]agent.Agent) {
 		currentAgent.graphID = i
 		combined.Visit(i, createConnection)
 	}
+
+	os.RemoveAll("./pkg/infra/teams/team1/graph/pics/")
+	os.MkdirAll("./pkg/infra/teams/team1/graph/pics/", os.ModePerm)
+}
+
+func printGraph(agentMap map[commons.ID]agent.Agent, state *state.State) {
+	numInitialAgents := len(sortedAgentIDs)
+	aliveAgents := map[int]bool{}
+	for i := 0; i < numInitialAgents; i++ {
+		aliveAgents[i] = false
+	}
+
+	g := graph.New(graph.IntHash, graph.Directed())
+	g.AddVertex(-1, graph.VertexAttribute("pos", "0,-1!"), graph.VertexAttribute("shape", "box"), graph.VertexAttribute("label", "Level: "+strconv.Itoa(int(state.CurrentLevel))))
+	// add alive agents to graph
+	for k, a := range agentMap {
+		sa := a.Strategy.(*SocialAgent)
+		pos := strconv.Itoa(sa.graphID/gridWidth) + "," + strconv.Itoa(sa.graphID%gridWidth) + "!"
+		if k == state.CurrentLeader {
+			g.AddVertex(sa.graphID, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "yellow"), graph.VertexAttribute("pos", pos))
+		} else {
+			g.AddVertex(sa.graphID, graph.VertexAttribute("pos", pos))
+		}
+		aliveAgents[sa.graphID] = true
+	}
+	// and dead agents
+	for n, alive := range aliveAgents {
+		if !alive {
+			pos := strconv.Itoa(n/gridWidth) + "," + strconv.Itoa(n%gridWidth) + "!"
+			g.AddVertex(n, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "red"), graph.VertexAttribute("pos", pos))
+		}
+	}
+
+	// add edges
+	networkThreshold := 0.5
+	for _, a := range agentMap {
+		sa := a.Strategy.(*SocialAgent)
+		for peer, sc := range sa.socialCapital {
+			if sc[1] >= networkThreshold {
+				if p, ok := agentMap[peer]; ok { // if alive
+					peerSa := p.Strategy.(*SocialAgent)
+					g.AddEdge(sa.graphID, peerSa.graphID)
+				}
+			}
+		}
+	}
+
+	filename := "./pkg/infra/teams/team1/graph/pics/graph" + strconv.Itoa(int(state.CurrentLevel)) + ".gv"
+
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err.Error())
+	}
+	draw.DOT(g, file)
+	file.Close()
 }
