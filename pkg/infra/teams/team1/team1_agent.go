@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
+	"infra/teams/team1/utils"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -56,11 +57,11 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	agentState := baseAgent.AgentState()
 
 	// Calculate best action based on current state and selfishness
-	coopTable := cooperationQ(agentState)
+	coopTable := utils.CooperationQ(agentState)
 
 	// TODO: Maybe make non-deterministic
 	// Return index of best action (assumes array ordering in same order as decision.FightAction
-	return decision.FightAction(argmax(coopTable[:]))
+	return decision.FightAction(utils.Argmax(coopTable[:]))
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {

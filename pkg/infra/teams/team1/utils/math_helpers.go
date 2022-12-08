@@ -1,8 +1,8 @@
-package team1
+package utils
 
 import "math"
 
-func argmax(array []float64) int {
+func Argmax(array []float64) int {
 	maxIndex := 0
 
 	for index, element := range array {
@@ -14,7 +14,7 @@ func argmax(array []float64) int {
 	return maxIndex
 }
 
-func argmin(array []float64) int {
+func Argmin(array []float64) int {
 	minIndex := 0
 
 	for index, element := range array {
@@ -26,7 +26,7 @@ func argmin(array []float64) int {
 	return minIndex
 }
 
-func max(array []float64) float64 {
+func Max(array []float64) float64 {
 	if len(array) == 0 {
 		return 0
 	}
@@ -42,7 +42,7 @@ func max(array []float64) float64 {
 	return max
 }
 
-func min(array []float64) float64 {
+func Min(array []float64) float64 {
 	if len(array) == 0 {
 		return 0
 	}
@@ -59,7 +59,7 @@ func min(array []float64) float64 {
 }
 
 // Ensures a float is between -1 and 1
-func boundFloat(inputNumber float64) float64 {
+func BoundFloat(inputNumber float64) float64 {
 	if inputNumber > 1.0 {
 		return 1.0
 	} else if inputNumber < -1.0 {
@@ -70,17 +70,17 @@ func boundFloat(inputNumber float64) float64 {
 }
 
 // Ensures array values are between -1 and 1
-func boundArray(inputArray [4]float64) [4]float64 {
+func BoundArray(inputArray [4]float64) [4]float64 {
 	return [4]float64{
-		boundFloat(inputArray[0]),
-		boundFloat(inputArray[1]),
-		boundFloat(inputArray[2]),
-		boundFloat(inputArray[3]),
+		BoundFloat(inputArray[0]),
+		BoundFloat(inputArray[1]),
+		BoundFloat(inputArray[2]),
+		BoundFloat(inputArray[3]),
 	}
 }
 
 // Add two arrays
-func addArrays(A [4]float64, B [4]float64) [4]float64 {
+func AddArrays(A [4]float64, B [4]float64) [4]float64 {
 	return [4]float64{
 		A[0] + B[0],
 		A[1] + B[1],
@@ -89,7 +89,7 @@ func addArrays(A [4]float64, B [4]float64) [4]float64 {
 	}
 }
 
-func decayNumber(inputNumber float64) float64 {
+func DecayNumber(inputNumber float64) float64 {
 	if inputNumber < 0 {
 		return 0.70 * inputNumber
 	} else {
@@ -97,16 +97,16 @@ func decayNumber(inputNumber float64) float64 {
 	}
 }
 
-func decayArray(inputArray [4]float64) [4]float64 {
+func DecayArray(inputArray [4]float64) [4]float64 {
 	return [4]float64{
-		decayNumber(inputArray[0]),
-		decayNumber(inputArray[1]),
-		decayNumber(inputArray[2]),
-		decayNumber(inputArray[3]),
+		DecayNumber(inputArray[0]),
+		DecayNumber(inputArray[1]),
+		DecayNumber(inputArray[2]),
+		DecayNumber(inputArray[3]),
 	}
 }
 
-func softmax(inputArray [3]float64) [3]float64 {
+func Softmax(inputArray [3]float64) [3]float64 {
 	expValues := [3]float64{
 		math.Exp(inputArray[0]),
 		math.Exp(inputArray[1]),
@@ -127,7 +127,7 @@ func softmax(inputArray [3]float64) [3]float64 {
 	return expValues
 }
 
-func makeIncremental(inputArray [3]float64) [3]float64 {
+func MakeIncremental(inputArray [3]float64) [3]float64 {
 	var outputArray [3]float64
 
 	outputArray[0] = inputArray[0]
@@ -140,9 +140,9 @@ func makeIncremental(inputArray [3]float64) [3]float64 {
 }
 
 // Make lowest value -1, highest 1 and everything else interpolation between
-func normalise(array [3]float64) [3]float64 {
-	max := max(array[:])
-	min := min(array[:])
+func Normalise(array [3]float64) [3]float64 {
+	max := Max(array[:])
+	min := Min(array[:])
 
 	var normArray [3]float64
 
