@@ -19,7 +19,7 @@ import (
 // 1. Each agent can respond to one of the trading negotiations it is involved in OR propose a new trade to another agent.
 // 2. Main thread collects trade messages from all agents, and updated the state accordingly.
 // 3. Collected message will be forwarded to corresponding target agents in the start of next round.
-func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage, round uint, roundLimit uint) {
+func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, round uint, roundLimit uint) {
 	// track offers made by each agent, no repeated offers are allowed
 	// i.e. only one offer of a specific item from an agent to another agent is allowed to exist simultaneously
 	availableWeapons := make(map[commons.ID][]state.Item)
@@ -50,8 +50,8 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 			go (&a).HandleTrade(
 				s.AgentState[a.BaseAgent.ID()],
 				commons.SliceToImmutableList(info.Weapons()[id]),
-				commons.SliceToImmutableList(info.Shields()[id]), 
-				&FindNegotiations(id, info.Negotiations()),
+				commons.SliceToImmutableList(info.Shields()[id]),
+				FindNegotiations(id, info.Negotiations()),
 				start, closure, response)
 		}
 		// start all agents
@@ -233,12 +233,12 @@ func ExecuteTrade(inventory *internal.Inventory, negotiation message.TradeNegoti
 
 // FindNegotiations
 // Find all negotiations that the given agent is involved in
-func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) immutable.Map[commons.TradeID, message.TradeNegotiation] {
+func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) *immutable.Map[commons.TradeID, message.TradeNegotiation] {
 	b := immutable.NewMapBuilder[commons.TradeID, message.TradeNegotiation](nil)
 	for tradeID, negotiation := range negotiations {
 		if negotiation.IsInvolved(agentID) {
 			b.Set(tradeID, negotiation)
 		}
 	}
-	return *b.Map()
+	return b.Map()
 }
