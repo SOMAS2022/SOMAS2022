@@ -19,7 +19,7 @@ func CalculateDelta() float64 {
 // X, the monster’s resilience
 func CalculateMonsterHealth(nAgent uint, stamina uint, nLevel uint, currentLevel uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * (2.0*float64(currentLevel)/float64(nLevel) + 0.5)))
+	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * 10 * (float64(currentLevel)/float64(nLevel) + (1 / 10))))
 }
 
 // Y, monster’s damage rating
