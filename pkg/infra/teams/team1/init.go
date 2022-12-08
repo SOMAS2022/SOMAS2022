@@ -48,9 +48,9 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 	for k := range agentMap {
 		allAgents = append(allAgents, k)
 	}
-	for k, a := range agentMap {
+	for _, a := range agentMap {
 		socialStrategy := a.Strategy.(*SocialAgent)
-		socialStrategy.initSocialCapital(k, allAgents)
+		socialStrategy.initSocialCapital(allAgents)
 	}
 	connectAgents(agentMap)
 

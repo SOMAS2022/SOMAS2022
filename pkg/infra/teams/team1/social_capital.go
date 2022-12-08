@@ -9,15 +9,12 @@ import (
 )
 
 // Called by own InitAgent function when running team experiment, before game starts
-func (s *SocialAgent) initSocialCapital(selfID string, allAgents []string) {
+func (s *SocialAgent) initSocialCapital(allAgents []string) {
 	// Create empty map
 	s.socialCapital = map[string][4]float64{}
 	for _, id := range allAgents {
 		s.socialCapital[id] = [4]float64{0.0, 0.0, 0.0, 0.0}
 	}
-
-	// Delete the agents own id from the socialCapital array
-	delete(s.socialCapital, selfID)
 }
 
 // Called any time a message is received, initialises or updates the socialCapital map
@@ -37,9 +34,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 
 			s.socialCapital[agentID] = [4]float64{0.0, 0.0, 0.0, 0.0}
 		}
-
-		// Delete the agents own id from the socialCapital array
-		delete(s.socialCapital, self.ID())
 	}
 
 	// Extract agentState from base agent

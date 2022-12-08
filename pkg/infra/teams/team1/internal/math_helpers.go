@@ -214,3 +214,25 @@ func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
 		float64(view.MonsterAttack()),
 	}
 }
+
+func ConstMulSlice(constant float64, input []float64) []float64 {
+	multipliedSlice := make([]float64, len(input))
+
+	for idx, element := range input {
+		multipliedSlice[idx] = constant * element
+	}
+
+	return multipliedSlice
+}
+
+func AddSlices(a []float64, b []float64) []float64 {
+	if len(a) != len(b) {
+		panic("Slices are not of same size")
+	}
+
+	for idx, element := range b {
+		a[idx] += element
+	}
+
+	return a
+}
