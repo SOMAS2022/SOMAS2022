@@ -114,8 +114,7 @@ func startGameLoop() {
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)
 
-		channelsMap = addCommsChannels()
-		trade.HandleTrade(*globalState, agentMap, channelsMap, 5, 3)
+		trade.HandleTrade(*globalState, agentMap, 5, 3)
 
 		channelsMap = addCommsChannels()
 

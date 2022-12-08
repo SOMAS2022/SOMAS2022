@@ -40,11 +40,6 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 
 		for id, a := range agents {
 			a := a
-			agentState := s.AgentState[a.BaseAgent.ID()]
-			availWeapons := commons.SliceToImmutableList(info.Weapons()[id])
-			availShields := commons.SliceToImmutableList(info.Shields()[id])
-			requests := FindNegotiations(id, info.Negotiations())
-
 			start := make(chan interface{})
 			starts[id] = start
 			closure := make(chan interface{})
@@ -52,7 +47,12 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, channelsMap m
 			response := make(chan message.TradeMessage)
 			responses[id] = response
 
-			go (&a).HandleTrade(agentState, availWeapons, availShields, &requests, start, closure, response)
+			go (&a).HandleTrade(
+				s.AgentState[a.BaseAgent.ID()],
+				commons.SliceToImmutableList(info.Weapons()[id]),
+				commons.SliceToImmutableList(info.Shields()[id]), 
+				&FindNegotiations(id, info.Negotiations()),
+				start, closure, response)
 		}
 		// start all agents
 		for _, startMessage := range starts {
