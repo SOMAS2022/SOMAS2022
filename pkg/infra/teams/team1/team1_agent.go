@@ -1,6 +1,7 @@
 package team1
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -9,8 +10,8 @@ import (
 	"infra/game/state"
 	"infra/teams/team1/internal"
 	"math/rand"
-
-	"github.com/benbjohnson/immutable"
+	"os"
+	"strconv"
 )
 
 type SocialAgent struct {
@@ -55,12 +56,28 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
 	qState := internal.BaseAgentToQState(baseAgent)
 
+	// If we are training a Q function, maybe do an action other than the best action
+	exploration := os.Getenv("EXPLORATION")
+	if exploration != "" {
+		epsilon, _ := strconv.ParseFloat(exploration, 64)
+
+		if epsilon < rand.Float64() {
+			// Do random action
+			return decision.FightAction(rand.Intn(3))
+		}
+	}
+
 	// Calculate best action based on current state and selfishness
 	coopTable := internal.CooperationQ(qState)
+	selfTable := internal.SelfishQ(qState)
 
-	// TODO: Maybe make non-deterministic
+	multipliedCoop := internal.ConstMulSlice(1.0-s.selfishness, coopTable[:])
+	multipliedSelf := internal.ConstMulSlice(s.selfishness, selfTable[:])
+
+	totalQSlice := internal.AddSlices(multipliedCoop, multipliedSelf)
+
 	// Return index of best action (assumes array ordering in same order as decision.FightAction
-	return decision.FightAction(internal.Argmax(coopTable[:]))
+	return decision.FightAction(internal.Argmax(totalQSlice))
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
@@ -131,7 +148,6 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 }
 
 func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	//return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 	return 0
 }
 
