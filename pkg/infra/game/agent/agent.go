@@ -172,3 +172,22 @@ func (a *Agent) handleLootRoundMessage(
 func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
 }
+
+func (a *Agent) HandleTrade(
+	agentState state.AgentState,
+	info message.TradeInfo,
+	next <-chan interface{},
+	closure <-chan interface{},
+	responseChannel chan<- message.TradeMessage,
+) {
+	a.BaseAgent.latestState = agentState
+	for {
+		select {
+		case <-closure:
+			return
+		case <-next:
+			tradeMessage := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, info)
+			responseChannel <- tradeMessage
+		}
+	}
+}

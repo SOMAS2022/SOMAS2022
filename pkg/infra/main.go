@@ -13,6 +13,7 @@ import (
 	"infra/game/stage/fight"
 	"infra/game/stage/hppool"
 	"infra/game/stage/loot"
+	"infra/game/stage/trade"
 	"infra/game/stages"
 	"infra/logging"
 	"infra/teams/team1"
@@ -112,6 +113,8 @@ func startGameLoop() {
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)
+
+		trade.HandleTrade(*globalState, agentMap, 5, 3)
 
 		channelsMap = addCommsChannels()
 

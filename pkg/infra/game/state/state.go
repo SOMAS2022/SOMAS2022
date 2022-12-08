@@ -40,6 +40,23 @@ type AgentState struct {
 	Defector    Defector
 }
 
+func (s *AgentState) HasItem(itemType commons.ItemType, itemID commons.ItemID) bool {
+	var inventory immutable.List[Item]
+	if itemType == commons.Weapon {
+		inventory = s.Weapons
+	} else if itemType == commons.Shield {
+		inventory = s.Shields
+	}
+	itr := inventory.Iterator()
+	for !itr.Done() {
+		_, item := itr.Next()
+		if item.Id() == itemID {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *AgentState) BonusAttack(state State) uint {
 	if val, ok := state.InventoryMap.Weapons[s.WeaponInUse]; ok {
 		return val

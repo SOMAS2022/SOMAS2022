@@ -107,8 +107,33 @@ func ImmutableSetEquality[I constraints.Ordered](a immutable.SortedMap[I, struct
 	return true
 }
 
+type ItemType bool
+
+const (
+	Shield ItemType = true
+	Weapon ItemType = false
+)
+
 type ID = string
 
 type ProposalID = string
 
 type ItemID = string
+
+type TradeID = string
+
+func ImmutableListToSlice[V comparable](list immutable.List[V]) []V {
+	slice := make([]V, list.Len())
+	for i := 0; i < list.Len(); i++ {
+		slice[i] = list.Get(i)
+	}
+	return slice
+}
+
+func SliceToImmutableList[V comparable](slice []V) *immutable.List[V] {
+	list := immutable.NewListBuilder[V]()
+	for _, item := range slice {
+		list.Append(item)
+	}
+	return list.List()
+}

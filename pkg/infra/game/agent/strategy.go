@@ -14,6 +14,7 @@ type Strategy interface {
 	Election
 	Loot
 	HPPool
+	Trade
 	// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.weapons
 	HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx
 	// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
@@ -51,4 +52,9 @@ type Loot interface {
 
 type HPPool interface {
 	DonateToHpPool(baseAgent BaseAgent) uint
+}
+
+type Trade interface {
+	// HandleTradeNegotiation given a map of trade negotiations, respond to one of them or start a new trade negotiation
+	HandleTradeNegotiation(agent BaseAgent, Info message.TradeInfo) message.TradeMessage
 }

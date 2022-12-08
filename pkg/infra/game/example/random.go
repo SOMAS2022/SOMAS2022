@@ -1,14 +1,13 @@
 package example
 
 import (
-	"infra/game/message/proposal"
-	"infra/game/state"
-	"math/rand"
-
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
+	"infra/game/state"
+	"math/rand"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -239,6 +238,10 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	// shields := b.AgentState().Shields
 	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
+}
+
+func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+	return message.TradeRequest{}
 }
 
 func NewRandomAgent() agent.Strategy {

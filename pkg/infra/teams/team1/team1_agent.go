@@ -264,6 +264,10 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
+func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+	return message.TradeRequest{}
+}
+
 func NewSocialAgent() agent.Strategy {
 	return &SocialAgent{
 		selfishness:     rand.Float64(),
