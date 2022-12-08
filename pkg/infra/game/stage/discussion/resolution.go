@@ -8,6 +8,7 @@ import (
 	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/game/tally"
+	"infra/teams/team1"
 	"math/rand"
 
 	"golang.org/x/exp/maps"
@@ -45,6 +46,8 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, rules, commons.MapToImmutable(fightActions))
 		handleDefectionFight(gs, agentMap, resolution, fightActions, prop)
 	}
+	// TODO: Remove (but only after asking Edvard Holen)
+	team1.LogDecisions(fightActions, gs)
 
 	return decision.FightResult{
 		Choices:         fightActions,
