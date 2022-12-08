@@ -145,16 +145,7 @@ func HandleTradeResponse(agentID commons.ID, msg message.TradeResponse,
 			return
 		}
 		// check if offered item is still available
-		switch resp.Offer.ItemType {
-		case commons.Weapon:
-			if !ContainsItem(info.Shields()[agentID], agentID, resp.Offer.Item) {
-				return
-			}
-		case commons.Shield:
-			if !ContainsItem(info.Shields()[agentID], agentID, resp.Offer.Item) {
-				return
-			}
-		}
+		ItemIsAvailable(info.Inventory, agentID, resp.Offer)
 		// update ongoing negotiations
 		negotiation.UpdateDemand(agentID, resp.Demand)
 		oldOffer, replaceOffer := negotiation.UpdateOffer(agentID, resp.Offer)
@@ -179,13 +170,22 @@ func RemoveFromNegotiation(tradeID commons.TradeID, agentID commons.ID, negotiat
 	}
 }
 
+func ItemIsAvailable(inventory internal.Inventory, agentID commons.ID, offer message.TradeOffer) bool {
+	switch offer.ItemType {
+	case commons.Weapon:
+		return ContainsItem(inventory.Shields()[agentID], agentID, offer.Item)
+	case commons.Shield:
+		return ContainsItem(inventory.Shields()[agentID], agentID, offer.Item)
+	}
+	return false
+}
+
 func ContainsItem(inventory []state.Item, agentID commons.ID, item state.Item) bool {
 	for _, v := range inventory {
 		if v.Id() == item.Id() {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -223,8 +223,6 @@ func PutBackItems(inventory *internal.Inventory, negotiation message.TradeNegoti
 			AddItem(inventory.Shields(), negotiation.Agent2, negotiation.Condition2.Offer.Item)
 		}
 	}
-
-	return
 }
 
 // ExecuteTrade
@@ -250,8 +248,6 @@ func ExecuteTrade(inventory *internal.Inventory, negotiation message.TradeNegoti
 			AddItem(inventory.Shields(), negotiation.Agent1, condition2.Offer.Item)
 		}
 	}
-
-	return
 }
 
 // FindNegotiations
