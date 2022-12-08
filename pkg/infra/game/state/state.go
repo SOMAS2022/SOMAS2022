@@ -57,26 +57,34 @@ func (s *AgentState) HasItem(itemType commons.ItemType, itemID commons.ItemID) b
 	return false
 }
 
-func (s *AgentState) BonusAttack(state State) uint {
-	if val, ok := state.InventoryMap.Weapons[s.WeaponInUse]; ok {
-		return val
+func (s *AgentState) BonusAttack() uint {
+	iterator := s.Weapons.Iterator()
+	for !iterator.Done() {
+		_, value := iterator.Next()
+		if value.Id() == s.WeaponInUse {
+			return value.Value()
+		}
 	}
 	return 0
 }
 
-func (s *AgentState) BonusDefense(state State) uint {
-	if val, ok := state.InventoryMap.Shields[s.ShieldInUse]; ok {
-		return val
+func (s *AgentState) BonusDefense() uint {
+	iterator := s.Shields.Iterator()
+	for !iterator.Done() {
+		_, value := iterator.Next()
+		if value.Id() == s.WeaponInUse {
+			return value.Value()
+		}
 	}
 	return 0
 }
 
-func (s *AgentState) TotalAttack(state State) uint {
-	return s.Attack + s.BonusAttack(state)
+func (s *AgentState) TotalAttack() uint {
+	return s.Attack + s.BonusAttack()
 }
 
-func (s *AgentState) TotalDefense(state State) uint {
-	return s.Defense + s.BonusDefense(state)
+func (s *AgentState) TotalDefense() uint {
+	return s.Defense + s.BonusDefense()
 }
 
 func (s *AgentState) AddWeapon(weapon Item) {

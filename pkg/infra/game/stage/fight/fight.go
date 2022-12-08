@@ -112,10 +112,10 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 		const scalingFactor = 0.01
 		switch d {
 		case decision.Attack:
-			if agentState.Stamina > agentState.BonusAttack(state) {
+			if agentState.Stamina > agentState.BonusAttack() {
 				fightResult.AttackingAgents = append(fightResult.AttackingAgents, agentID)
-				attackSum += agentState.TotalAttack(state)
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack(state))
+				attackSum += agentState.TotalAttack()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack())
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
@@ -123,10 +123,10 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 				agentState.Stamina += 1
 			}
 		case decision.Defend:
-			if agentState.Stamina > agentState.BonusDefense(state) {
+			if agentState.Stamina > agentState.BonusDefense() {
 				fightResult.ShieldingAgents = append(fightResult.ShieldingAgents, agentID)
-				shieldSum += agentState.TotalDefense(state)
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense(state))
+				shieldSum += agentState.TotalDefense()
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense())
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
