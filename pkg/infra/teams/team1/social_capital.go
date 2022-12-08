@@ -132,8 +132,8 @@ func (s *SocialAgent) sendGossip(agent agent.BaseAgent) {
 		if sci.arr[1] < s.gossipThreshold {
 			continue
 		}
-		Gossip(agent, sci.ID, MessagePraise, admiredAgents)
-		Gossip(agent, sci.ID, MessageDenounce, hatedAgents)
+		internal.Gossip(agent, sci.ID, internal.MessagePraise, admiredAgents)
+		internal.Gossip(agent, sci.ID, internal.MessageDenounce, hatedAgents)
 	}
 }
 
@@ -150,9 +150,9 @@ func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 	mtype := m.GetNum()
 	var sign float64
 	switch mtype {
-	case MessagePraise:
+	case internal.MessagePraise:
 		sign = 1.0
-	case MessageDenounce:
+	case internal.MessageDenounce:
 		sign = -1.0
 	}
 
