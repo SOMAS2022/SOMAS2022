@@ -97,8 +97,8 @@ func (s *State) ToView() View {
 			Stamina:      StaminaRange(staminaRange),
 			Attack:       state.Attack,
 			Defense:      state.Defense,
-			BonusAttack:  state.BonusAttack(*s),
-			BonusDefense: state.BonusDefense(*s),
+			BonusAttack:  state.BonusAttack(),
+			BonusDefense: state.BonusDefense(),
 			Defector:     state.Defector,
 		})
 	}

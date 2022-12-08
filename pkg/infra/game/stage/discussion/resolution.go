@@ -36,7 +36,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 			}
 		} else {
 			for id, a := range agentMap {
-				expectedFightAction := predicate(gs, a.AgentState())
+				expectedFightAction := predicate(a.AgentState())
 				if gs.Defection {
 					fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
 					if expectedFightAction != fightActions[id] {
@@ -124,14 +124,14 @@ func ResolveLootDiscussion(
 func demandList(
 	gs state.State,
 	agentMap map[commons.ID]agent.Agent,
-	predicate func(state.State, state.AgentState) map[decision.LootAction]struct{},
+	predicate func(state.AgentState) map[decision.LootAction]struct{},
 ) ([]commons.ID, []commons.ID, []commons.ID, []commons.ID) {
 	getsWeapon := make([]commons.ID, 0)
 	getsShield := make([]commons.ID, 0)
 	getsHealthPotion := make([]commons.ID, 0)
 	getsStaminaPotion := make([]commons.ID, 0)
 	for id := range agentMap {
-		actions := predicate(gs, gs.AgentState[id])
+		actions := predicate(gs.AgentState[id])
 		if _, ok := actions[decision.Weapon]; ok {
 			getsWeapon = append(getsWeapon, id)
 		}
