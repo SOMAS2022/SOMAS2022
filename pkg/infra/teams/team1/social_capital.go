@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/teams/team1/internal"
 	"sort"
 )
 
@@ -46,15 +47,15 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 	agentState := view.AgentState()
 
 	// Calculate how cooperative agents own action was
-	cooperativeQ := cooperationQ(self.AgentState())
-	cooperationScale := normalise(cooperativeQ)
+	cooperativeQ := internal.CooperationQ(self.AgentState())
+	cooperationScale := internal.Normalise(cooperativeQ)
 	selfAction, _ := choices.Get(self.ID())
 	selfCooperation := cooperationScale[int(selfAction)]
 
 	// Update socialCapital values
 	for agentID := range s.socialCapital {
 		// Decay existing socialCapital values
-		s.socialCapital[agentID] = decayArray(s.socialCapital[agentID])
+		s.socialCapital[agentID] = internal.DecayArray(s.socialCapital[agentID])
 
 		// If agent did an action, update socialCapital based on action
 		action, exists := choices.Get(agentID)
@@ -63,10 +64,10 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			otherAgentState, _ := agentState.Get(agentID)
 
 			// Calculate how cooperative each action is in other agents current state
-			cooperativeQ := hiddenCooperationQ(otherAgentState)
+			cooperativeQ := internal.HiddenCooperationQ(otherAgentState)
 
 			// Put actions on linear scale from -1 (least cooperative) to 1 (most cooperative)
-			cooperationScale := normalise(cooperativeQ)
+			cooperationScale := internal.Normalise(cooperativeQ)
 
 			// Calculate update of trustworthiness based on how cooperative action was
 			deltaTrust := 0.1 * cooperationScale[int(action)]
@@ -75,7 +76,7 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			deltaHonour := 0.1 * (cooperationScale[int(action)] - selfCooperation)
 
 			// Update the socialCapital array based on calculated delta for trustworthiness and honour
-			s.socialCapital[agentID] = boundArray(addArrays(s.socialCapital[agentID], [4]float64{0.0, 0.0, deltaTrust, deltaHonour}))
+			s.socialCapital[agentID] = internal.BoundArray(internal.AddArrays(s.socialCapital[agentID], [4]float64{0.0, 0.0, deltaTrust, deltaHonour}))
 		}
 	}
 }
@@ -131,8 +132,8 @@ func (s *SocialAgent) sendGossip(agent agent.BaseAgent) {
 		if sci.arr[1] < s.gossipThreshold {
 			continue
 		}
-		Gossip(agent, sci.ID, MessagePraise, admiredAgents)
-		Gossip(agent, sci.ID, MessageDenounce, hatedAgents)
+		internal.Gossip(agent, sci.ID, internal.MessagePraise, admiredAgents)
+		internal.Gossip(agent, sci.ID, internal.MessageDenounce, hatedAgents)
 	}
 }
 
@@ -149,16 +150,16 @@ func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 	mtype := m.GetNum()
 	var sign float64
 	switch mtype {
-	case MessagePraise:
+	case internal.MessagePraise:
 		sign = 1.0
-	case MessageDenounce:
+	case internal.MessageDenounce:
 		sign = -1.0
 	}
 
 	for _, about := range m.GetStringArr() {
 		sc := s.socialCapital[about]
 		sc[1] += sign * senderPerception * 0.1 * sc[1]
-		sc = boundArray(sc)
+		sc = internal.BoundArray(sc)
 		s.socialCapital[about] = sc
 	}
 }

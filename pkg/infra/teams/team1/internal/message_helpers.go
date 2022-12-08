@@ -7,7 +7,7 @@
 * without the express permission of Team 1, SOMAS2022
 *******************************************************/
 
-package team1
+package internal
 
 import (
 	"infra/game/agent"
