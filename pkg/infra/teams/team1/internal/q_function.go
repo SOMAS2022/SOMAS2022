@@ -67,14 +67,14 @@ func getQStateOther(state state.HiddenAgentState) [8]float64 {
 // Output state -> reward (given strategy)
 func QFunction(qstate [8]float64, coop bool) [3]float64 {
 	var reward [3]float64
-	var strat [3]ActionStrategy
+	var strategy [3]ActionStrategy
 	if coop {
-		strat = CoopStrategies
+		strategy = CoopStrategies
 	} else {
-		strat = SelfishStrategies
+		strategy = SelfishStrategies
 	}
 	for i := 0; i < 3; i++ {
-		reward[i] = computeReward(strat[i].LinRegWeights, qstate)
+		reward[i] = computeReward(strategy[i].LinRegWeights, qstate)
 	}
 	return reward
 }
