@@ -47,7 +47,7 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 	agentState := view.AgentState()
 
 	// Calculate how cooperative agents own action was
-	cooperativeQ := internal.CooperationQ(self.AgentState())
+	cooperativeQ := internal.CooperationQ(internal.BaseAgentToQState(self))
 	cooperationScale := internal.Normalise(cooperativeQ)
 	selfAction, _ := choices.Get(self.ID())
 	selfCooperation := cooperationScale[int(selfAction)]
@@ -64,7 +64,7 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			otherAgentState, _ := agentState.Get(agentID)
 
 			// Calculate how cooperative each action is in other agents current state
-			cooperativeQ := internal.HiddenCooperationQ(otherAgentState)
+			cooperativeQ := internal.CooperationQ(internal.HiddenAgentToQState(otherAgentState, view))
 
 			// Put actions on linear scale from -1 (least cooperative) to 1 (most cooperative)
 			cooperationScale := internal.Normalise(cooperativeQ)

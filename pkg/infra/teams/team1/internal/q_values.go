@@ -8,26 +8,13 @@
 *******************************************************/
 package internal
 
-import (
-	"infra/game/state"
-)
-
-// Hidden: Estimate reward of other player for action they took
-func HiddenCooperationQ(state state.HiddenAgentState) [3]float64 {
-	return QFunction(getQStateOther(state), true)
-}
-
-func HiddenSelfishQ(state state.HiddenAgentState) [3]float64 {
-	return QFunction(getQStateOther(state), false)
-}
-
 // Estimate reward for agent actions
-func CooperationQ(state state.AgentState) [3]float64 {
-	reward := QFunction(getQState(state), true)
+func CooperationQ(state QState) [3]float64 {
+	reward := QFunction(state, true)
 	// fmt.Println(reward)
 	return reward
 }
 
-func SelfishQ(state state.AgentState) [3]float64 {
-	return QFunction(getQState(state), false)
+func SelfishQ(state QState) [3]float64 {
+	return QFunction(state, false)
 }

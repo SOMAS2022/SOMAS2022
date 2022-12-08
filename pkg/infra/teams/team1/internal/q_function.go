@@ -11,13 +11,13 @@ package internal
 import "infra/game/state"
 
 type QState struct {
-	Hp            uint
-	Stamina       uint
-	TotalAttack   uint
-	TotalDefense  uint
-	LevelsToWin   uint
-	MonsterHealth uint
-	MonsterAttack uint
+	Hp            float64
+	Stamina       float64
+	TotalAttack   float64
+	TotalDefense  float64
+	LevelsToWin   float64
+	MonsterHealth float64
+	MonsterAttack float64
 }
 
 type ActionStrategy struct {
@@ -51,8 +51,8 @@ func computeReward(weights [8]float64, array [8]float64) float64 {
 func getQState(state state.AgentState) [8]float64 {
 	// TODO currently using dummy variables - need world state as well
 	return [8]float64{
-		float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense),
-		1, 2, 3, 4,
+		1, float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense),
+		1, 2, 3,
 	}
 }
 
@@ -65,7 +65,7 @@ func getQStateOther(state state.HiddenAgentState) [8]float64 {
 }
 
 // Output state -> reward (given strategy)
-func QFunction(qstate [8]float64, coop bool) [3]float64 {
+func QFunction(qstate QState, coop bool) [3]float64 {
 	var reward [3]float64
 	var strategy [3]ActionStrategy
 	if coop {
@@ -74,7 +74,7 @@ func QFunction(qstate [8]float64, coop bool) [3]float64 {
 		strategy = SelfishStrategies
 	}
 	for i := 0; i < 3; i++ {
-		reward[i] = computeReward(strategy[i].LinRegWeights, qstate)
+		reward[i] = computeReward(strategy[i].LinRegWeights, QStateToArray(qstate))
 	}
 	return reward
 }
