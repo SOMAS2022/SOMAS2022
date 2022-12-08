@@ -12,22 +12,22 @@ import (
 	"infra/game/state"
 )
 
+// Hidden: Estimate reward of other player for action they took
 func HiddenCooperationQ(state state.HiddenAgentState) [3]float64 {
-	// TODO: Implement with q-function
-	return [3]float64{0.0, 0.0, 0.0}
+	return QFunction(getQStateOther(state), true)
 }
 
 func HiddenSelfishQ(state state.HiddenAgentState) [3]float64 {
-	// TODO: Implement with q-function
-	return [3]float64{0.0, 0.0, 0.0}
+	return QFunction(getQStateOther(state), false)
 }
 
+// Estimate reward for agent actions
 func CooperationQ(state state.AgentState) [3]float64 {
-	// TODO: Implement with q-function
-	return [3]float64{0.0, 0.0, 0.0}
+	reward := QFunction(getQState(state), true)
+	// fmt.Println(reward)
+	return reward
 }
 
 func SelfishQ(state state.AgentState) [3]float64 {
-	// TODO: Implement with q-function
-	return [3]float64{0.0, 0.0, 0.0}
+	return QFunction(getQState(state), false)
 }
