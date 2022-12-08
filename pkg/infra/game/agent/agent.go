@@ -6,7 +6,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/stage/trade/internal"
 	"infra/game/state"
 	"infra/logging"
 
@@ -176,7 +175,7 @@ func (a *Agent) addLoot(pool state.LootPool) {
 
 func (a *Agent) HandleTrade(
 	agentState state.AgentState,
-	info internal.Info,
+	info message.TradeInfo,
 	next <-chan interface{},
 	closure <-chan interface{},
 	responseChannel chan<- message.TradeMessage,

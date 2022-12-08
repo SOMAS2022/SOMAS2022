@@ -5,7 +5,6 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
-	"infra/game/stage/trade/internal"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -57,5 +56,5 @@ type HPPool interface {
 
 type Trade interface {
 	// HandleTradeNegotiation given a map of trade negotiations, respond to one of them or start a new trade negotiation
-	HandleTradeNegotiation(agent BaseAgent, Info internal.Info) message.TradeMessage
+	HandleTradeNegotiation(agent BaseAgent, Info message.TradeInfo) message.TradeMessage
 }

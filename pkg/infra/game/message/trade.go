@@ -56,6 +56,12 @@ type TradeCondition struct {
 	Demand TradeDemand
 }
 
+type TradeInfo struct {
+	Negotiations map[commons.TradeID]TradeNegotiation
+	Weapons      immutable.List[state.Item]
+	Shields      immutable.List[state.Item]
+}
+
 func (t TradeAbstain) sealedTradeMessage() {}
 
 func (t TradeRequest) sealedTradeMessage() {}

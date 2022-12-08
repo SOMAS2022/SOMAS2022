@@ -9,8 +9,6 @@ import (
 	"infra/game/state"
 	"infra/logging"
 	"time"
-
-	"github.com/benbjohnson/immutable"
 )
 
 // HandleTrade
@@ -47,7 +45,7 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, round uint, r
 			response := make(chan message.TradeMessage)
 			responses[id] = response
 
-			go (&a).HandleTrade(s.AgentState[a.BaseAgent.ID()], *info, start, closure, response)
+			go (&a).HandleTrade(s.AgentState[a.BaseAgent.ID()], NewTradeInfo(id, info), start, closure, response)
 		}
 		// start all agents
 		for _, startMessage := range starts {
@@ -90,6 +88,15 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, round uint, r
 		s.AgentState[agentID] = agentState
 	}
 }
+
+func NewTradeInfo(agentID commons.ID, info *internal.Info) message.TradeInfo {
+	return message.TradeInfo{
+		Negotiations: FindNegotiations(agentID, info.Negotiations()),
+		Weapons:      commons.ListToImmutableList(info.Inventory.Weapons()[agentID]),
+		Shields:      commons.ListToImmutableList(info.Inventory.Shields()[agentID]),
+	}
+}
+
 func HandleTradeMessage(agentID commons.ID, negotiation message.TradeMessage,
 	info *internal.Info,
 	agentState map[commons.ID]state.AgentState,
@@ -228,12 +235,12 @@ func ExecuteTrade(inventory *internal.Inventory, negotiation message.TradeNegoti
 
 // FindNegotiations
 // Find all negotiations that the given agent is involved in
-func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) immutable.Map[commons.TradeID, message.TradeNegotiation] {
-	b := immutable.NewMapBuilder[commons.TradeID, message.TradeNegotiation](nil)
+func FindNegotiations(agentID commons.ID, negotiations map[commons.TradeID]message.TradeNegotiation) map[commons.TradeID]message.TradeNegotiation {
+	result := make(map[commons.TradeID]message.TradeNegotiation)
 	for tradeID, negotiation := range negotiations {
 		if negotiation.IsInvolved(agentID) {
-			b.Set(tradeID, negotiation)
+			result[tradeID] = negotiation
 		}
 	}
-	return *b.Map()
+	return result
 }

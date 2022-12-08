@@ -6,7 +6,6 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
-	"infra/game/stage/trade/internal"
 	"infra/game/state"
 	"math/rand"
 
@@ -241,7 +240,7 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ internal.Info) message.TradeMessage {
+func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
 
