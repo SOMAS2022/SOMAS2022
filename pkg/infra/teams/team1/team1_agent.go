@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/message/proposal"
 	"infra/game/state"
 	"math/rand"
 
@@ -14,7 +13,26 @@ import (
 
 type SocialAgent struct {
 	socialCapital map[string][4]float64 // agentID -> [Institutions, Networks, Trustworthiness, Honour]
-	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
+
+	// manifesto states
+	// TODO
+	sumSocialCapital map[string]float64
+	// TODO
+	agentHarshnessScore map[string]float64
+	// TODO
+	agentsSurvivalLikelihood map[string]float64
+	// TODO
+	survivalLikelihood float64
+	// TODO
+	standardDeviationAgentSurvival float64
+	// TODO
+	meanSurvivalLikelihood float64
+	// TODO
+	prevLeaderSurvivalEffect float64
+	// TODO
+	leaderRating float64
+
+	selfishness float64 // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
 }
 
 func (s *SocialAgent) LootAction() immutable.List[commons.ItemID] {
@@ -62,24 +80,24 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
-	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := ba.View()
-	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := ba.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
-	for id, itemIDS := range lootAllocation {
-		mMapped[id] = commons.ListToImmutable(itemIDS)
-	}
-	return commons.MapToImmutable(mMapped)
-}
+// func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
+// 	lootAllocation := make(map[commons.ID][]commons.ItemID)
+// 	view := ba.View()
+// 	ids := commons.ImmutableMapKeys(view.AgentState())
+// 	iterator := ba.Loot().Weapons().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().Shields().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().HpPotions().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().StaminaPotions().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	mMapped := make(map[commons.ID]immutable.List[commons.ItemID])
+// 	for id, itemIDS := range lootAllocation {
+// 		mMapped[id] = commons.ListToImmutable(itemIDS)
+// 	}
+// 	return commons.MapToImmutable(mMapped)
+// }
 
 func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
@@ -111,43 +129,43 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 	}
 }
 
-func (s *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
-	rules := make([]proposal.Rule[decision.FightAction], 0)
+// func (s *SocialAgent) FightResolution(_ agent.BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
+// 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-	))
+// 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+// 		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+// 	))
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-	))
+// 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+// 		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+// 	))
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-	))
+// 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+// 		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+// 	))
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-	))
+// 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+// 		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+// 	))
 
-	return *commons.NewImmutableList(rules)
-}
+// 	return *commons.NewImmutableList(rules)
+// }
 
-func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, true, 10, 50)
-	return manifesto
-}
+// func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+// 	manifesto := decision.NewManifesto(false, true, 10, 50)
+// 	return manifesto
+// }
 
-func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Abstain
-	case 1:
-		return decision.Negative
-	default:
-		return decision.Positive
-	}
-}
+// func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+// 	switch rand.Intn(3) {
+// 	case 0:
+// 		return decision.Abstain
+// 	case 1:
+// 		return decision.Negative
+// 	default:
+// 		return decision.Positive
+// 	}
+// }
 
 func (s *SocialAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
@@ -163,42 +181,42 @@ func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.
 	return nil
 }
 
-func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
-	view := b.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
-	i := 0
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
-		}
-	}
+// func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+// 	// Extract ID of alive agents
+// 	view := b.View()
+// 	agentState := view.AgentState()
+// 	aliveAgentIDs := make([]string, agentState.Len())
+// 	i := 0
+// 	itr := agentState.Iterator()
+// 	for !itr.Done() {
+// 		id, a, ok := itr.Next()
+// 		if ok && a.Hp > 0 {
+// 			aliveAgentIDs[i] = id
+// 			i++
+// 		}
+// 	}
 
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := rand.Intn(numAliveAgents)
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
-	}
+// 	// Randomly fill the ballot
+// 	var ballot decision.Ballot
+// 	numAliveAgents := len(aliveAgentIDs)
+// 	numCandidate := rand.Intn(numAliveAgents)
+// 	for i := 0; i < numCandidate; i++ {
+// 		randomIdx := rand.Intn(numAliveAgents)
+// 		randomCandidate := aliveAgentIDs[uint(randomIdx)]
+// 		ballot = append(ballot, randomCandidate)
+// 	}
 
-	return ballot
-}
+// 	return ballot
+// }
 
-func (s *SocialAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
-	if intent == 0 {
-		return decision.Positive
-	} else {
-		return decision.Negative
-	}
-}
+// func (s *SocialAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+// 	intent := rand.Intn(2)
+// 	if intent == 0 {
+// 		return decision.Positive
+// 	} else {
+// 		return decision.Negative
+// 	}
+// }
 
 func (s *SocialAgent) HandleFightProposalRequest(
 	_ message.Proposal[decision.FightAction],

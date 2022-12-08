@@ -1,0 +1,33 @@
+CreateManifesto(baseAgent BaseAgent) *decision.Manifesto
+HandleConfidencePoll(baseAgent BaseAgent) decision.Intent
+HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
+LootAllocation(agent BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]]
+
+
+eta(Agent, Proposal)
+social_capital(Agent, Proposal)
+N(proposal)
+
+CreateManifesto {
+
+    best_p = Pmax(eta(this, p) + gamma*social_capital(this, p))
+
+    if l(this, best_p) > threshold
+        return best_p
+
+    pl = most_likely_p()
+
+    if eta(this, pl) > threshold2
+        return do nothing
+
+    p = p such that eta(this, p) = threshold2 + theta
+
+    n = N(p)
+
+    if n > theshold3 * number of agents left
+        do nothing
+
+    else
+        return p
+
+}
