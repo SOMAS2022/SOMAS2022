@@ -32,13 +32,13 @@ func TestTrainQ(t *testing.T) {
 		os.Setenv("GAMEID", id.String())
 
 		// Run one game
-		main()
+		// main()
 
 		// Postprocess the logs from that specific game
-		team1.PostprocessLog()
+		// team1.PostprocessLog()
 
 		// Write learned weights from data to csv
-		// team1.LearnStrategies()
+		team1.LearnStrategies()
 	}
 
 }
