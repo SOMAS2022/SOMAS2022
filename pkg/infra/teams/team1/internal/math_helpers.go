@@ -216,7 +216,6 @@ func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
 }
 
 func ConstMulSlice(constant float64, input []float64) []float64 {
-
 	multipliedSlice := make([]float64, len(input))
 
 	for idx, element := range input {

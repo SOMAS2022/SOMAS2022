@@ -9,7 +9,7 @@ import (
 )
 
 // Called by own InitAgent function when running team experiment, before game starts
-func (s *SocialAgent) initSocialCapital(selfID string, allAgents []string) {
+func (s *SocialAgent) initSocialCapital(allAgents []string) {
 	// Create empty map
 	s.socialCapital = map[string][4]float64{}
 	for _, id := range allAgents {
@@ -34,7 +34,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 
 			s.socialCapital[agentID] = [4]float64{0.0, 0.0, 0.0, 0.0}
 		}
-
 	}
 
 	// Extract agentState from base agent

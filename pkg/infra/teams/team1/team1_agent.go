@@ -1,7 +1,6 @@
 package team1
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -12,6 +11,8 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+
+	"github.com/benbjohnson/immutable"
 )
 
 type SocialAgent struct {
