@@ -16,7 +16,7 @@ import (
 type SocialAgent struct {
 	socialCapital map[string][4]float64 // agentID -> [Institutions, Networks, Trustworthiness, Honour]
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
-	// Will gosip to all agents who's network value is above this
+	// Will gossip to all agents whose network value is above this
 	gossipThreshold float64
 	// Proportion of agents to talk badly about
 	propHate float64
