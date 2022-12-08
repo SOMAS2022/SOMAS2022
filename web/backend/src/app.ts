@@ -4,9 +4,8 @@ import mongoose from "mongoose";
 import { exec } from "child_process";
 import { GameLog, Run, TeamNames, TeamScore } from "../../common/types";
 import { getGITCommitHash  } from "./common/utils";
-import SimEntryModel from "./db/schema/Run";
-import fs from "fs";
 import RunModel from "./db/schema/Run";
+import fs from "fs";
 
 const app = express();
 const PORT = 9000;
@@ -100,7 +99,7 @@ app.post("/sendToQueue", (req, res) => {
 });
 
 app.get("/fetchRuns", (_, res) => {
-    SimEntryModel
+    RunModel
         .find()
         .limit(20)
         .sort({ "Meta.TimeSubmitted": -1 })

@@ -53,7 +53,7 @@ export default function ResultsOverview({ run }: ResultsOverviewProps) {
     });
 
     const HPPool = run.Logs.Levels.map(level => {
-        return level.HPPoolStage.OldHPPool;
+        return level.HPPoolStage.NewHPPool;
     });
     const MonsterResilience = run.Logs.Levels.map(level => {
         return level.LevelStats.MonsterAttack;
@@ -87,7 +87,7 @@ export default function ResultsOverview({ run }: ResultsOverviewProps) {
     });
     return (
         <Box>
-            <AgentDeathGraph agents={agentsAlivePerLevel} threshold={run.Config.PassThreshold*run.Logs.Levels[0].LevelStats.NumberOfAgents}/>
+            <AgentDeathGraph agents={agentsAlivePerLevel} threshold={run.Config.PassThreshold * run.Logs.Levels[0].LevelStats.NumberOfAgents} />
             <AgentDeathRoundGraph agents={agentsAlivePerRound} threshold={run.Config.PassThreshold * run.Logs.Levels[0].LevelStats.NumberOfAgents} />
             <AverageAgentHPGraph points={AverageHP}/>
             <AverageAgentATGraph points={AverageAT}/>

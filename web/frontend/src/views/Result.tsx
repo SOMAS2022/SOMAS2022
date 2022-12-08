@@ -54,7 +54,8 @@ export default function Result ({run}: ResultProps) {
                 <Tabs value={tabValue} onChange={handleChange} aria-label="basic tabs example">
                     <Tab label="Overview" {...a11yProps(0)} />
                     <Tab label="Game" {...a11yProps(1)} />
-                    {/* <Tab label="Agents" {...a11yProps(2)} /> */}
+                    <Tab label="Agents" {...a11yProps(2)} />
+                    <Tab label="Logs" {...a11yProps(3)} />
                 </Tabs>
             </Box>
             <TabPanel value={tabValue} index={0}>
@@ -65,6 +66,9 @@ export default function Result ({run}: ResultProps) {
             </TabPanel>
             <TabPanel value={tabValue} index={2}>
                 {/* <Agents run={run}/> */}
+            </TabPanel>
+            <TabPanel value={tabValue} index={3}>
+                <div><pre>{JSON.stringify(run, null, 2)}</pre></div>
             </TabPanel>
         </Box>
     );

@@ -26,7 +26,6 @@ export const options = {
             ticks: {
                 stepSize: 1
             },
-            // title: "hello",
         }
     },
     plugins: {

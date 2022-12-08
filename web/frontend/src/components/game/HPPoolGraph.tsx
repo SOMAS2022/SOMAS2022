@@ -40,7 +40,7 @@ const data = {
     labels: labels,
     datasets: [
         {
-            label: "HP Pool",
+            label: "HP Pool at end of level",
             data: [0],
             borderColor: "rgb(255, 99, 132)",
             backgroundColor: "rgba(255, 99, 132, 0.5)",
