@@ -151,7 +151,9 @@ func FindBordaCountWinner(scores map[commons.ID]float64) (commons.ID, float64) {
 		randIdx := rand.Intn(len(winners))
 		winner = winners[uint(randIdx)]
 	} else {
-		winner = winners[0]
+		if len(winners) > 0 {
+			winner = winners[0]
+		}
 	}
 
 	return winner, maxScore
