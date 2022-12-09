@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/game/tally"
@@ -16,12 +17,13 @@ import (
 
 func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
-	prop := tally.GetMax().Rules()
+	prop := tally.GetMax()
+	rules := prop.Rules()
 	if manifesto.FightDecisionPower() && currentLeader.Strategy != nil {
-		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, prop)
-		handleDefectionFight(gs, agentMap, resolution, fightActions)
+		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, rules)
+		handleDefectionFight(gs, agentMap, resolution, fightActions, prop)
 	} else {
-		predicate := proposal.ToSinglePredicate(prop)
+		predicate := proposal.ToSinglePredicate(rules)
 		if predicate == nil {
 			for id, a := range agentMap {
 				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
@@ -30,7 +32,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 			for id, a := range agentMap {
 				expectedFightAction := predicate(a.AgentState())
 				if gs.Defection {
-					fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
+					fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction, prop)
 					if expectedFightAction != fightActions[id] {
 						agentState := gs.AgentState[id]
 						agentState.Defector.SetFight(true)
@@ -53,11 +55,11 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	}
 }
 
-func handleDefectionFight(gs state.State, agentMap map[commons.ID]agent.Agent, resolution immutable.Map[commons.ID, decision.FightAction], fightActions map[commons.ID]decision.FightAction) {
+func handleDefectionFight(gs state.State, agentMap map[commons.ID]agent.Agent, resolution immutable.Map[commons.ID, decision.FightAction], fightActions map[commons.ID]decision.FightAction, prop message.Proposal[decision.FightAction]) {
 	for id, a := range agentMap {
 		value, ok := resolution.Get(id)
 		if ok {
-			actualAction := a.FightAction(*a.BaseAgent, value)
+			actualAction := a.FightAction(*a.BaseAgent, value, prop)
 			if actualAction != value {
 				agentState := gs.AgentState[id]
 				agentState.Defector.SetFight(true)
@@ -78,12 +80,14 @@ func ResolveLootDiscussion(
 	manifesto decision.Manifesto,
 	tally *tally.Tally[decision.LootAction],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	prop := tally.GetMax()
 	if manifesto.LootDecisionPower() && leader.Strategy != nil {
-		leaderAllocation := leader.Strategy.LootAllocation(*leader.BaseAgent)
+		leaderAllocation := leader.Strategy.LootAllocation(*leader.BaseAgent, prop)
 
 		iterator := leaderAllocation.Iterator()
 		actualAllocation := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-		handleDefectionLoot(gs, agentMap, iterator, actualAllocation)
+
+		handleDefectionLoot(gs, agentMap, iterator, actualAllocation, prop)
 
 		defectedAllocation := commons.MapToImmutable(actualAllocation)
 		iterator = defectedAllocation.Iterator()
@@ -105,7 +109,7 @@ func ResolveLootDiscussion(
 
 		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
 	} else {
-		predicate := proposal.ToMultiPredicate(tally.GetMax().Rules())
+		predicate := proposal.ToMultiPredicate(prop.Rules())
 		if predicate == nil {
 			// either leader died or no proposal was made
 			return handleNilLootAllocation(agentMap)
@@ -122,7 +126,7 @@ func ResolveLootDiscussion(
 		for id, itemIDS := range m {
 			alloc := commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
 			if gs.Defection {
-				agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc)
+				agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc, prop)
 				addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
 				if !commons.ImmutableSetEquality(alloc, agentLoot) {
 					defector := gs.AgentState[id].Defector
@@ -136,11 +140,17 @@ func ResolveLootDiscussion(
 	}
 }
 
-func handleDefectionLoot(gs state.State, agentMap map[commons.ID]agent.Agent, iterator *immutable.MapIterator[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]], actualAllocation map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}]) {
+func handleDefectionLoot(
+	gs state.State,
+	agentMap map[commons.ID]agent.Agent,
+	iterator *immutable.MapIterator[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+	actualAllocation map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}],
+	prop message.Proposal[decision.LootAction],
+) {
 	for !iterator.Done() {
 		agentID, allocation, _ := iterator.Next()
 		a := agentMap[agentID]
-		newAllocation := a.LootAction(*a.BaseAgent, allocation)
+		newAllocation := a.LootAction(*a.BaseAgent, allocation, prop)
 		if !commons.ImmutableSetEquality(newAllocation, allocation) {
 			defector := gs.AgentState[agentID].Defector
 			defector.SetLoot(true)

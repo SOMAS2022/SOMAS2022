@@ -51,7 +51,7 @@ func (s *SocialAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.
 	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
 }
 
-func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
@@ -82,7 +82,7 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	return decision.FightAction(internal.Argmax(totalQSlice))
 }
 
-func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
 	return s.FightActionNoProposal(baseAgent)
 }
 
@@ -115,7 +115,7 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (s *SocialAgent) LootAllocation(ba agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -281,7 +281,7 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+func (s *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
 
