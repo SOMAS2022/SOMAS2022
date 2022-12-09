@@ -16,7 +16,6 @@ import (
 	"infra/game/stage/trade"
 	"infra/game/stages"
 	"infra/logging"
-	"infra/teams/team1"
 	"math"
 	"time"
 
@@ -25,7 +24,7 @@ import (
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
-	"TEAM1":  team1.NewSocialAgent,
+	// "TEAM1":  team1.NewSocialAgent,
 }
 
 func main() {
@@ -36,7 +35,7 @@ func main() {
 	id := flag.String("i", time.String(), "Provide an ID for a given run")
 	flag.Parse()
 
-	logging.InitLogger(*useJSONFormatter, *debug, *id)
+	logging.InitLogger(*useJSONFormatter, *debug, *id, globalState)
 	initGame()
 	startGameLoop()
 }
@@ -175,7 +174,7 @@ func startGameLoop() {
 
 		channelsMap = addCommsChannels()
 
-		levelLog.HPPoolStage = logging.HPPoolStage{Occured: true, OldHPPool: globalState.HpPool}
+		levelLog.HPPoolStage = logging.HPPoolStage{Occurred: true, OldHPPool: globalState.HpPool}
 		hppool.UpdateHpPool(agentMap, globalState)
 		levelLog.HPPoolStage.NewHPPool = globalState.HpPool
 		levelLog.HPPoolStage.DonatedThisRound = levelLog.HPPoolStage.NewHPPool - levelLog.HPPoolStage.OldHPPool
@@ -188,7 +187,7 @@ func startGameLoop() {
 
 		immutableFightRounds := commons.NewImmutableList(fightResultSlice)
 		votesResult := commons.MapToImmutable(votes)
-		stages.UpdateInternalStates(agentMap, globalState, immutableFightRounds, &votesResult)
+		levelLog.AgentLogs = updateInternalStates(immutableFightRounds, &votesResult)
 
 		logging.LogToFile(logging.Info, nil, "", levelLog)
 	}

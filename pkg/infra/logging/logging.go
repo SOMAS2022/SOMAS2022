@@ -2,12 +2,14 @@ package logging
 
 import (
 	"fmt"
+	"infra/game/state"
 	"os"
 
 	"github.com/sirupsen/logrus"
 )
 
 var log = logrus.New()
+var gameState *state.State
 
 type LogField = logrus.Fields
 
@@ -21,7 +23,7 @@ const (
 	Error
 )
 
-func InitLogger(useJSONFormatter bool, debug bool, id string) {
+func InitLogger(useJSONFormatter bool, debug bool, id string, state *state.State) {
 	if useJSONFormatter {
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
@@ -30,6 +32,7 @@ func InitLogger(useJSONFormatter bool, debug bool, id string) {
 
 	log.SetOutput(os.Stdout)
 	runID = id
+	gameState = state
 
 	if debug {
 		log.SetLevel(logrus.TraceLevel)

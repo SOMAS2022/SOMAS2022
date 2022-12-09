@@ -2,6 +2,7 @@ package logging
 
 import (
 	"encoding/json"
+	"fmt"
 	"infra/game/commons"
 	"os"
 )
@@ -72,6 +73,13 @@ type LevelStages struct {
 	FightStage    FightStage
 	LootStage     LootStage
 	HPPoolStage   HPPoolStage
+	AgentLogs     map[commons.ID]AgentLog
+}
+
+type AgentLog struct {
+	Name       string
+	ID         commons.ID
+	Properties map[string]float32
 }
 
 type LevelStats struct {
@@ -136,6 +144,28 @@ type HPPoolStage struct {
 	NewHPPool        uint
 }
 
+func AgentLogToFile(fields LogField, msg string) {
+	agentLog := AgentLog{}
+	for k, v := range fields {
+		if k == "agentName" {
+			if name, ok := v.(string); ok {
+				agentLog.Name = name
+			}
+		} else if k == "agentID" {
+			if id, ok := v.(string); ok {
+				agentLog.ID = id
+			}
+		} else {
+			if num, ok := v.(float32); ok {
+				agentLog.Properties[k] = float32(num)
+			}
+		}
+	}
+	fmt.Println(gameState.CurrentLeader)
+	fmt.Println(fileLog.Levels)
+	fileLog.Levels[gameState.CurrentLevel-1].AgentLogs[agentLog.ID] = agentLog
+}
+
 func LogToFile(lvl Level, fields LogField, msg string, level LevelStages) {
 	switch lvl {
 	case Error:
@@ -148,7 +178,6 @@ func LogToFile(lvl Level, fields LogField, msg string, level LevelStages) {
 		return
 	case Info:
 		fileLog.Levels = append(fileLog.Levels, level)
-		// fmt.Print(level)
 		return
 	}
 }

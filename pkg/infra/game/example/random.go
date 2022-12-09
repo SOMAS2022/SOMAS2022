@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
+	"infra/logging"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -124,7 +125,15 @@ func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 }
 
-func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+	r.bravery += rand.Intn(10)
+	log <- logging.AgentLog{
+		Name: a.Name(),
+		ID:   a.ID(),
+		Properties: map[string]float32{
+			"bravery": float32(r.bravery),
+		},
+	}
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -245,5 +254,5 @@ func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeI
 }
 
 func NewRandomAgent() agent.Strategy {
-	return &RandomAgent{bravery: 0}
+	return &RandomAgent{bravery: rand.Intn(5)}
 }

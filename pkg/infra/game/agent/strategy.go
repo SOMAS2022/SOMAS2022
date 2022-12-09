@@ -5,6 +5,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
+	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -20,7 +21,7 @@ type Strategy interface {
 	// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
 	HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx
 
-	UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint])
+	UpdateInternalState(baseAgent BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog)
 }
 
 type Election interface {

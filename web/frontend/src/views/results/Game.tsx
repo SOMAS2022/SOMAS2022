@@ -14,7 +14,7 @@ interface ResultsOverviewProps {
     run: Run
 }
 
-export default function ResultsOverview({ run }: ResultsOverviewProps) {
+export default function Game({ run }: ResultsOverviewProps) {
     const agentsAlivePerLevel: Array<number> = [];
     for (let i = 0; i < run.Logs.Levels.length; i++) {
         if (!run.Logs.Levels[i].FightStage.Occurred) {

@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
+	"infra/logging"
 	"infra/teams/team1/internal"
 	"math/rand"
 	"os"
@@ -152,8 +153,8 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
-func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
-	// Update socialCapital at end of each round
+// Update social capital at end of each round
+func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()

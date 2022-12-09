@@ -75,6 +75,18 @@ export interface LevelStages {
     FightStage: FightStage
     LootStage: LootStage
     HPPoolStage: HPPoolStage
+    AgentLogs: Record<string, AgentLog>
+}
+
+export interface AgentLog {
+    Name: string,
+    ID: string,
+    Properties: Record<string, number>
+}
+
+export interface PropertyLog {
+    PropertyName: string
+    PropertyValues: Record<string, number>
 }
 
 export interface LevelStats {

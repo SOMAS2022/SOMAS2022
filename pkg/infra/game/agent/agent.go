@@ -23,10 +23,10 @@ func (a *Agent) HandleDonateToHpPool(agentState state.AgentState) uint {
 	return a.Strategy.DonateToHpPool(*a.BaseAgent)
 }
 
-func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResults *commons.ImmutableList[decision.ImmutableFightResult], voteResults *immutable.Map[decision.Intent, uint]) {
+func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResults *commons.ImmutableList[decision.ImmutableFightResult], voteResults *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
 	a.BaseAgent.latestState = agentState
 
-	a.Strategy.UpdateInternalState(*a.BaseAgent, fightResults, voteResults)
+	a.Strategy.UpdateInternalState(*a.BaseAgent, fightResults, voteResults, logChan)
 }
 
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState) decision.ItemIdx {
