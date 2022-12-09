@@ -157,7 +157,7 @@ func AgentLogToFile(fields LogField, msg string) {
 			}
 		} else {
 			if num, ok := v.(float32); ok {
-				agentLog.Properties[k] = float32(num)
+				agentLog.Properties[k] = num
 			}
 		}
 	}
