@@ -114,7 +114,7 @@ app.get("/fetchRuns", (_, res) => {
 
 app.listen(PORT, async () => {
     console.log(`[server]: Server is running at https://localhost:${PORT}`);
-    await mongoose.connect("mongodb+srv://root:SOMAS2022@sim-logs.pk5ldje.mongodb.net/?retryWrites=true&w=majority");
+    await mongoose.connect("");
     console.log("[server]: Connected to MongoDB");
     return;
 });
