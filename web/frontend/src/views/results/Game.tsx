@@ -2,10 +2,7 @@ import { Box } from "@mui/material";
 import { Run } from "../../../../common/types";
 import { AgentDeathGraph } from "../../components/game/AgentDeathGraph";
 import { AgentDeathRoundGraph } from "../../components/game/AgentDeathRoundGraph";
-import { AverageAgentATGraph } from "../../components/game/AverageAgentATGraph";
-import { AverageAgentHPGraph } from "../../components/game/AverageAgentHPGraph";
-import { AverageAgentSHGraph } from "../../components/game/AverageAgentSHGraph";
-import { AverageAgentSTGraph } from "../../components/game/AverageAgentSTGraph";
+import { AverageAgentStats } from "../../components/game/AverageAgentStats";
 import { FightRoundGraph } from "../../components/game/FightRoundGraph";
 import { HPPoolGraph } from "../../components/game/HPPoolGraph";
 import { VONCGraph } from "../../components/game/VONCGraph";
@@ -89,10 +86,7 @@ export default function Game({ run }: ResultsOverviewProps) {
         <Box>
             <AgentDeathGraph agents={agentsAlivePerLevel} threshold={run.Config.PassThreshold * run.Logs.Levels[0].LevelStats.NumberOfAgents} />
             <AgentDeathRoundGraph agents={agentsAlivePerRound} threshold={run.Config.PassThreshold * run.Logs.Levels[0].LevelStats.NumberOfAgents} />
-            <AverageAgentHPGraph points={AverageHP}/>
-            <AverageAgentATGraph points={AverageAT}/>
-            <AverageAgentSHGraph points={AverageSH}/>
-            <AverageAgentSTGraph points={AverageST}/>
+            <AverageAgentStats HP={AverageHP} AT={AverageAT} SH={AverageSH} ST={AverageST}/>
             <HPPoolGraph pool={HPPool} monsterHP={MonsterResilience}/>
             <FightRoundGraph fightRounds={FightRoundsPerLevel}/>
             <VONCGraph forVotes={VONCForVotes} againstVotes={VONCAgainstVotes} abstainVotes={VONCAbstainVotes}/>

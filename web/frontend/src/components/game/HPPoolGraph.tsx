@@ -67,5 +67,5 @@ export function HPPoolGraph({ pool, monsterHP }: HPPoolGraphProps) {
     data.datasets[0].data = pool;
     data.datasets[1].data = monsterHP;
 
-    return <Line key={uuid().toString()} options={options} data={data} />;
+    return <Line key={uuid().toString()} options={options} data={data} style={{ minHeight: "50vh", maxHeight: "50vh" }} />;
 }

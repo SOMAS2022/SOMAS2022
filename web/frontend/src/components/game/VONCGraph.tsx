@@ -82,5 +82,5 @@ export function VONCGraph({ forVotes, againstVotes, abstainVotes }: VONCGraphPro
     data.datasets[1].data = againstVotes;
     data.datasets[2].data = abstainVotes;
 
-    return <Bar key={uuid().toString()} options={options} data={data} />;
+    return <Bar key={uuid().toString()} options={options} data={data} style={{ minHeight: "50vh", maxHeight: "50vh" }} />;
 }

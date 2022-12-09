@@ -64,5 +64,5 @@ export function FightRoundGraph({ fightRounds }: FightRoundGraph) {
     data.labels = xaxis;
     data.datasets[0].data = fightRounds;
 
-    return <Bar key={uuid().toString()} options={options} data={data} />;
+    return <Bar key={uuid().toString()} style={{ minHeight: "50vh", maxHeight: "50vh" }} options={options} data={data} />;
 }

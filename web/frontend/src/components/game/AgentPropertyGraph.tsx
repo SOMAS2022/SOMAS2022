@@ -78,5 +78,5 @@ export function AgentPropertyGraph({ properties }: AgentPropertyGraphProps) {
     console.log(dataset);
     console.log(xaxis);
 
-    return <Line key={uuid().toString()} options={options} data={data} />;
+    return <Line key={uuid().toString()} style={{ minHeight: "50vh", maxHeight: "50vh" }} options={options} data={data} />;
 }

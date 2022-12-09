@@ -71,7 +71,7 @@ interface HistogramGraph {
 export function HistogramGraph({property, values, idx, binSize}: HistogramGraph) {
     data.datasets[0].label = property;
     if (values.length == 0) {
-        return <Line key={uuid().toString()} options={options} data={data} style={{minHeight: "500px"}}/>;
+        return <Line key={uuid().toString()} options={options} data={data} style={{ minHeight: "50vh", maxHeight: "50vh" }} />;
     } else {
         const flat = values.flat();
         const min = Math.min(...flat);
@@ -119,6 +119,6 @@ export function HistogramGraph({property, values, idx, binSize}: HistogramGraph)
 
         data.labels = Object.keys(binnedFreqs) as unknown as number[];
         data.datasets[0].data = Object.values(binnedFreqs);
-        return <Line key={uuid().toString()} options={options} data={data} style={{ minHeight: "500px" }} />;
+        return <Line key={uuid().toString()} options={options} data={data} style={{ minHeight: "50vh", maxHeight: "50vh" }} />;
     }
 }

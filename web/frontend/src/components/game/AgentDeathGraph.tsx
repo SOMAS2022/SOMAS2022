@@ -70,5 +70,5 @@ export function AgentDeathGraph({agents, threshold}: AgentDeathGraphProps) {
     data.datasets[0].data = agents;
     data.datasets[1].data= thresholdArr;
     
-    return <Line key={uuid().toString()} options={options} data={data} />;
+    return <Line key={uuid().toString()} style={{minHeight: "50vh", maxHeight: "50vh"}} options={options} data={data} />;
 }

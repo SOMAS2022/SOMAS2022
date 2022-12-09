@@ -108,19 +108,18 @@ export default function Agents({ run, agentPropertyMap, teamPropertyMap }: Agent
                         })}
                     </Select></>
             } 
+            
             <Typography>
                 Level
             </Typography>
             <Slider id="level" defaultValue={1} value={typeof level === "number" ? level : 0} onChange={handleLevelChange} aria-label="Default" valueLabelDisplay="on" style={{ marginTop: "32px" }} marks={levelMarks} min={levelMarks[0].value} max={levelMarks[1].value} /> 
 
-            <HistogramGraph property={propertySelect} values={teamSelect in teamPropertyMap && propertySelect in teamPropertyMap[teamSelect] ? teamPropertyMap[teamSelect][propertySelect] : []} idx={typeof level === "number" ? level-1 : 0} binSize={typeof bins === "number" ? bins : 0}/>
-            
             <Typography>
                 Bin Size
             </Typography>
-            <Slider id="bin" defaultValue={1} value={typeof bins === "number" ? bins : 0} onChange={handleBinChange} aria-label="Default" valueLabelDisplay="on" style={{ marginTop: "32px" }} marks={binMarks} min={binMarks[0].value} max={binMarks[1].value}/> 
-            
-            
+            <Slider id="bin" defaultValue={1} value={typeof bins === "number" ? bins : 0} onChange={handleBinChange} aria-label="Default" valueLabelDisplay="on" style={{ marginTop: "32px" }} marks={binMarks} min={binMarks[0].value} max={binMarks[1].value} />
+
+            <HistogramGraph property={propertySelect} values={teamSelect in teamPropertyMap && propertySelect in teamPropertyMap[teamSelect] ? teamPropertyMap[teamSelect][propertySelect] : []} idx={typeof level === "number" ? level-1 : 0} binSize={typeof bins === "number" ? bins : 0}/>
             
             <InputLabel id="Agents" style={{marginTop:24}}>Agents</InputLabel>
             <Select
