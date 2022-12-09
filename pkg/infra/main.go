@@ -61,8 +61,8 @@ func startGameLoop() {
 				Winner:   globalState.CurrentLeader,
 				Team:     agentMap[globalState.CurrentLeader].BaseAgent.Name(),
 				Manifesto: logging.ManifestoLog{
-					FightImposition:     globalState.LeaderManifesto.FightImposition(),
-					LootImposition:      globalState.LeaderManifesto.LootImposition(),
+					FightImposition:     globalState.LeaderManifesto.FightDecisionPower(),
+					LootImposition:      globalState.LeaderManifesto.LootDecisionPower(),
 					TermLength:          globalState.LeaderManifesto.TermLength(),
 					ThresholdPercentage: globalState.LeaderManifesto.OverthrowThreshold(),
 				},
