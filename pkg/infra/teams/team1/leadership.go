@@ -343,11 +343,11 @@ func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.Immuta
 			decision_likelihoods[health_id][1],
 			decision_likelihoods[health_id][2]}
 		decision_likelihoods[stamina_id] = [3]float64{
-			decision_likelihoods[health_id][0] + float64(percentile)*3.0,
+			decision_likelihoods[health_id][0] + float64(percentile)*6.0,
 			decision_likelihoods[health_id][1],
 			decision_likelihoods[health_id][2]}
 		decision_likelihoods[attack_id] = [3]float64{
-			decision_likelihoods[health_id][0] + float64(percentile)*3.0,
+			decision_likelihoods[health_id][0] + float64(percentile)*6.0,
 			decision_likelihoods[health_id][1],
 			decision_likelihoods[health_id][2]}
 		decision_likelihoods[defense_id] = [3]float64{
@@ -381,15 +381,6 @@ func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.Immuta
 			decision_likelihoods[health_id][1],
 			decision_likelihoods[health_id][2] + float64(percentile)*2.5}
 	}
-
-	// convert to cumulative prob
-	for index := 0; index < len(ids); index++ {
-		id := ids[index]
-		decision_likelihoods[id] = [3]float64{decision_likelihoods[id][0],
-			decision_likelihoods[id][0] + decision_likelihoods[id][1],
-			decision_likelihoods[id][0] + decision_likelihoods[id][1] + decision_likelihoods[id][2]}
-	}
-
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		random := rand.Float64() * decision_likelihoods[id][2]
@@ -420,6 +411,7 @@ func (s *SocialAgent) UpdateLeadershipState(self agent.BaseAgent, fightResult *c
 		sumSocialCapital[id] = element[0] + element[1] + element[2] + element[3]
 	}
 	s.sumSocialCapital = sumSocialCapital
+	s.leaderRating = sumSocialCapital[view.CurrentLeader()]
 
 	// TODO
 	// agentHarshnessScore map[string]float64
