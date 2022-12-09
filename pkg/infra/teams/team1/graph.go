@@ -10,6 +10,7 @@
 package team1
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/state"
@@ -86,12 +87,18 @@ func printGraph(agentMap map[commons.ID]agent.Agent, state *state.State) {
 	g.AddVertex(-1, graph.VertexAttribute("pos", "0,-1!"), graph.VertexAttribute("shape", "box"), graph.VertexAttribute("label", "Level: "+strconv.Itoa(int(state.CurrentLevel))))
 	// add alive agents to graph
 	for k, a := range agentMap {
+		healthG := int(float64(state.AgentState[k].Hp) / 1000 * 255)
+		if healthG > 255 {
+			healthG = 255
+		}
+		healthR := 255 - healthG
+		healthStr := "#" + fmt.Sprintf("%02X", healthR) + fmt.Sprintf("%02X", healthG) + "00"
 		sa := a.Strategy.(*SocialAgent)
 		pos := strconv.Itoa(sa.graphID/gridWidth) + "," + strconv.Itoa(sa.graphID%gridWidth) + "!"
 		if k == state.CurrentLeader {
-			g.AddVertex(sa.graphID, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "yellow"), graph.VertexAttribute("pos", pos))
+			g.AddVertex(sa.graphID, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "yellow"), graph.VertexAttribute("pos", pos), graph.VertexAttribute("color", healthStr))
 		} else {
-			g.AddVertex(sa.graphID, graph.VertexAttribute("pos", pos))
+			g.AddVertex(sa.graphID, graph.VertexAttribute("pos", pos), graph.VertexAttribute("color", healthStr))
 		}
 		aliveAgents[sa.graphID] = true
 	}
@@ -99,7 +106,7 @@ func printGraph(agentMap map[commons.ID]agent.Agent, state *state.State) {
 	for n, alive := range aliveAgents {
 		if !alive {
 			pos := strconv.Itoa(n/gridWidth) + "," + strconv.Itoa(n%gridWidth) + "!"
-			g.AddVertex(n, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "red"), graph.VertexAttribute("pos", pos))
+			g.AddVertex(n, graph.VertexAttribute("style", "filled"), graph.VertexAttribute("fillcolor", "red"), graph.VertexAttribute("pos", pos), graph.VertexAttribute("color", "#FF0000"))
 		}
 	}
 
