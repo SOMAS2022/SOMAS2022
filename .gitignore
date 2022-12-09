@@ -1,6 +1,7 @@
 **.out
 node_modules
 web/backend/dist/*
+logs/*
 
 .vscode/*
 !.vscode/extensions.json

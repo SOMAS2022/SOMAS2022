@@ -2,10 +2,9 @@ package config
 
 import (
 	"fmt"
+	"infra/logging"
 	"os"
 	"strconv"
-
-	"infra/logging"
 )
 
 func EnvToUint(key string, def uint) uint {
