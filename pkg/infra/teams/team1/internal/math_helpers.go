@@ -8,7 +8,11 @@
 *******************************************************/
 package internal
 
-import "math"
+import (
+	"infra/game/agent"
+	"infra/game/state"
+	"math"
+)
 
 func Argmax(array []float64) int {
 	maxIndex := 0
@@ -166,4 +170,47 @@ func Normalise(array [3]float64) [3]float64 {
 	}
 
 	return normArray
+}
+
+func QStateToArray(state QState) [8]float64 {
+	return [8]float64{
+		1,
+		state.Hp,
+		state.Stamina,
+		state.TotalAttack,
+		state.TotalDefense,
+		state.LevelsToWin,
+		state.MonsterHealth,
+		state.MonsterAttack,
+	}
+}
+
+func BaseAgentToQState(agent agent.BaseAgent) QState {
+	// Get agentState from baseAgent
+	agentState := agent.AgentState()
+
+	// Get view from baseAgent
+	view := agent.View()
+
+	return QState{
+		float64(agentState.Hp),
+		float64(agentState.Stamina),
+		float64(agentState.Attack),
+		float64(agentState.Defense),
+		float64(view.CurrentLevel()),
+		float64(view.MonsterHealth()),
+		float64(view.MonsterAttack()),
+	}
+}
+
+func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
+	return QState{
+		float64(agent.Hp),
+		float64(agent.Stamina),
+		float64(agent.Attack),
+		float64(agent.Defense),
+		float64(view.CurrentLevel()),
+		float64(view.MonsterHealth()),
+		float64(view.MonsterAttack()),
+	}
 }

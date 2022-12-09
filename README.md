@@ -31,18 +31,16 @@ structures ([2021](https://github.com/SOMAS2021/SOMAS2021))
 .
 ├── cmd
 │   └── (Executable Outputs)
-├── config.json
 ├── docs
 │   └── (Documentation Files)
-├── frontend
-│   └── (Frontend Implementation)
+├── web
+│   └── (Frontend/Backend Implementation)
 ├── pkg
-│   ├── agents
-│   │   └── (Teams Agents)
 │   └── infra
 │       └── (Infrastructure Implementation)
 |       └── teams
-|           └── (Individual Team Experiments)
+|           └── (Individual Team Agents/Experiments)
+├── .env (Environmental variables for Infrastructure)
 └── scripts
     └── (Automation/Execution scripts)
 ```

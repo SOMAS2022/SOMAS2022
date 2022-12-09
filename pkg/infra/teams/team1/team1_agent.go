@@ -63,11 +63,10 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 }
 
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	// Get agentState from baseAgent
-	agentState := baseAgent.AgentState()
+	qState := internal.BaseAgentToQState(baseAgent)
 
 	// Calculate best action based on current state and selfishness
-	coopTable := internal.CooperationQ(agentState)
+	coopTable := internal.CooperationQ(qState)
 
 	// TODO: Maybe make non-deterministic
 	// Return index of best action (assumes array ordering in same order as decision.FightAction

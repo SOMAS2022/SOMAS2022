@@ -6,49 +6,49 @@ import (
 	"infra/game/state"
 )
 
-func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]) func(state.State, state.AgentState) A {
+func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]) func(state.AgentState) A {
 	iterator := rules.Iterator()
-	predicates := make([]func(s state.State, agentState state.AgentState) (A, bool), 0)
+	predicates := make([]func(agentState state.AgentState) (A, bool), 0)
 	for !iterator.Done() {
 		rule, _ := iterator.Next()
 		pred := makePredicate(rule.condition)
-		wrappedPredicate := func(s state.State, agentState state.AgentState) (A, bool) {
-			return rule.action, pred(s, agentState)
+		wrappedPredicate := func(agentState state.AgentState) (A, bool) {
+			return rule.action, pred(agentState)
 		}
 		predicates = append(predicates, wrappedPredicate)
 	}
 	if len(predicates) > 0 {
-		return func(s state.State, agentState state.AgentState) A {
+		return func(agentState state.AgentState) A {
 			for _, predicate := range predicates {
-				action, match := predicate(s, agentState)
+				action, match := predicate(agentState)
 				if match {
 					return action
 				}
 			}
 			// todo: what to do if unallocated with parameterized class
-			a, _ := predicates[len(predicates)-1](s, agentState)
+			a, _ := predicates[len(predicates)-1](agentState)
 			return a
 		}
 	}
 	return nil
 }
 
-func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]) func(state.State, state.AgentState) map[A]struct{} {
+func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]) func(state.AgentState) map[A]struct{} {
 	iterator := rules.Iterator()
-	predicates := make([]func(s state.State, agentState state.AgentState) (A, bool), 0)
+	predicates := make([]func(agentState state.AgentState) (A, bool), 0)
 	for !iterator.Done() {
 		rule, _ := iterator.Next()
 		pred := makePredicate(rule.condition)
-		wrappedPredicate := func(s state.State, agentState state.AgentState) (A, bool) {
-			return rule.action, pred(s, agentState)
+		wrappedPredicate := func(agentState state.AgentState) (A, bool) {
+			return rule.action, pred(agentState)
 		}
 		predicates = append(predicates, wrappedPredicate)
 	}
 	if len(predicates) > 0 {
-		return func(s state.State, agentState state.AgentState) map[A]struct{} {
+		return func(agentState state.AgentState) map[A]struct{} {
 			res := make(map[A]struct{})
 			for _, predicate := range predicates {
-				action, match := predicate(s, agentState)
+				action, match := predicate(agentState)
 				if match {
 					res[action] = struct{}{}
 				}
@@ -59,7 +59,7 @@ func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rul
 	return nil
 }
 
-func makePredicate(cond Condition) func(s state.State, agentState state.AgentState) bool {
+func makePredicate(cond Condition) func(agentState state.AgentState) bool {
 	switch condT := cond.(type) {
 	case *ComparativeCondition:
 		return buildCompPredicate(*condT)
@@ -76,32 +76,32 @@ func makePredicate(cond Condition) func(s state.State, agentState state.AgentSta
 	case DefectorCondition:
 		return defectorEval()
 	default:
-		return func(_ state.State, _ state.AgentState) bool {
+		return func(_ state.AgentState) bool {
 			return true
 		}
 	}
 }
 
-func andEval(cond AndCondition) func(state.State, state.AgentState) bool {
-	return func(s state.State, agentState state.AgentState) bool {
-		return makePredicate(cond.CondA())(s, agentState) && makePredicate(cond.CondB())(s, agentState)
+func andEval(cond AndCondition) func(state.AgentState) bool {
+	return func(agentState state.AgentState) bool {
+		return makePredicate(cond.CondA())(agentState) && makePredicate(cond.CondB())(agentState)
 	}
 }
 
-func orEval(cond OrCondition) func(state.State, state.AgentState) bool {
-	return func(s state.State, agentState state.AgentState) bool {
-		return makePredicate(cond.CondA())(s, agentState) || makePredicate(cond.CondB())(s, agentState)
+func orEval(cond OrCondition) func(state.AgentState) bool {
+	return func(agentState state.AgentState) bool {
+		return makePredicate(cond.CondA())(agentState) || makePredicate(cond.CondB())(agentState)
 	}
 }
 
-func defectorEval() func(state.State, state.AgentState) bool {
-	return func(_ state.State, agentState state.AgentState) bool {
+func defectorEval() func(state.AgentState) bool {
+	return func(agentState state.AgentState) bool {
 		return agentState.Defector.IsDefector()
 	}
 }
 
-func buildCompPredicate(condT ComparativeCondition) func(s state.State, agentState state.AgentState) bool {
-	return func(s state.State, agentState state.AgentState) bool {
+func buildCompPredicate(condT ComparativeCondition) func(agentState state.AgentState) bool {
+	return func(agentState state.AgentState) bool {
 		var attr uint
 		switch condT.Attribute {
 		case Health:
@@ -109,9 +109,9 @@ func buildCompPredicate(condT ComparativeCondition) func(s state.State, agentSta
 		case Stamina:
 			attr = agentState.Stamina
 		case TotalAttack:
-			attr = agentState.TotalAttack(s)
+			attr = agentState.TotalAttack()
 		case TotalDefence:
-			attr = agentState.TotalDefense(s)
+			attr = agentState.TotalDefense()
 		default:
 			attr = agentState.Hp
 		}

@@ -1,16 +1,15 @@
 package team1
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
-	"infra/logging"
 	"math"
 	"math/rand"
+	"sort"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -93,9 +92,9 @@ func (s *SocialAgent) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto
 	// TODO add count of agents making bad decision
 
 	// TODO how should this be modified
-	threshold_social_reward := 0.0 // between -1 and 1
+	threshold_social_reward := 0.2 // between -1 and 1
 	// TODO how should this be modified
-	threshold_min_eta := 0.0
+	threshold_min_eta := 0.6
 	// TODO how should this be modified
 	support_threshold := 0.3
 
@@ -140,19 +139,15 @@ func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 
 	for id, survival := range s.agentsSurvivalLikelihood {
 		attitude := 0.0
-		attitude += (1 - math.Abs(s.survivalLikelihood-survival)) * 0.2
+		attitude += (1 - math.Abs(s.survivalLikelihood-survival))
 
 		attitude += s.sumSocialCapital[id]
 
-		// TODO
-		// if s.survivalLikelihood < 0.1 {
-		// 	attitude -= s.agentHarshnessScore[id]
-		// }
-		if attitude > 0.5 {
+		if attitude >= 0.8 {
 			ballot = append(ballot, id)
 		}
 	}
-
+	ballot = append(ballot, b.ID())
 	return ballot
 }
 
@@ -170,23 +165,11 @@ func allocate_with_distribution(distribution []float64, iterator commons.Iterato
 	for !iterator.Done() {
 		item, _ := iterator.Next()
 		random := rand.Float64() * distribution[len(distribution)-1]
-		// logging.Log(logging.Error, nil, string(random))
-		// logging.Log(logging.Error, nil, "------------")
-		// logging.Log(logging.Error, nil, fmt.Sprintf("%f", random))
-		// logging.Log(logging.Error, nil, fmt.Sprintf("%f", distribution))
-		// // logging.Log(logging.Error, nil, fmt.Sprintf("%f", distribution[len(distribution)-1]))
-		// logging.Log(logging.Error, nil, "------------")
 		var toBeAllocated string
 		// Add max iteration
 		change := int(len(distribution) / 4)
 		index := int(len(distribution) / 2)
 		for count := 0; count < 100; count++ {
-			if count == 90 {
-				logging.Log(logging.Error, nil, fmt.Sprintf("%f", random))
-			}
-			// logging.Log(logging.Error, nil, fmt.Sprintf("%f", random))
-			// logging.Log(logging.Error, nil, fmt.Sprintf("%f", float64(index)))
-			// logging.Log(logging.Error, nil, fmt.Sprintf("%f", float64(distribution[index])))
 			if index == len(distribution)-1 || index == 0 {
 				toBeAllocated = ids[index]
 				break
@@ -221,8 +204,6 @@ func allocate_with_distribution(distribution []float64, iterator commons.Iterato
 // TODO
 func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
-
-	// func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.List[commons.ItemID]] {
 
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -275,22 +256,22 @@ func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.I
 
 		if survival_likelihood > 0.05 {
 			weapon_prob += 1.0
-			stamina_prob += 1.0
+			// stamina_prob += 1.0
 		}
 
-		weapon_prob += float64(max_attack) / (float64(agent_state.Attack) * (float64(agent_state.Attack)))
+		// weapon_prob += float64(max_attack) / ((float64(agent_state.Attack) * (float64(agent_state.Attack))) + 0.1)
 		// weapon_prob += float64(social_score) / float64(max_social) * 0.1
-		// weapon_prob += float64(agent_state.Hp) / float64(max_health) * 0.5
+		weapon_prob += float64(agent_state.Hp)/float64(max_health)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stamina)
 
-		defense_prob += float64(max_defense) / float64(agent_state.Defense)
+		defense_prob += float64(max_defense) / (math.Pow(float64(agent_state.Defense), 4) + 0.1)
 		// defense_prob += float64(social_score) / float64(max_social) * 0.1
 		// defense_prob += float64(agent_state.Hp) / float64(max_health)
 
 		// hp_prob += float64(social_score) / float64(max_social) * 0.1
-		hp_prob += float64(max_health) / float64(agent_state.Hp)
+		hp_prob += float64(max_health) / (math.Pow(float64(agent_state.Hp), 4) + 0.1)
 
 		// stamina_prob += float64(social_score) / float64(max_social) * 0.3
-		stamina_prob += float64(max_stamina) / float64(agent_state.Stamina)
+		stamina_prob += float64(max_stamina) / (math.Pow(float64(agent_state.Stamina), 4) + 0.1)
 
 		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
 		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
@@ -323,55 +304,112 @@ func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.I
 func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 
 	view := agent.View()
-	// ids := commons.ImmutableMapKeys(view.AgentState())
-	// agents := view.AgentState()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	agents := view.AgentState()
 
 	// monster_attack := view.MonsterAttack()
 	// monster_health := view.MonsterHealth()
-	// // find percentiles of agents
-	// var percentiles [4][][2]int // health, attack, stamina, defense (val, index)
-	// total_attack := 0
-	// for id_index := 0; id_index < len(ids); id_index++ {
+	// find percentiles of agents
+	var percentiles [4][][2]int // health, attack, stamina, defense (val, index)
+	total_attack := 0
+	for id_index := 0; id_index < len(ids); id_index++ {
 
-	// 	agent_state, _ := agents.Get(ids[id_index])
-	// 	percentiles[0] = append(percentiles[0], [2]int{int(agent_state.Hp), id_index})
-	// 	percentiles[1] = append(percentiles[1], [2]int{int(agent_state.Attack), id_index})
-	// 	total_attack += int(agent_state.Attack)
-	// 	percentiles[2] = append(percentiles[1], [2]int{int(agent_state.Stamina), id_index})
-	// 	percentiles[3] = append(percentiles[1], [2]int{int(agent_state.Defense), id_index})
-	// }
+		agent_state, _ := agents.Get(ids[id_index])
+		percentiles[0] = append(percentiles[0], [2]int{int(agent_state.Hp), id_index})
+		percentiles[1] = append(percentiles[1], [2]int{int(agent_state.Attack), id_index})
+		total_attack += int(agent_state.Attack)
+		percentiles[2] = append(percentiles[1], [2]int{int(agent_state.Stamina), id_index})
+		percentiles[3] = append(percentiles[1], [2]int{int(agent_state.Defense), id_index})
+	}
 
-	// for index := 0; index < 4; index++ {
-	// 	sort.SliceStable(percentiles[index], func(i, j int) bool {
-	// 		return percentiles[index][i][0] < percentiles[index][j][0]
-	// 	})
-	// }
+	for index := 0; index < 4; index++ {
+		sort.SliceStable(percentiles[index], func(i, j int) bool {
+			return percentiles[index][i][0] < percentiles[index][j][0]
+		})
+	}
 
-	// var attack_id_indexes []int
-	// var defend_id_indexes []int
+	var decision_likelihoods = make(map[string][3]float64) // attack, cower, defend
 
-	// for {
+	for index := 0; index < len(ids); index++ {
+		percentile := float64(index) / float64(len(ids))
+		health_id := ids[percentiles[0][index][1]]
+		attack_id := ids[percentiles[0][index][1]]
+		stamina_id := ids[percentiles[0][index][1]]
+		defense_id := ids[percentiles[0][index][1]]
 
-	// }
+		// adjust attack likelihood
+		decision_likelihoods[health_id] = [3]float64{
+			float64(percentile) * 3.0,
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2]}
+		decision_likelihoods[stamina_id] = [3]float64{
+			decision_likelihoods[health_id][0] + float64(percentile)*3.0,
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2]}
+		decision_likelihoods[attack_id] = [3]float64{
+			decision_likelihoods[health_id][0] + float64(percentile)*3.0,
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2]}
+		decision_likelihoods[defense_id] = [3]float64{
+			decision_likelihoods[health_id][0] - float64(percentile)*0.5,
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2]}
+
+		decision_likelihoods[health_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			(1.0/float64(percentile) + 0.1) * 1,
+			decision_likelihoods[health_id][2]}
+		decision_likelihoods[stamina_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			(1.0/float64(percentile) + 0.1) * 1,
+			decision_likelihoods[health_id][2]}
+
+		decision_likelihoods[health_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2] + float64(percentile)}
+		decision_likelihoods[stamina_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2] + float64(percentile)*2.0}
+		decision_likelihoods[attack_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2] + float64(percentile)*0.5}
+		decision_likelihoods[defense_id] = [3]float64{
+			decision_likelihoods[health_id][0],
+			decision_likelihoods[health_id][1],
+			decision_likelihoods[health_id][2] + float64(percentile)*2.5}
+	}
+
+	// convert to cumulative prob
+	for index := 0; index < len(ids); index++ {
+		id := ids[index]
+		decision_likelihoods[id] = [3]float64{decision_likelihoods[id][0],
+			decision_likelihoods[id][0] + decision_likelihoods[id][1],
+			decision_likelihoods[id][0] + decision_likelihoods[id][1] + decision_likelihoods[id][2]}
+	}
 
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
+		random := rand.Float64() * decision_likelihoods[id][2]
+		// logging.Log(logging.Error, nil, fmt.Sprintf("%f", decision_likelihoods[id]))
 		var fightAction decision.FightAction
-		switch rand.Intn(3) {
-		case 0:
+
+		if random < decision_likelihoods[id][0] {
 			fightAction = decision.Attack
-		case 1:
-			fightAction = decision.Defend
-		default:
+		} else if random < decision_likelihoods[id][1] {
 			fightAction = decision.Cower
+		} else {
+			fightAction = decision.Defend
 		}
+
 		builder.Set(id, fightAction)
 	}
 	return *builder.Map()
 }
 
 func (s *SocialAgent) UpdateLeadershipState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
-
 	view := self.View()
 	agents := view.AgentState()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -394,7 +432,11 @@ func (s *SocialAgent) UpdateLeadershipState(self agent.BaseAgent, fightResult *c
 		survival_likelihood[ids[id]] = 0.0
 		survival_likelihood[ids[id]] += float64(agent_state.Hp) + float64(agent_state.Defense)
 		survival_likelihood[ids[id]] -= float64(agent_state.Attack) * 0.3
+
 	}
+
+	// logging.Log(logging.Error, nil, fmt.Sprintf("%f", v))
+
 	max_survival := 0.0
 	mean_survival := 0.0
 	deviation := 0.0
@@ -408,6 +450,11 @@ func (s *SocialAgent) UpdateLeadershipState(self agent.BaseAgent, fightResult *c
 		mean_survival += survival / max_survival
 	}
 	mean_survival /= float64(len(survival_likelihood))
+	for id, survival := range survival_likelihood {
+		survival_likelihood[id] = (survival / mean_survival) * 0.5
+		mean_survival += survival / max_survival
+	}
+	mean_survival = 0.5
 	for _, survival := range survival_likelihood {
 		deviation += math.Pow(survival-mean_survival, 2)
 	}
