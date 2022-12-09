@@ -38,7 +38,7 @@ type Fight interface {
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool
 	FightActionNoProposal(baseAgent BaseAgent) decision.FightAction
-	FightAction(baseAgent BaseAgent, proposedAction decision.FightAction) decision.FightAction
+	FightAction(baseAgent BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction
 }
 
 type Loot interface {
@@ -46,9 +46,9 @@ type Loot interface {
 	HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform
 	HandleLootProposal(r message.Proposal[decision.LootAction], agent BaseAgent) decision.Intent
 	HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent BaseAgent) bool
-	LootAllocation(agent BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]
+	LootAllocation(baseAgent BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]
 	LootActionNoProposal(baseAgent BaseAgent) immutable.SortedMap[commons.ItemID, struct{}]
-	LootAction(baseAgent BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}]
+	LootAction(baseAgent BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}]
 }
 
 type HPPool interface {

@@ -39,7 +39,11 @@ func (r *RandomAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.
 	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
 }
 
-func (r *RandomAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+func (r *RandomAgent) LootAction(
+	baseAgent agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	acceptedProposal message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
@@ -55,7 +59,11 @@ func (r *RandomAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	}
 }
 
-func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+func (r *RandomAgent) FightAction(
+	baseAgent agent.BaseAgent,
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
+) decision.FightAction {
 	return r.FightActionNoProposal(baseAgent)
 }
 
@@ -87,17 +95,17 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (r *RandomAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (r *RandomAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := ba.View()
+	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := ba.Loot().Weapons().Iterator()
+	iterator := baseAgent.Loot().Weapons().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().Shields().Iterator()
+	iterator = baseAgent.Loot().Shields().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().HpPotions().Iterator()
+	iterator = baseAgent.Loot().HpPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().StaminaPotions().Iterator()
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
