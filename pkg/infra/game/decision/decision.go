@@ -13,18 +13,18 @@ type ProposalAction interface {
 type HPPoolDecision struct{}
 
 type Manifesto struct {
-	fightImposition    bool
-	lootImposition     bool
+	fightDecisionPower bool
+	lootDecisionPower  bool
 	termLength         uint
 	overthrowThreshold uint
 }
 
-func (m Manifesto) FightImposition() bool {
-	return m.fightImposition
+func (m Manifesto) FightDecisionPower() bool {
+	return m.fightDecisionPower
 }
 
-func (m Manifesto) LootImposition() bool {
-	return m.lootImposition
+func (m Manifesto) LootDecisionPower() bool {
+	return m.lootDecisionPower
 }
 
 func (m Manifesto) TermLength() uint {
@@ -35,8 +35,13 @@ func (m Manifesto) OverthrowThreshold() uint {
 	return m.overthrowThreshold
 }
 
-func NewManifesto(fightImposition bool, lootImposition bool, termLength uint, overthrowThreshold uint) *Manifesto {
-	return &Manifesto{fightImposition: fightImposition, lootImposition: lootImposition, termLength: termLength, overthrowThreshold: overthrowThreshold}
+func NewManifesto(fightDecisionPower bool, lootDecisionPower bool, termLength uint, overthrowThreshold uint) *Manifesto {
+	return &Manifesto{
+		fightDecisionPower: fightDecisionPower,
+		lootDecisionPower:  lootDecisionPower,
+		termLength:         termLength,
+		overthrowThreshold: overthrowThreshold,
+	}
 }
 
 type ElectionParams struct {
@@ -68,7 +73,7 @@ func (e ElectionParams) NumberOfPreferences() uint {
 // Intent is used for polling.
 // Positive can mean true/agree/have confidence
 // Negative can mean false/disagree/don't have confidence
-// Abstain means ambivalenc.
+// Abstain means ambivalence.
 type Intent uint
 
 const (
