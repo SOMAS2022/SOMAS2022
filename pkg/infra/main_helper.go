@@ -187,7 +187,7 @@ func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.I
 	Hp Pool Helpers
 */
 
-func checkHpPool() {
+func checkHpPool() bool {
 	if globalState.HpPool >= globalState.MonsterHealth {
 		logging.Log(logging.Info, logging.LogField{
 			"Original HP Pool":  globalState.HpPool,

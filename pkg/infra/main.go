@@ -79,8 +79,8 @@ func startGameLoop() {
 		for _, a := range agentMap {
 			state := a.AgentState()
 			avgHP += a.AgentState().Hp
-			avgAT += state.TotalAttack(*globalState)
-			avgSH += state.TotalDefense(*globalState)
+			avgAT += state.TotalAttack()
+			avgSH += state.TotalDefense()
 			avgST += a.AgentState().Stamina
 		}
 		agents := uint(len(agentMap))

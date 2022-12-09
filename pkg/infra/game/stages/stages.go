@@ -12,6 +12,7 @@ import (
 	"infra/game/stage/update"
 	"infra/game/state"
 	"infra/game/tally"
+	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
 
@@ -71,13 +72,11 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 	}
 }
 
-func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *state.State, immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
+func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *state.State, immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
 	switch Mode {
 	// case "0":
 
 	default:
-		update.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
+		update.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult, logChan)
 	}
-
-	return
 }
