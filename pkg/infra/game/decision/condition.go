@@ -1,4 +1,4 @@
-package proposal
+package decision
 
 type Attribute uint
 

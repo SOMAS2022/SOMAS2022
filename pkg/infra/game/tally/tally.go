@@ -4,13 +4,12 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/message/proposal"
 	"infra/game/tally/internal"
 )
 
 type Tally[A decision.ProposalAction] struct {
 	proposalTally map[commons.ProposalID]uint
-	proposalMap   map[commons.ProposalID]commons.ImmutableList[proposal.Rule[A]]
+	proposalMap   map[commons.ProposalID]commons.ImmutableList[decision.Rule[A]]
 	currMax       internal.VoteCount
 	votes         <-chan commons.ProposalID
 	proposals     <-chan message.Proposal[A]
@@ -21,7 +20,7 @@ func (t *Tally[A]) ProposalTally() map[commons.ProposalID]uint {
 	return t.proposalTally
 }
 
-func (t *Tally[A]) ProposalMap() map[commons.ProposalID]commons.ImmutableList[proposal.Rule[A]] {
+func (t *Tally[A]) ProposalMap() map[commons.ProposalID]commons.ImmutableList[decision.Rule[A]] {
 	return t.proposalMap
 }
 
@@ -31,7 +30,7 @@ func NewTally[A decision.ProposalAction](votes <-chan commons.ProposalID,
 ) *Tally[A] {
 	return &Tally[A]{
 		proposalTally: make(map[commons.ProposalID]uint),
-		proposalMap:   make(map[commons.ProposalID]commons.ImmutableList[proposal.Rule[A]]),
+		proposalMap:   make(map[commons.ProposalID]commons.ImmutableList[decision.Rule[A]]),
 		votes:         votes,
 		proposals:     proposals,
 		closure:       closure,

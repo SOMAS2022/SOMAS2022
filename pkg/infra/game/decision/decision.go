@@ -6,16 +6,14 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type ProposalAction interface {
-	FightAction | LootAction
-}
-
 type HPPoolDecision struct{}
 
 type Manifesto struct {
 	running            bool
 	fightDecisionPower bool
 	lootDecisionPower  bool
+	fightPolicy        []Rule[FightAction]
+	lootPolicy         []Rule[LootAction]
 	termLength         uint
 	overthrowThreshold uint
 }
@@ -32,6 +30,14 @@ func (m Manifesto) LootDecisionPower() bool {
 	return m.lootDecisionPower
 }
 
+func (m Manifesto) FightPolicy() []Rule[FightAction] {
+	return m.fightPolicy
+}
+
+func (m Manifesto) LootPolicy() []Rule[LootAction] {
+	return m.lootPolicy
+}
+
 func (m Manifesto) TermLength() uint {
 	return m.termLength
 }
@@ -40,10 +46,13 @@ func (m Manifesto) OverthrowThreshold() uint {
 	return m.overthrowThreshold
 }
 
-func NewManifesto(fightDecisionPower bool, lootDecisionPower bool, termLength uint, overthrowThreshold uint) *Manifesto {
+func NewManifesto(running bool, fightDecisionPower bool, lootDecisionPower bool, fightPolicy []Rule[FightAction], lootPolicy []Rule[LootAction], termLength uint, overthrowThreshold uint) *Manifesto {
 	return &Manifesto{
+		running:            running,
 		fightDecisionPower: fightDecisionPower,
 		lootDecisionPower:  lootDecisionPower,
+		fightPolicy:        fightPolicy,
+		lootPolicy:         lootPolicy,
 		termLength:         termLength,
 		overthrowThreshold: overthrowThreshold,
 	}

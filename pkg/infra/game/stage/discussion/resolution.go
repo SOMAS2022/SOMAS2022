@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/game/tally"
 	"math/rand"
@@ -23,7 +22,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, rules)
 		handleDefectionFight(gs, agentMap, resolution, fightActions, prop)
 	} else {
-		predicate := proposal.ToSinglePredicate(rules)
+		predicate := state.ToSinglePredicate(rules)
 		if predicate == nil {
 			for id, a := range agentMap {
 				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
@@ -109,7 +108,7 @@ func ResolveLootDiscussion(
 
 		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
 	} else {
-		predicate := proposal.ToMultiPredicate(prop.Rules())
+		predicate := state.ToMultiPredicate(prop.Rules())
 		if predicate == nil {
 			// either leader died or no proposal was made
 			return handleNilLootAllocation(agentMap)

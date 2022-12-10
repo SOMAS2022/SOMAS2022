@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
@@ -17,7 +16,7 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[decision.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -95,7 +94,7 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (r *RandomAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (r *RandomAgent) LootAllocation(baseAgent agent.BaseAgent, decision message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -165,23 +164,23 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 	makesProposal := rand.Intn(100)
 
 	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
+		rules := make([]decision.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Attack,
+			decision.NewAndCondition(*decision.NewComparativeCondition(decision.Health, decision.GreaterThan, 1000),
+				*decision.NewComparativeCondition(decision.Stamina, decision.GreaterThan, 1000)),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Defend,
+			decision.NewComparativeCondition(decision.TotalDefence, decision.GreaterThan, 1000),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Cower,
+			decision.NewComparativeCondition(decision.Health, decision.LessThan, 1),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Attack,
+			decision.NewComparativeCondition(decision.Stamina, decision.GreaterThan, 10),
 		))
 
 		prop := *commons.NewImmutableList(rules)
