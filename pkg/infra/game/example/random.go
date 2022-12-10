@@ -144,8 +144,9 @@ func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.Immutabl
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 5)
-	return manifesto
+	fightPolicy := make([]decision.Rule[decision.FightAction], 0)
+	lootPolicy := make([]decision.Rule[decision.LootAction], 0)
+	return decision.NewManifesto(true, false, false, fightPolicy, lootPolicy, 10, 5)
 }
 
 func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {

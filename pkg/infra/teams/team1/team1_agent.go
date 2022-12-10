@@ -163,8 +163,9 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, true, 10, 50)
-	return manifesto
+	fightPolicy := make([]decision.Rule[decision.FightAction], 0)
+	lootPolicy := make([]decision.Rule[decision.LootAction], 0)
+	return decision.NewManifesto(true, false, false, fightPolicy, lootPolicy, 10, 5)
 }
 
 func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
