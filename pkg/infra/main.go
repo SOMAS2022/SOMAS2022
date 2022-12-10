@@ -55,11 +55,15 @@ func startGameLoop() {
 		leaderBeforeElection := globalState.CurrentLeader
 		if termLeft == 0 || !alive {
 			termLeft = runElection()
-			// fmt.Println(globalState.LeaderManifesto)
+			leader, ok := agentMap[globalState.CurrentLeader]
+			leaderName := ""
+			if ok {
+				leaderName = leader.BaseAgent.Name()
+			}
 			levelLog.ElectionStage = logging.ElectionStage{
 				Occurred: true,
 				Winner:   globalState.CurrentLeader,
-				Team:     agentMap[globalState.CurrentLeader].BaseAgent.Name(),
+				Team:     leaderName,
 				Manifesto: logging.ManifestoLog{
 					FightImposition:     globalState.LeaderManifesto.FightDecisionPower(),
 					LootImposition:      globalState.LeaderManifesto.LootDecisionPower(),

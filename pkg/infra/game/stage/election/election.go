@@ -16,7 +16,14 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 	agentManifestos := make(map[commons.ID]decision.Manifesto)
 
 	for id, a := range agents {
-		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
+		agentManifesto := *a.SubmitManifesto(state.AgentState[id])
+		if agentManifesto.Runnning() {
+			agentManifestos[id] = agentManifesto
+		}
+	}
+
+	if len(agentManifestos) < 1 {
+		return "", decision.Manifesto{}
 	}
 
 	agentIDs := make([]commons.ID, len(agents))

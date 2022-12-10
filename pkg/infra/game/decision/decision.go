@@ -13,10 +13,15 @@ type ProposalAction interface {
 type HPPoolDecision struct{}
 
 type Manifesto struct {
+	running            bool
 	fightDecisionPower bool
 	lootDecisionPower  bool
 	termLength         uint
 	overthrowThreshold uint
+}
+
+func (m Manifesto) Runnning() bool {
+	return m.running
 }
 
 func (m Manifesto) FightDecisionPower() bool {
