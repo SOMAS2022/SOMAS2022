@@ -15,6 +15,7 @@ import (
 type Agent struct {
 	*BaseAgent
 	Strategy
+	MessagesRemaining uint
 }
 
 func (a *Agent) HandleDonateToHpPool(agentState state.AgentState) uint {
@@ -92,7 +93,13 @@ func (a *Agent) handleFightRoundMessage(log *immutable.Map[commons.ID, decision.
 	switch r := m.Message().(type) {
 	case message.FightRequest:
 		req := *message.NewTaggedRequestMessage[message.FightRequest](m.Sender(), r, m.MID())
-		resp := a.Strategy.HandleFightRequest(req, log)
+		var resp message.Message
+		if a.MessagesRemaining < 1 {
+			resp = nil
+		} else {
+			resp = a.Strategy.HandleFightRequest(req, log)
+			a.MessagesRemaining = commons.SaturatingSub(a.MessagesRemaining, 1)
+		}
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
 	case message.FightInform:
@@ -142,7 +149,13 @@ func (a *Agent) handleLootRoundMessage(
 	switch r := m.Message().(type) {
 	case message.LootRequest:
 		req := *message.NewTaggedRequestMessage[message.LootRequest](m.Sender(), r, m.MID())
-		resp := a.Strategy.HandleLootRequest(req)
+		var resp message.Message
+		if a.MessagesRemaining < 1 {
+			resp = nil
+		} else {
+			resp = a.Strategy.HandleLootRequest(req)
+			a.MessagesRemaining = commons.SaturatingSub(a.MessagesRemaining, 1)
+		}
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
 	case message.LootInform:

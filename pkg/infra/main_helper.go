@@ -71,6 +71,12 @@ func initGame() {
 	Communication Helpers
 */
 
+func resetAgentMessageLimit() {
+	for _, a := range agentMap {
+		a.MessagesRemaining = gameConfig.AgentMessageLimit
+	}
+}
+
 func addCommsChannels() map[commons.ID]chan message.TaggedMessage {
 	keys := make([]commons.ID, len(agentMap))
 	res := make(map[commons.ID]chan message.TaggedMessage)

@@ -21,8 +21,9 @@ func InstantiateAgent[S agent.Strategy](gameConfig config.GameConfig,
 	for i := uint(0); i < quantity; i++ {
 		agentID := uuid.NewString()
 		agentMap[agentID] = agent.Agent{
-			BaseAgent: agent.NewBaseAgent(nil, agentID, agentName, viewPtr),
-			Strategy:  strategyConstructor(),
+			BaseAgent:         agent.NewBaseAgent(nil, agentID, agentName, viewPtr),
+			Strategy:          strategyConstructor(),
+			MessagesRemaining: gameConfig.AgentMessageLimit,
 		}
 
 		agentStateMap[agentID] = state.AgentState{
@@ -45,6 +46,7 @@ func InitGameConfig() config.GameConfig {
 		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 20),
 		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 20),
 		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
+		AgentMessageLimit:      config.EnvToUint("AGENT_MESSAGE_LIMIT", 0),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 1),

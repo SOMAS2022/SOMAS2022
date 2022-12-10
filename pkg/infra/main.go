@@ -124,6 +124,8 @@ func startGameLoop() {
 			for u, action := range decisionMap {
 				decisionMapView.Set(u, action)
 			}
+
+			resetAgentMessageLimit()
 			fightTally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, fightTally)
 			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
@@ -165,6 +167,7 @@ func startGameLoop() {
 
 		// TODO: Loot Discussion Stage
 
+		resetAgentMessageLimit()
 		lootPool := generateLootPool(len(agentMap), globalState.CurrentLevel)
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)

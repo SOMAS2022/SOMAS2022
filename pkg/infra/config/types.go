@@ -7,6 +7,7 @@ type GameConfig struct {
 	StartingShieldStrength uint
 	ThresholdPercentage    float32
 	InitialNumAgents       uint
+	AgentMessageLimit      uint
 	Stamina                uint
 	VotingStrategy         uint
 	VotingPreferences      uint
