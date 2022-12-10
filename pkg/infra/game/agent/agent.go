@@ -92,11 +92,11 @@ func (a *Agent) handleFightRoundMessage(log *immutable.Map[commons.ID, decision.
 ) {
 	switch r := m.Message().(type) {
 	case message.FightRequest:
-		req := *message.NewTaggedRequestMessage[message.FightRequest](m.Sender(), r, m.MID())
 		var resp message.Message
 		if a.MessagesRemaining < 1 {
 			resp = nil
 		} else {
+			req := *message.NewTaggedRequestMessage[message.FightRequest](m.Sender(), r, m.MID())
 			resp = a.Strategy.HandleFightRequest(req, log)
 			a.MessagesRemaining = commons.SaturatingSub(a.MessagesRemaining, 1)
 		}
@@ -148,11 +148,11 @@ func (a *Agent) handleLootRoundMessage(
 ) {
 	switch r := m.Message().(type) {
 	case message.LootRequest:
-		req := *message.NewTaggedRequestMessage[message.LootRequest](m.Sender(), r, m.MID())
 		var resp message.Message
 		if a.MessagesRemaining < 1 {
 			resp = nil
 		} else {
+			req := *message.NewTaggedRequestMessage[message.LootRequest](m.Sender(), r, m.MID())
 			resp = a.Strategy.HandleLootRequest(req)
 			a.MessagesRemaining = commons.SaturatingSub(a.MessagesRemaining, 1)
 		}
