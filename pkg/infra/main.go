@@ -187,7 +187,7 @@ func startGameLoop() {
 
 		immutableFightRounds := commons.NewImmutableList(fightResultSlice)
 		votesResult := commons.MapToImmutable(votes)
-		levelLog.AgentLogs = updateInternalStates(immutableFightRounds, &votesResult)
+		levelLog.AgentLogs = stages.UpdateInternalStates(agentMap, globalState, immutableFightRounds, &votesResult)
 
 		logging.LogToFile(logging.Info, nil, "", levelLog)
 	}
