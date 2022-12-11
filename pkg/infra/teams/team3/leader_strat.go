@@ -46,17 +46,17 @@ func (a *AgentThree) HandleLootProposalRequest(_ message.Proposal[decision.LootA
 	}
 }
 
-func (a *AgentThree) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (a *AgentThree) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := ba.View()
+	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := ba.Loot().Weapons().Iterator()
+	iterator := baseAgent.Loot().Weapons().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().Shields().Iterator()
+	iterator = baseAgent.Loot().Shields().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().HpPotions().Iterator()
+	iterator = baseAgent.Loot().HpPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().StaminaPotions().Iterator()
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
