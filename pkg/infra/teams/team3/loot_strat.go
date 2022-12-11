@@ -14,7 +14,11 @@ func (a *AgentThree) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.S
 	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
 }
 
-func (a *AgentThree) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+func (a *AgentThree) LootAction(
+	baseAgent agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	acceptedProposal message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
