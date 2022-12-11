@@ -12,8 +12,8 @@ type Manifesto struct {
 	running            bool
 	fightDecisionPower bool
 	lootDecisionPower  bool
-	fightPolicy        []Rule[FightAction]
-	lootPolicy         []Rule[LootAction]
+	fightPolicy        commons.ImmutableList[Rule[FightAction]]
+	lootPolicy         commons.ImmutableList[Rule[LootAction]]
 	termLength         uint
 	overthrowThreshold uint
 }
@@ -30,11 +30,11 @@ func (m Manifesto) LootDecisionPower() bool {
 	return m.lootDecisionPower
 }
 
-func (m Manifesto) FightPolicy() []Rule[FightAction] {
+func (m Manifesto) FightPolicy() commons.ImmutableList[Rule[FightAction]] {
 	return m.fightPolicy
 }
 
-func (m Manifesto) LootPolicy() []Rule[LootAction] {
+func (m Manifesto) LootPolicy() commons.ImmutableList[Rule[LootAction]] {
 	return m.lootPolicy
 }
 
@@ -46,7 +46,7 @@ func (m Manifesto) OverthrowThreshold() uint {
 	return m.overthrowThreshold
 }
 
-func NewManifesto(running bool, fightDecisionPower bool, lootDecisionPower bool, fightPolicy []Rule[FightAction], lootPolicy []Rule[LootAction], termLength uint, overthrowThreshold uint) *Manifesto {
+func NewManifesto(running bool, fightDecisionPower bool, lootDecisionPower bool, fightPolicy commons.ImmutableList[Rule[FightAction]], lootPolicy commons.ImmutableList[Rule[LootAction]], termLength uint, overthrowThreshold uint) *Manifesto {
 	return &Manifesto{
 		running:            running,
 		fightDecisionPower: fightDecisionPower,
