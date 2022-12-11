@@ -44,6 +44,50 @@ func NewAgent2() Strategy {
 }
 
 /* ---- HELPER FUNCTIONS ----*/
+// Returns Manifesto Effectiveness based on History
+func manifestoEffectPercentage(agent BaseAgent) float64 {
+	return 0.0
+}
+
+// Returns Number of Full Term Agent2 served
+// without being overthrown
+func fullTermPercentage(agent BaseAgent) float64 {
+	return 0.0
+}
+
+// Returns Number of Terms Agent2 served
+// and was overthrown
+func overthrowPercentage(agent BaseAgent) float64 {
+	return 0.0
+}
+
+// Returns T|F if agent was overthrown or not
+func wasOverthrown(agent BaseAgent) bool {
+	return false
+}
+
+// Returns T|F if previous agent manifesto imposed loot
+func prevLootImpAbility(agent BaseAgent) bool {
+	return false
+}
+
+// Returns T|F if previous agent manifesto imposed fight
+func prevFightImpAbility(agent BaseAgent) bool {
+	return false
+}
+
+// First time agent is leader
+func firstTime(agent BaseAgent) bool {
+	return true
+}
+
+// Experience of agent [0,1]
+func experience(agent BaseAgent) float64 {
+	overthrowWeight := 0.4
+	fullTermWeight := 0.7
+	manifestoEffectWeight := 0.7
+	return -overthrowWeight*overthrowPercentage(agent) + fullTermWeight*fullTermPercentage(agent) + manifestoEffectWeight*manifestoEffectPercentage(agent)
+}
 
 func (a *Agent2) updateBaseAgentPerLevel(agent BaseAgent) {
 	a.baseAgentPerLevel = append(a.baseAgentPerLevel, agent)
@@ -178,19 +222,57 @@ func logistic(x float64, k float64, x0 float64) float64 {
 /* ---- STRATEGY ---- */
 
 // HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons
-func (a *Agent2) HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().Weapons
-	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
-
-	// 0th weapon has the greatest attack points
-	return decision.ItemIdx(0)
+func (a *Agent2) HandleUpdateWeapon(agent BaseAgent) decision.ItemIdx {
+	weaponsInventory := agent.AgentState().Weapons
+	if weaponsInventory.Len() != 0 {
+		desiredWeaponIndex := decision.ItemIdx(weaponsInventory.Len() - 1)
+		for i := 0; i < weaponsInventory.Len(); i++ {
+			if weaponsInventory.Get(i).Value() < agent.AgentState().Stamina {
+				desiredWeaponIndex = decision.ItemIdx(i)
+				break
+			}
+		}
+		for i := 0; i < weaponsInventory.Len(); i++ {
+			if weaponsInventory.Get(i).Value() < agent.AgentState().Stamina {
+				if weaponsInventory.Get(int(desiredWeaponIndex)).Value() < weaponsInventory.Get(i).Value() {
+					desiredWeaponIndex = decision.ItemIdx(i)
+				} else {
+					continue
+				}
+			}
+		}
+		return desiredWeaponIndex
+	} else {
+		return decision.ItemIdx(0)
+	}
 }
 
 // HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
-func (a *Agent2) HandleUpdateShield(baseAgent BaseAgent) decision.ItemIdx {
-	// shields := b.AgentState().Shields
-	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
-	return decision.ItemIdx(0)
+func (a *Agent2) HandleUpdateShield(agent BaseAgent) decision.ItemIdx {
+
+	shieldInventory := agent.AgentState().Shields
+	if shieldInventory.Len() != 0 {
+		desiredShieldIndex := decision.ItemIdx(shieldInventory.Len() - 1)
+
+		for i := 0; i < shieldInventory.Len(); i++ {
+			if shieldInventory.Get(i).Value() < agent.AgentState().Stamina {
+				desiredShieldIndex = decision.ItemIdx(i)
+				break
+			}
+		}
+		for i := 0; i < shieldInventory.Len(); i++ {
+			if shieldInventory.Get(i).Value() < agent.AgentState().Stamina {
+				if shieldInventory.Get(int(desiredShieldIndex)).Value() < shieldInventory.Get(i).Value() {
+					desiredShieldIndex = decision.ItemIdx(i)
+				} else {
+					continue
+				}
+			}
+		}
+		return desiredShieldIndex
+	} else {
+		return decision.ItemIdx(0)
+	}
 }
 
 // UpdateInternalState TODO: Implement me!
@@ -203,12 +285,65 @@ func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.I
 
 /* ---- ELECTION ---- */
 
-// CreateManifesto TODO: Implement me!
+// CreateManifesto FIXME: Check me!
 // Description: Used to give Manifesto Information if elected Leader.
 // Return:		The Manifesto with FightImposition, LootImposition, term length and overthrow threshold.
-func (a *Agent2) CreateManifesto(baseAgent BaseAgent) *decision.Manifesto {
-	draftManifesto := decision.NewManifesto(false, true, 4, 51)
-	return draftManifesto
+func (a *Agent2) CreateManifesto(agent BaseAgent) *decision.Manifesto {
+	/*
+		CreateManifesto:
+		- Term_Length =  Int(factor * experience) + Bias(Default term e.g. 1 term)
+		- Overthrow(%) = first_time ? default -> 51% : experience*(mapping factor)* (-10,10)
+		- FightImpositionDecision = experience + (prev_fight_imp_ability * !was_overthrown ? bias : 0 ) > threshold ? True : False
+		- LootImposition = experience + (prev_loot_imp_ability * !was_overthrown ? bias : 0 ) > threshold ? True : False
+	*/
+	f1 := 4 * experience(agent)           // [0,4]
+	f2 := 20.00*experience(agent) - 10.00 // [-10,10]
+	defaultTerm := uint(1)                // 1 Term
+	defaultOverthrow := uint(51)          // 51% Agents to overthrow
+	overthrowThreshold := uint(0)
+	termLength := uint(f1) + defaultTerm // [1,5]
+	fightImposeThreshold := 0.0
+	lootImposeThreshold := 0.0
+	fightImposition := false
+	lootImposition := false
+
+	if firstTime(agent) == true {
+		overthrowThreshold = defaultOverthrow
+	} else {
+		overthrowThreshold = uint(experience(agent) * f2)
+	}
+	if (prevFightImpAbility(agent) && !wasOverthrown(agent)) == true {
+		fightImposeHistoryCheck := 0.5
+		if (experience(agent) + fightImposeHistoryCheck) > fightImposeThreshold {
+			fightImposition = true
+		} else {
+			fightImposition = false
+		}
+	} else {
+		fightImposeHistoryCheck := 0.0
+		if (experience(agent) + fightImposeHistoryCheck) > fightImposeThreshold {
+			fightImposition = true
+		} else {
+			fightImposition = false
+		}
+	}
+	if (prevLootImpAbility(agent) && !wasOverthrown(agent)) == true {
+		lootImposeHistoryCheck := 0.5
+		if (experience(agent) + lootImposeHistoryCheck) > lootImposeThreshold {
+			lootImposition = true
+		} else {
+			lootImposition = false
+		}
+	} else {
+		lootImposeHistoryCheck := 0.0
+		if (experience(agent) + lootImposeHistoryCheck) > lootImposeThreshold {
+			lootImposition = true
+		} else {
+			lootImposition = false
+		}
+	}
+	Manifesto := decision.NewManifesto(fightImposition, lootImposition, termLength, overthrowThreshold)
+	return Manifesto
 }
 
 // HandleConfidencePoll TODO: Implement me!
