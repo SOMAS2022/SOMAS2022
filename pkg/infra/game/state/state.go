@@ -3,6 +3,7 @@ package state
 import (
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/state/proposal"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -115,6 +116,6 @@ type State struct {
 	AgentState      map[commons.ID]AgentState
 	InventoryMap    InventoryMap
 	CurrentLeader   commons.ID
-	LeaderManifesto decision.Manifesto
+	LeaderManifesto proposal.Manifesto
 	Defection       bool
 }

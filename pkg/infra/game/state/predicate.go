@@ -3,11 +3,12 @@ package state
 import (
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/state/proposal"
 )
 
-func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[decision.Rule[A]]) func(AgentState) A {
+func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[proposal.Rule[A]]) func(AgentState) A {
 	iterator := rules.Iterator()
-	predicates := make([]func(agentState AgentState) (A, bool), 0)
+	predicates := make([]func(state AgentState) (A, bool), 0)
 	for !iterator.Done() {
 		rule, _ := iterator.Next()
 		pred := makePredicate(rule.Condition())
@@ -32,7 +33,7 @@ func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[de
 	return nil
 }
 
-func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[decision.Rule[A]]) func(AgentState) map[A]struct{} {
+func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[proposal.Rule[A]]) func(AgentState) map[A]struct{} {
 	iterator := rules.Iterator()
 	predicates := make([]func(agentState AgentState) (A, bool), 0)
 	for !iterator.Done() {
@@ -58,21 +59,21 @@ func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[dec
 	return nil
 }
 
-func makePredicate(cond decision.Condition) func(agentState AgentState) bool {
+func makePredicate(cond proposal.Condition) func(agentState AgentState) bool {
 	switch condT := cond.(type) {
-	case *decision.ComparativeCondition:
+	case *proposal.ComparativeCondition:
 		return buildCompPredicate(*condT)
-	case decision.ComparativeCondition:
+	case proposal.ComparativeCondition:
 		return buildCompPredicate(condT)
-	case *decision.AndCondition:
+	case *proposal.AndCondition:
 		return andEval(*condT)
-	case decision.AndCondition:
+	case proposal.AndCondition:
 		return andEval(condT)
-	case *decision.OrCondition:
+	case *proposal.OrCondition:
 		return orEval(*condT)
-	case decision.OrCondition:
+	case proposal.OrCondition:
 		return orEval(condT)
-	case decision.DefectorCondition:
+	case proposal.DefectorCondition:
 		return defectorEval()
 	default:
 		return func(_ AgentState) bool {
@@ -81,13 +82,13 @@ func makePredicate(cond decision.Condition) func(agentState AgentState) bool {
 	}
 }
 
-func andEval(cond decision.AndCondition) func(AgentState) bool {
+func andEval(cond proposal.AndCondition) func(AgentState) bool {
 	return func(agentState AgentState) bool {
 		return makePredicate(cond.CondA())(agentState) && makePredicate(cond.CondB())(agentState)
 	}
 }
 
-func orEval(cond decision.OrCondition) func(AgentState) bool {
+func orEval(cond proposal.OrCondition) func(AgentState) bool {
 	return func(agentState AgentState) bool {
 		return makePredicate(cond.CondA())(agentState) || makePredicate(cond.CondB())(agentState)
 	}
@@ -99,23 +100,23 @@ func defectorEval() func(AgentState) bool {
 	}
 }
 
-func buildCompPredicate(condT decision.ComparativeCondition) func(agentState AgentState) bool {
+func buildCompPredicate(condT proposal.ComparativeCondition) func(agentState AgentState) bool {
 	return func(agentState AgentState) bool {
 		var attr uint
 		switch condT.Attribute {
-		case decision.Health:
+		case proposal.Health:
 			attr = agentState.Hp
-		case decision.Stamina:
+		case proposal.Stamina:
 			attr = agentState.Stamina
-		case decision.TotalAttack:
+		case proposal.TotalAttack:
 			attr = agentState.TotalAttack()
-		case decision.TotalDefence:
+		case proposal.TotalDefence:
 			attr = agentState.TotalDefense()
 		default:
 			attr = agentState.Hp
 		}
 		switch condT.Comparator {
-		case decision.GreaterThan:
+		case proposal.GreaterThan:
 			if attr > condT.Value {
 				return true
 			} else {

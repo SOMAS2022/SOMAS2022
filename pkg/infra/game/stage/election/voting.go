@@ -5,7 +5,7 @@ import (
 	"math/rand"
 
 	"infra/game/commons"
-	"infra/game/decision"
+	"infra/game/state/proposal"
 	"infra/logging"
 )
 
@@ -25,7 +25,7 @@ import (
 	7. Copeland Scoring
 */
 
-func singleChoicePlurality(ballots []decision.Ballot) commons.ID {
+func singleChoicePlurality(ballots []proposal.Ballot) commons.ID {
 	// Count number of votes collected for each candidate
 	votes := make(map[commons.ID]uint)
 
@@ -72,7 +72,7 @@ func singleChoicePlurality(ballots []decision.Ballot) commons.ID {
 // 1. ignore empty ballots
 // 2. assume points shared if not shown in non-empty ballots
 // 3. randomly select one if multiple agents get the max score.
-func BordaCount(ballots []decision.Ballot, aliveAgentIDs []commons.ID) commons.ID {
+func BordaCount(ballots []proposal.Ballot, aliveAgentIDs []commons.ID) commons.ID {
 	N := len(aliveAgentIDs)
 	updated := make(map[commons.ID]bool)
 	scores := make(map[commons.ID]float64)

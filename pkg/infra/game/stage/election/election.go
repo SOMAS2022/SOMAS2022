@@ -5,15 +5,15 @@ import (
 
 	"infra/game/agent"
 	"infra/game/commons"
-	"infra/game/decision"
 	"infra/game/state"
+	"infra/game/state/proposal"
 )
 
-func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy decision.VotingStrategy, numberOfPreferences uint) (
-	commons.ID, decision.Manifesto,
+func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strategy proposal.VotingStrategy, numberOfPreferences uint) (
+	commons.ID, proposal.Manifesto,
 ) {
 	// Get manifestos from agents
-	agentManifestos := make(map[commons.ID]decision.Manifesto)
+	agentManifestos := make(map[commons.ID]proposal.Manifesto)
 
 	for id, a := range agents {
 		agentManifesto := *a.SubmitManifesto(state.AgentState[id])
@@ -23,7 +23,7 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 	}
 
 	if len(agentManifestos) < 1 {
-		return "", decision.Manifesto{}
+		return "", proposal.Manifesto{}
 	}
 
 	agentIDs := make([]commons.ID, len(agents))
@@ -34,11 +34,11 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 		i++
 	}
 
-	ballots := make([]decision.Ballot, 0)
+	ballots := make([]proposal.Ballot, 0)
 
-	ballotChan := make(chan decision.Ballot)
+	ballotChan := make(chan proposal.Ballot)
 
-	params := decision.NewElectionParams(agentManifestos, strategy, numberOfPreferences)
+	params := proposal.NewElectionParams(agentManifestos, strategy, numberOfPreferences)
 
 	var wg sync.WaitGroup
 	for id, a := range agents {
@@ -56,13 +56,13 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 	}
 
 	switch strategy {
-	case decision.VotingStrategy(decision.SingleChoicePlurality):
+	case proposal.VotingStrategy(proposal.SingleChoicePlurality):
 		winningID := singleChoicePlurality(ballots)
 		winningManifesto := agentManifestos[winningID]
 
 		return winningID, winningManifesto
 
-	case decision.VotingStrategy(decision.BordaCount):
+	case proposal.VotingStrategy(proposal.BordaCount):
 		winningID := BordaCount(ballots, agentIDs)
 		winningManifesto := agentManifestos[winningID]
 
@@ -76,7 +76,7 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 }
 
 // Create channel to a specific agent.
-func startAgentElectionHandlers(agentState state.AgentState, a agent.Agent, params *decision.ElectionParams, dChan chan<- decision.Ballot, wg *sync.WaitGroup) {
+func startAgentElectionHandlers(agentState state.AgentState, a agent.Agent, params *proposal.ElectionParams, dChan chan<- proposal.Ballot, wg *sync.WaitGroup) {
 	go func(group *sync.WaitGroup) {
 		dChan <- a.HandleElection(agentState, params)
 

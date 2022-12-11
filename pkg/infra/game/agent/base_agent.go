@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"infra/game/decision"
+	"infra/game/state/proposal"
 
 	"infra/game/commons"
 	"infra/game/message"
@@ -81,7 +82,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 	return nil
 }
 
-func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[decision.Rule[decision.FightAction]]) error {
+func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.FightAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
 		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules, ba.ID()), uuid.New())
@@ -90,7 +91,7 @@ func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[decis
 	return communicationError("Leader not available for messaging, dead or bad!")
 }
 
-func (ba *BaseAgent) SendLootProposalToLeader(rules commons.ImmutableList[decision.Rule[decision.LootAction]]) error {
+func (ba *BaseAgent) SendLootProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.LootAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
 		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules, ba.ID()), uuid.New())

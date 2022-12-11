@@ -4,6 +4,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/state/proposal"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -24,15 +25,15 @@ type Strategy interface {
 }
 
 type Election interface {
-	CreateManifesto(baseAgent BaseAgent) *decision.Manifesto
+	CreateManifesto(baseAgent BaseAgent) *proposal.Manifesto
 	HandleConfidencePoll(baseAgent BaseAgent) decision.Intent
-	HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot
+	HandleElectionBallot(baseAgent BaseAgent, params *proposal.ElectionParams) proposal.Ballot
 }
 
 type Fight interface {
 	HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction])
 	HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform
-	FightResolution(agent BaseAgent, prop commons.ImmutableList[decision.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction]
+	FightResolution(agent BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction]
 	HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent) decision.Intent
 	// HandleFightProposalRequest only called as leader
 	HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool

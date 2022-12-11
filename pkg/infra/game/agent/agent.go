@@ -7,6 +7,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/game/state/proposal"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -40,7 +41,7 @@ func (a *Agent) HandleUpdateShield(agentState state.AgentState) decision.ItemIdx
 	return a.Strategy.HandleUpdateShield(*a.BaseAgent)
 }
 
-func (a *Agent) SubmitManifesto(agentState state.AgentState) *decision.Manifesto {
+func (a *Agent) SubmitManifesto(agentState state.AgentState) *proposal.Manifesto {
 	a.BaseAgent.latestState = agentState
 
 	return a.Strategy.CreateManifesto(*a.BaseAgent)
@@ -53,7 +54,7 @@ func (a *Agent) HandleNoConfidenceVote(agentState state.AgentState) decision.Int
 	return a.Strategy.HandleConfidencePoll(*a.BaseAgent)
 }
 
-func (a *Agent) HandleElection(agentState state.AgentState, params *decision.ElectionParams) decision.Ballot {
+func (a *Agent) HandleElection(agentState state.AgentState, params *proposal.ElectionParams) proposal.Ballot {
 	a.BaseAgent.latestState = agentState
 
 	return a.Strategy.HandleElectionBallot(*a.BaseAgent, params)

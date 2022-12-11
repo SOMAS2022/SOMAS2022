@@ -18,6 +18,7 @@ import (
 	"infra/game/stage/fight"
 	"infra/game/stages"
 	"infra/game/state"
+	"infra/game/state/proposal"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -103,7 +104,7 @@ func createImmutableMapForChannels[K constraints.Ordered, V any](peerChannels ma
 */
 
 func runElection() uint {
-	electedAgent, manifesto := election.HandleElection(globalState, agentMap, decision.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
+	electedAgent, manifesto := election.HandleElection(globalState, agentMap, proposal.VotingStrategy(gameConfig.VotingStrategy), gameConfig.VotingPreferences)
 	termLeft := manifesto.TermLength()
 	globalState.LeaderManifesto = manifesto
 	globalState.CurrentLeader = electedAgent

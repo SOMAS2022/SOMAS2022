@@ -2,7 +2,7 @@ package state
 
 import (
 	"infra/game/commons"
-	"infra/game/decision"
+	"infra/game/state/proposal"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -14,7 +14,7 @@ type View struct {
 	monsterAttack   uint
 	agentState      *immutable.Map[commons.ID, HiddenAgentState]
 	currentLeader   commons.ID
-	leaderManifesto decision.Manifesto
+	leaderManifesto proposal.Manifesto
 }
 
 type (
@@ -68,7 +68,7 @@ func (v *View) CurrentLeader() commons.ID {
 	return v.currentLeader
 }
 
-func (v *View) LeaderManifesto() decision.Manifesto {
+func (v *View) LeaderManifesto() proposal.Manifesto {
 	return v.leaderManifesto
 }
 

@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/game/state/proposal"
 	"infra/logging"
 	"math/rand"
 
@@ -16,7 +17,7 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[decision.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -143,10 +144,10 @@ func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.Immutabl
 	}
 }
 
-func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	fightPolicy := commons.NewImmutableList(make([]decision.Rule[decision.FightAction], 0))
-	lootPolicy := commons.NewImmutableList(make([]decision.Rule[decision.LootAction], 0))
-	return decision.NewManifesto(true, false, false, *fightPolicy, *lootPolicy, 10, 5)
+func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *proposal.Manifesto {
+	fightPolicy := commons.NewImmutableList(make([]proposal.Rule[decision.FightAction], 0))
+	lootPolicy := commons.NewImmutableList(make([]proposal.Rule[decision.LootAction], 0))
+	return proposal.NewManifesto(true, false, false, *fightPolicy, *lootPolicy, 10, 5)
 }
 
 func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
@@ -165,23 +166,23 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 	makesProposal := rand.Intn(100)
 
 	if makesProposal > 80 {
-		rules := make([]decision.Rule[decision.FightAction], 0)
+		rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Attack,
-			decision.NewAndCondition(*decision.NewComparativeCondition(decision.Health, decision.GreaterThan, 1000),
-				*decision.NewComparativeCondition(decision.Stamina, decision.GreaterThan, 1000)),
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
 		))
 
-		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Defend,
-			decision.NewComparativeCondition(decision.TotalDefence, decision.GreaterThan, 1000),
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
 		))
 
-		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Cower,
-			decision.NewComparativeCondition(decision.Health, decision.LessThan, 1),
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
 		))
 
-		rules = append(rules, *decision.NewRule[decision.FightAction](decision.Attack,
-			decision.NewComparativeCondition(decision.Stamina, decision.GreaterThan, 10),
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 		))
 
 		prop := *commons.NewImmutableList(rules)
@@ -193,7 +194,7 @@ func (r *RandomAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.
 	return nil
 }
 
-func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *proposal.ElectionParams) proposal.Ballot {
 	// Extract ID of alive agents
 	view := b.View()
 	agentState := view.AgentState()
@@ -209,7 +210,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	}
 
 	// Randomly fill the ballot
-	var ballot decision.Ballot
+	var ballot proposal.Ballot
 	numAliveAgents := len(aliveAgentIDs)
 	numCandidate := rand.Intn(numAliveAgents)
 	for i := 0; i < numCandidate; i++ {

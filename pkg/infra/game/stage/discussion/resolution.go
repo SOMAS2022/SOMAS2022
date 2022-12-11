@@ -6,6 +6,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/state"
+	"infra/game/state/proposal"
 	"infra/game/tally"
 	"math/rand"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
+func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto proposal.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
 	prop := tally.GetMax()
 	rules := prop.Rules()
@@ -76,7 +77,7 @@ func ResolveLootDiscussion(
 	agentMap map[commons.ID]agent.Agent,
 	pool *state.LootPool,
 	leader agent.Agent,
-	manifesto decision.Manifesto,
+	manifesto proposal.Manifesto,
 	tally *tally.Tally[decision.LootAction],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	prop := tally.GetMax()
