@@ -24,7 +24,11 @@ func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	}
 }
 
-func (a *AgentThree) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+func (a *AgentThree) FightAction(
+	baseAgent agent.BaseAgent,
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
+) decision.FightAction {
 	return a.FightActionNoProposal(baseAgent)
 }
 
