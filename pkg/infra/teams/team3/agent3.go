@@ -6,6 +6,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -32,7 +33,7 @@ type AgentThree struct {
 }
 
 // Update internal parameters at the end of each lvl!?
-func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	a.UpdateUtility(baseAgent)
 	a.HP = int(baseAgent.AgentState().Hp)
 	a.ST = int(baseAgent.AgentState().Stamina)
