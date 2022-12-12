@@ -26,14 +26,58 @@ type AgentFour struct {
 	TSN          []commons.ID
 }
 
+// HP pool donation
 func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	//
+	C := 0
+	C_thresh_HP := 1
+	// If our health is > 50% and we feel generous then donate some (max 20%) HP
+	if a.HP > 0.8 && C < C_thresh_HP {
+		return uint(rand.Intn((a.HP * 20) / 100))
+		C +=1
+	}
+	return 0
+}
+
+// Replenish Health
+func (a *AgentFour) RepenlishHealth(baseAgent agent.BaseAgent) uint {
+	aux_var := (Y/(0.5*N_surv) - a.SH)
+	for (a.HP < aux_var && we have a HP potion) {
+		//#use health potion -> health_potion = health_potion - 1
+	}
+}
+
+// Replenish Stamina
+func (a *AgentFour) RepenlishStamina(baseAgent agent.BaseAgent) uint {
+	aux_var := (Y/(0.5*N_surv) - a.SH)
+	for ((a.ST < TotalAttack || a.ST < TotalDefense) && (we have a ST potion)) {
+		#use stamina potion
+	}
 }
 
 // FUNCTIONS COPIED //
 
 func (a *AgentFour) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	//
+	threshold_fight_HP = ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+	threshold_fight_ST = ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+
+	if (HP > threshold_fight_HP AND ST > threshold_fight_ST){
+		fight
+	}
+	else{
+		cowers
+	}
+
+	if our decision == cower and manifesto decision for us == fight{
+	if the random_prob < Thresh_fight{            # bad boy
+			threshold_fight_HP = HP + 10
+			U -= 1
+	}
+	else{                                                         # accept decision from manifesto
+			U += 1
+	}
+
+	}
 }
 
 func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
@@ -121,7 +165,11 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 }
 
 func (a *AgentFour) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-	//
+	a.UpdateUtility(baseAgent)
+	a.HP = int(baseAgent.AgentState().Hp)
+	a.ST = int(baseAgent.AgentState().Stamina)
+	a.AT = int(baseAgent.AgentState().Attack)
+	a.SH = int(baseAgent.AgentState().Shields)
 }
 
 func (a *AgentFour) UpdateUtility(baseAgent agent.BaseAgent) {
