@@ -10,21 +10,35 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
+var startingHP = uint(1000)
+var startingAT = uint(20)
+var startingSH = uint(20)
+var startingST = uint(2000)
+
 type Team6Agent struct {
 	bravery    uint
 	generosity uint
 	similarity uint
 	trust      uint
 	leadership uint
+
+	HPThreshold uint
+	ATThreshold uint
+	SHThreshold uint
+	STThreshold uint
 }
 
 func NewTeam6Agent() agent.Strategy {
 	return &Team6Agent{
-		bravery:    50,
-		generosity: 50,
-		similarity: 50,
-		trust:      50,
-		leadership: 50,
+		bravery:     50,
+		generosity:  50,
+		similarity:  50,
+		trust:       50,
+		leadership:  50,
+		HPThreshold: 100,
+		ATThreshold: 2,
+		SHThreshold: 2,
+		STThreshold: 200,
 	}
 }
 

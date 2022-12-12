@@ -80,14 +80,13 @@ func (a *Team6Agent) HandleFightProposalRequest(proposal message.Proposal[decisi
 }
 
 func (a *Team6Agent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		return decision.Cower
-	case 1:
+	state := baseAgent.AgentState()
+	if state.Hp > (a.HPThreshold*startingHP-1) && state.Attack > (a.ATThreshold*startingAT-1) && state.Stamina > (a.STThreshold*startingST-1) {
 		return decision.Attack
-	default:
+	} else if state.Hp > (a.HPThreshold*startingHP-1) && state.Stamina > (a.STThreshold*startingST-1) {
 		return decision.Defend
+	} else {
+		return decision.Cower
 	}
 }
 
