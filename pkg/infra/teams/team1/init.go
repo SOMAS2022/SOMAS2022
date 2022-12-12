@@ -86,6 +86,7 @@ func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *stat
 	close(agentLogChan)
 	// fmt.Println(agentLogs)
 
-	printGraph(agentMap, globalState)
+	// Uncomment to create pictures for the video (takes more time)
+	//printGraph(agentMap, globalState)
 	return agentLogs
 }
