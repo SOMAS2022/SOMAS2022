@@ -29,7 +29,11 @@ type AgentThree struct {
 	ST           int
 	AT           int
 	bravery      int
+	uR           map[commons.ID]int
+	uP           map[commons.ID]int
+	uC           map[commons.ID]int
 	utilityScore map[commons.ID]int
+	TSN          []commons.ID
 }
 
 // Update internal parameters at the end of each lvl!?
