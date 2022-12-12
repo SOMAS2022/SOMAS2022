@@ -111,18 +111,18 @@ func printGraph(agentMap map[commons.ID]agent.Agent, state *state.State) {
 	}
 
 	// add edges
-	networkThreshold := 0.5
-	for _, a := range agentMap {
-		sa := a.Strategy.(*SocialAgent)
-		for peer, sc := range sa.socialCapital {
-			if sc[1] >= networkThreshold {
-				if p, ok := agentMap[peer]; ok { // if alive
-					peerSa := p.Strategy.(*SocialAgent)
-					g.AddEdge(sa.graphID, peerSa.graphID)
-				}
-			}
-		}
-	}
+	// networkThreshold := 0.5
+	// for _, a := range agentMap {
+	// 	sa := a.Strategy.(*SocialAgent)
+	// 	for peer, sc := range sa.socialCapital {
+	// 		if sc[1] >= networkThreshold {
+	// 			if p, ok := agentMap[peer]; ok { // if alive
+	// 				peerSa := p.Strategy.(*SocialAgent)
+	// 				g.AddEdge(sa.graphID, peerSa.graphID)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	filename := "./pkg/infra/teams/team1/graph/pics/graph" + strconv.Itoa(int(state.CurrentLevel)) + ".gv"
 
