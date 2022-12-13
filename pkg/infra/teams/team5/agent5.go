@@ -13,8 +13,9 @@ import (
 
 type agent5 struct {
 	//FightInformation
+	// InternalState   internalState
 	LootInformation commons5.Loot
-	InternalState   internalState
+	SocialNetwork   socialNetwork.socialNetwork
 }
 
 func (t *agent5) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
@@ -102,11 +103,13 @@ func (t *agent5) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return returnType
 }
 
-type internalState struct {
-	AllAgents commons5.Agents
-	//......
-}
+// type internalState struct {
+// 	AllAgents commons5.Agents
+// 	//......
+// }
 
 func NewAgen5() agent.Strategy {
-	return &agent5{}
+	var agent5 agent.Strategy
+
+	return agent5
 }
