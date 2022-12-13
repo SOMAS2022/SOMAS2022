@@ -22,10 +22,10 @@ type Team6Agent struct {
 	trust      uint
 	leadership uint
 
-	HPThreshold uint
-	ATThreshold uint
-	SHThreshold uint
-	STThreshold uint
+	HPThreshold float32
+	ATThreshold float32
+	SHThreshold float32
+	STThreshold float32
 }
 
 func NewTeam6Agent() agent.Strategy {
@@ -35,10 +35,10 @@ func NewTeam6Agent() agent.Strategy {
 		similarity:  50,
 		trust:       50,
 		leadership:  50,
-		HPThreshold: 100,
-		ATThreshold: 2,
-		SHThreshold: 2,
-		STThreshold: 200,
+		HPThreshold: 0.1,
+		ATThreshold: 0.1,
+		SHThreshold: 0.1,
+		STThreshold: 0.1,
 	}
 }
 

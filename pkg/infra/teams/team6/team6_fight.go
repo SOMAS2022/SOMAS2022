@@ -81,9 +81,9 @@ func (a *Team6Agent) HandleFightProposalRequest(proposal message.Proposal[decisi
 
 func (a *Team6Agent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
 	state := baseAgent.AgentState()
-	if state.Hp > (a.HPThreshold*startingHP-1) && state.Attack > (a.ATThreshold*startingAT-1) && state.Stamina > (a.STThreshold*startingST-1) {
+	if state.Hp > uint((a.HPThreshold*float32(startingHP-1))) && state.Attack > uint((a.ATThreshold*float32(startingAT-1))) && state.Stamina > uint((a.STThreshold*float32(startingST-1))) {
 		return decision.Attack
-	} else if state.Hp > (a.HPThreshold*startingHP-1) && state.Stamina > (a.STThreshold*startingST-1) {
+	} else if state.Hp > uint((a.HPThreshold*float32(startingHP-1))) && state.Stamina > uint((a.STThreshold*float32(startingST-1))) {
 		return decision.Defend
 	} else {
 		return decision.Cower
