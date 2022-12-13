@@ -2,13 +2,46 @@ package team6
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
 	"infra/game/decision"
 	"math/rand"
 )
 
-func (a *Team6Agent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 5)
-	return manifesto
+func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
+	view := ba.View()
+
+	fightDecisionPower, lootDecisionPower := false, false
+
+	var leaderFightDecision, leaderLootDecision uint
+
+	if view.LeaderManifesto().FightDecisionPower() {
+		leaderFightDecision = 100
+	} else {
+		leaderFightDecision = 0
+	}
+
+	if view.LeaderManifesto().LootDecisionPower() {
+		leaderLootDecision = 100
+	} else {
+		leaderLootDecision = 0
+	}
+
+	a.fightDecisionPowerOpinion += Min(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.fightDecisionPowerOpinion*leaderFightDecision/100), 100)
+	a.lootDecisionPowerOpinion += Min(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.lootDecisionPowerOpinion*leaderLootDecision/100), 100)
+	a.termLengthOpinion += Min(float32(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.termLengthOpinion*float32(view.LeaderManifesto().TermLength())/100)), 100)
+	a.overthrowTHOpinion += Min(float32(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.overthrowTHOpinion*float32(view.LeaderManifesto().OverthrowThreshold())/100)), 100)
+
+	if a.fightDecisionPowerOpinion > 50 {
+		fightDecisionPower = true
+	}
+
+	if a.lootDecisionPowerOpinion > 50 {
+		lootDecisionPower = true
+	}
+
+	a.proposedManifesto = *decision.NewManifesto(fightDecisionPower, lootDecisionPower, uint(a.termLengthOpinion), uint(a.overthrowTHOpinion))
+
+	return &a.proposedManifesto
 }
 
 func (a *Team6Agent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {

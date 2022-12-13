@@ -26,6 +26,12 @@ type Team6Agent struct {
 	SHThreshold float32
 	STThreshold float32
 
+	proposedManifesto         decision.Manifesto
+	fightDecisionPowerOpinion uint
+	lootDecisionPowerOpinion  uint
+	termLengthOpinion         float32
+	overthrowTHOpinion        float32
+
 	currentLevel             uint
 	lastFightRound           uint
 	lastHPPoolDonationAmount uint
@@ -33,15 +39,22 @@ type Team6Agent struct {
 
 func NewTeam6Agent() agent.Strategy {
 	return &Team6Agent{
-		bravery:     make(map[commons.ID]uint),
-		generosity:  make(map[commons.ID]uint),
-		similarity:  make(map[commons.ID]uint),
-		trust:       make(map[commons.ID]uint),
-		leadership:  make(map[commons.ID]uint),
+		bravery:    make(map[commons.ID]uint),
+		generosity: make(map[commons.ID]uint),
+		similarity: make(map[commons.ID]uint),
+		trust:      make(map[commons.ID]uint),
+		leadership: make(map[commons.ID]uint),
+
 		HPThreshold: 0.1,
 		ATThreshold: 0.1,
 		SHThreshold: 0.1,
 		STThreshold: 0.1,
+
+		proposedManifesto:         *decision.NewManifesto(false, false, 3, 51),
+		fightDecisionPowerOpinion: 25,
+		lootDecisionPowerOpinion:  25,
+		termLengthOpinion:         25,
+		overthrowTHOpinion:        25,
 	}
 }
 
