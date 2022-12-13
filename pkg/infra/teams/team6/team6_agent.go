@@ -85,6 +85,29 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 			"lastFightRound":   float32(a.lastFightRound),
 		},
 	}
+
+	view := ba.View()
+	agentStates := view.AgentState()
+	itr := agentStates.Iterator()
+	for !itr.Done() {
+		id, as, _ := itr.Next()
+		if as.Defector.IsDefector() {
+			_, ok := a.trust[id]
+			if ok {
+				a.trust[id] -= 10
+			} else {
+				a.trust[id] = 40
+			}
+		} else {
+			_, ok := a.trust[id]
+			if ok {
+				a.trust[id] += 2
+			} else {
+				a.trust[id] = 50
+			}
+		}
+	}
+
 	a.lastFightRound++
 	a.currentLevel++
 }
