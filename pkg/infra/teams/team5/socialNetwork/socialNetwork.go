@@ -7,12 +7,11 @@ type agentTrusts struct {
 	GoodwillScore uint
 }
 
-type agentPersonality struct {
+type agentProfile struct {
 	AgentID     commons.ID
 	Trusts      agentTrusts
 	Personality string
 }
-
 
 //provisional enum method, maybe helps with screen personalities in the applicaitons
 //  type strategy uint
@@ -30,41 +29,62 @@ type agentPersonality struct {
 // 	Evil
 // )
 
-type SocialNetwork struct {
-	AgentPersonality map[commons.ID]agentPersonality
-	LawfullMin       uint
-	ChaoticMax       uint
-	GoodMin          uint
-	EvilMax          uint
+type socialNetwork struct {
+	AgentProfile map[commons.ID]agentProfile
+	LawfullMin   uint
+	ChaoticMax   uint
+	GoodMin      uint
+	EvilMax      uint
 }
 
-func updatePersonality(sn &SocialNetwork, agentID commons.ID, extraStrategeScore uint, extraGoodwillScore uint) {
-	newStrategyScore := sn.AgentPersonality[agentID].Trusts.StrategyScore + extraStrategeScore
-	sn.AgentPersonality[agentID].Trusts.StrategyScore = newStrategyScore
-	newGoodwillScore := sn.AgentPersonality[agentID].Trusts.GoodwillScore + extraGoodwillScore
-	sn.AgentPersonality[agentID].Trusts.GoodwillScore = newGoodwillScore
-	
-	updatePersonalityBoundaries(sn &SocialNetwork)
+func updatePersonality(sn socialNetwork, agentID commons.ID, extraStrategeScore uint, extraGoodwillScore uint) socialNetwork {
+	nsn := sn
+	newStrategyScore := sn.AgentProfile[agentID].Trusts.StrategyScore + extraStrategeScore
+	nsn.AgentProfile[agentID].Trusts.StrategyScore = newStrategyScore
+	newGoodwillScore := sn.AgentProfile[agentID].Trusts.GoodwillScore + extraGoodwillScore
+	nsn.AgentProfile[agentID].Trusts.GoodwillScore = newGoodwillScore
 
-	if sn.AgentPersonality[agentID].Trusts.StrategyScore <= ChaoticMax {
+	nsn = updatePersonalityBoundaries(nsn)
+
+	if nsn.AgentProfile[agentID].Trusts.StrategyScore <= nsn.ChaoticMax {
 		goodwillPersonality := "Evil"
-	} else if sn.AgentPersonality[agentID].Trusts.StrategyScore < LawfullMin {
+	} else if nsn.AgentProfile[agentID].Trusts.StrategyScore < nsn.LawfullMin {
 		goodwillPersonality := "GoodwillNeutral"
-	} else{
+	} else {
 		goodwillPersonality := "Good"
 	}
 
-	if sn.AgentPersonality[agentID].Trusts.GoodwillScore <= ChaoticMax{
+	if nsn.AgentProfile[agentID].Trusts.GoodwillScore <= nsn.ChaoticMax {
 		strategyPersonality := "Chaotic"
-	} else if (sn.AgentPersonality[agentID].Trusts.GoodwillScore < LawfullMin) {
+	} else if nsn.AgentProfile[agentID].Trusts.GoodwillScore < nsn.LawfullMin {
 		strategyPersonality := "StrategyNeutral"
 	} else {
 		strategyPersonality := "Lawful"
 	}
 
-	sn.AgentPersonality[agentID].Personality = strategyPersonality+goodwillPersonality
+	nsn.AgentProfile[agentID].Personality = strategyPersonality + goodwillPersonality
+	return nsn
 }
 
-func updatePersonalityBoundaries(sn &SocialNetwork) {
+func updatePersonalityBoundaries(sn socialNetwork) socialNetwork {
+	nsn := sn
 
+	return nsn
 }
+
+//Initialise social network
+
+// func initialiseSocialNetwork() socialNetwork {
+// 	var initialTrust uint
+// 	initialTrust = 50
+// 	sn.AgentProfile[...commmons.ID].StrategyScore = initialTrust
+// 	sn.AgentProfile.[...commmons.ID].AgentProfile.GoodwillScore = initialTrust
+// 	sn := socialNetwork{
+// 		AgentProfile: make(map[commons.ID]agentProfile),
+// 		LawfullMin:       75,
+// 		ChaoticMax:       25,
+// 		GoodMin:          75,
+// 		EvilMax:          25,
+// 	}
+// 	return sn
+// }
