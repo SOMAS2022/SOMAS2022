@@ -45,18 +45,34 @@ func NewTeam6Agent() agent.Strategy {
 	}
 }
 
-func (a *Team6Agent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().weapons
-	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
+func (a *Team6Agent) HandleUpdateWeapon(ba agent.BaseAgent) decision.ItemIdx {
+	state := ba.AgentState()
+	weapons := state.Weapons
 
-	// 0th weapon has the greatest attack points
-	return decision.ItemIdx(0)
+	itr := weapons.Iterator()
+	for !itr.Done() {
+		idx, value := itr.Next()
+		if float32(value.Value()) < a.STThreshold*float32(startingST) {
+			return decision.ItemIdx(idx)
+		}
+	}
+
+	return decision.ItemIdx(Max(0, weapons.Len()-1))
 }
 
-func (a *Team6Agent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
-	// shields := b.AgentState().Shields
-	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
-	return decision.ItemIdx(0)
+func (a *Team6Agent) HandleUpdateShield(ba agent.BaseAgent) decision.ItemIdx {
+	state := ba.AgentState()
+	shields := state.Shields
+
+	itr := shields.Iterator()
+	for !itr.Done() {
+		idx, value := itr.Next()
+		if float32(value.Value()) < a.STThreshold*float32(startingST) {
+			return decision.ItemIdx(idx)
+		}
+	}
+
+	return decision.ItemIdx(Max(0, shields.Len()-1))
 }
 
 func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
