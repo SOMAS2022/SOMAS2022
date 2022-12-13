@@ -17,3 +17,11 @@ func Min[T constraints.Ordered](a T, b T) T {
 		return b
 	}
 }
+
+func SCSaturatingAdd(a uint, b uint, max uint) uint {
+	if a+b > max {
+		return max
+	} else {
+		return a + b
+	}
+}

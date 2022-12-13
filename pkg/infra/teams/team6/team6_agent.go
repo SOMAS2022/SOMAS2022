@@ -94,14 +94,14 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 		if as.Defector.IsDefector() {
 			_, ok := a.trust[id]
 			if ok {
-				a.trust[id] -= 10
+				a.trust[id] = commons.SaturatingSub(a.trust[id], 10)
 			} else {
 				a.trust[id] = 40
 			}
 		} else {
 			_, ok := a.trust[id]
 			if ok {
-				a.trust[id] += 2
+				a.trust[id] = SCSaturatingAdd(a.trust[id], 2, 100)
 			} else {
 				a.trust[id] = 50
 			}
