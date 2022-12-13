@@ -91,5 +91,12 @@ func (a *Team6Agent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 }
 
 func (a *Team6Agent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	return a.FightActionNoProposal(baseAgent)
+	/*
+		If our agent thinks they should cower, let's let them trust their intuition over the group's.
+	*/
+	if a.FightActionNoProposal(baseAgent) == decision.Cower && proposedAction != decision.Cower {
+		return decision.Cower
+	} else {
+		return a.FightActionNoProposal(baseAgent)
+	}
 }
