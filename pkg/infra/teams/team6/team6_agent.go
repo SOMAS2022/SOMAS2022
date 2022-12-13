@@ -26,6 +26,9 @@ type Team6Agent struct {
 	ATThreshold float32
 	SHThreshold float32
 	STThreshold float32
+
+	fightRoundHappened bool
+	lastHPPoolDonation uint
 }
 
 func NewTeam6Agent() agent.Strategy {
@@ -62,7 +65,10 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 		Name: ba.Name(),
 		ID:   ba.ID(),
 		Properties: map[string]float32{
-			"bravery": float32(a.bravery),
+			"bravery":          float32(a.bravery),
+			"hp pool donation": float32(a.lastHPPoolDonation),
+			"hp":               float32(ba.AgentState().Hp),
 		},
 	}
+	a.fightRoundHappened = false
 }
