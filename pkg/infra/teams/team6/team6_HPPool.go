@@ -17,25 +17,31 @@ func (a *Team6Agent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 		it attacks it will lose HP proportional to bonus attack
 	*/
 	donationPercentage := uint(5)
-	donationMaximum := uint(0.1 * float32(startingHP))
+	donationMaximum := uint(0.10 * float32(startingHP))
 	donationHPThreshold := uint(0.25 * float32(startingHP))
 	state := baseAgent.AgentState()
 
-	if !a.fightRoundHappened || state.Hp <= donationHPThreshold {
-		a.lastHPPoolDonation = 0
+	if a.lastFightRound == 0 {
+		donationPercentage = 15
+	} else {
+		donationPercentage = 1
+	}
+
+	if state.Hp <= donationHPThreshold {
+		a.lastHPPoolDonationAmount = 0
 		return 0
 	} else if a.FightActionNoProposal(baseAgent) == decision.Cower {
-		a.lastHPPoolDonation = uint(state.Hp * donationPercentage / 100)
-		return a.lastHPPoolDonation
+		a.lastHPPoolDonationAmount = uint(state.Hp * donationPercentage / 100)
+		return a.lastHPPoolDonationAmount
 	} else {
 		if state.Stamina < Max(state.TotalAttack(), state.TotalDefense()) {
 			expectedHPRemaining := commons.SaturatingSub(state.Hp, Max(state.Stamina, Max(state.TotalAttack(), state.TotalDefense())))
-			a.lastHPPoolDonation = Max(donationMaximum, expectedHPRemaining*uint(donationPercentage)/100)
-			return a.lastHPPoolDonation
+			a.lastHPPoolDonationAmount = Min(donationMaximum, expectedHPRemaining*uint(donationPercentage)/100)
+			return a.lastHPPoolDonationAmount
 		} else {
 			expectedHPRemaining := commons.SaturatingSub(state.Hp, Max(state.TotalAttack(), state.TotalDefense()))
-			a.lastHPPoolDonation = Max(donationMaximum, expectedHPRemaining*uint(donationPercentage)/100)
-			return a.lastHPPoolDonation
+			a.lastHPPoolDonationAmount = Min(donationMaximum, expectedHPRemaining*uint(donationPercentage)/100)
+			return a.lastHPPoolDonationAmount
 		}
 	}
 }

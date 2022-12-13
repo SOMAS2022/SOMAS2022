@@ -94,7 +94,7 @@ func (a *Team6Agent) FightAction(baseAgent agent.BaseAgent, proposedAction decis
 	/*
 		If our agent thinks they should cower, let's let them trust their intuition over the group's.
 	*/
-	a.fightRoundHappened = true
+	a.lastFightRound = 0
 	if a.FightActionNoProposal(baseAgent) == decision.Cower && proposedAction != decision.Cower {
 		return decision.Cower
 	} else {
