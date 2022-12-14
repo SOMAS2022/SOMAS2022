@@ -310,14 +310,20 @@ func (fiv *FivAgent) HandleFightProposal(_ message.Proposal[decision.FightAction
 func (fiv *FivAgent) HandleFightProposalRequest(
 	_ message.Proposal[decision.FightAction],
 	_ agent.BaseAgent,
-	_ *immutable.Map[commons.ID, decision.FightAction],
+	proposals *immutable.Map[commons.ID, decision.FightAction],
 ) bool {
-	switch rand.Intn(2) {
-	case 0:
-		return true
-	default:
-		return false
+	var allCount float32 = 0.0
+	var cowCount float32 = 0.0
+	itr := proposals.Iterator()
+	for !itr.Done() {
+		_, fight, _ := itr.Next()
+		allCount += 1
+		if fight == decision.Cower {
+			cowCount += 1
+		}
 	}
+	percentCow := cowCount / allCount
+	return percentCow <= 0.4
 }
 
 func (fiv *FivAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
