@@ -52,6 +52,25 @@ func (qt *Qtable) GetMaxQAction(state string) string {
 	return maxQPair.action
 }
 
+func (qt *Qtable) GetMaxQState(action string) string {
+	fstCheck := true
+	var maxQ float32 = 0.0
+	var maxQPair SaPair
+	for sa, q := range qt.table {
+		if sa.action == action {
+			if fstCheck || q > maxQ {
+				fstCheck = false
+				maxQ = q
+				maxQPair = sa
+			}
+		}
+	}
+	if fstCheck {
+		return "NoSaPairAvailable"
+	}
+	return maxQPair.state
+}
+
 func (qt *Qtable) Learn(reward float32, maxFR float32) {
 	qt.table[qt.saTaken] += qt.alpha * (reward + qt.gamma*maxFR - qt.table[qt.saTaken])
 }

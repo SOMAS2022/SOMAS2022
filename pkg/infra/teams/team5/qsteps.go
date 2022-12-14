@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message/proposal"
 	"infra/game/state"
 	"math/rand"
 )
@@ -148,4 +149,58 @@ func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
 	fSas := []SaPair{{state: cqState, action: "Cower"}, {state: cqState, action: "Attck"}, {state: cqState, action: "Defnd"}}
 	fiv.qtable.Learn(reward, fiv.qtable.GetMaxFR(fSas))
 	// fiv.qtable.Print()
+}
+
+// Proposal related
+
+func (fiv *FivAgent) findProposalHealth(level string) proposal.ComparativeCondition {
+	var healthThresh proposal.ComparativeCondition
+	switch level {
+	case "Low":
+		healthThresh = *proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 300)
+	case "Mid":
+		healthThresh = *proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 600)
+	default:
+		healthThresh = *proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 600)
+	}
+	return healthThresh
+}
+
+func (fiv *FivAgent) findProposalStamina(level string) proposal.ComparativeCondition {
+	var staminaThresh proposal.ComparativeCondition
+	switch level {
+	case "Low":
+		staminaThresh = *proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, 300)
+	case "Mid":
+		staminaThresh = *proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, 600)
+	default:
+		staminaThresh = *proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 600-1)
+	}
+	return staminaThresh
+}
+
+func (fiv *FivAgent) findProposalAT(level string, globalATMax float32) proposal.ComparativeCondition {
+	var atThresh proposal.ComparativeCondition
+	switch level {
+	case "Weakee":
+		atThresh = *proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, uint(0.25*globalATMax))
+	case "Ordina":
+		atThresh = *proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, uint(0.75*globalATMax))
+	case "Master":
+		atThresh = *proposal.NewComparativeCondition(proposal.TotalAttack, proposal.GreaterThan, uint(0.75*globalATMax)-1)
+	}
+	return atThresh
+}
+
+func (fiv *FivAgent) findProposalSH(level string, globalSHMax float32) proposal.ComparativeCondition {
+	var shThresh proposal.ComparativeCondition
+	switch level {
+	case "Weakee":
+		shThresh = *proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, uint(0.25*globalSHMax))
+	case "Ordina":
+		shThresh = *proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, uint(0.75*globalSHMax))
+	case "Master":
+		shThresh = *proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, uint(0.75*globalSHMax)-1)
+	}
+	return shThresh
 }

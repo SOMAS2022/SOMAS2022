@@ -9,6 +9,7 @@ import (
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
+	"strings"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -205,32 +206,64 @@ func (fiv *FivAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 }
 
 func (fiv *FivAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	makesProposal := rand.Intn(100)
-
-	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-		))
-
-		prop := *commons.NewImmutableList(rules)
-		_ = baseAgent.SendFightProposalToLeader(prop)
+	// Purpose by finding highest Q state associated with an action
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	var globalATMax float32
+	var globalSHMax float32
+	for _, id := range commons.ImmutableMapKeys(globalStates) {
+		agState, _ := globalStates.Get(id)
+		if agState.Attack+agState.BonusAttack > uint(globalATMax) {
+			globalATMax = float32(agState.Attack + agState.BonusAttack)
+		}
+		if agState.Defense+agState.BonusDefense > uint(globalSHMax) {
+			globalATMax = float32(agState.Defense + agState.BonusDefense)
+		}
 	}
+
+	rules := make([]proposal.Rule[decision.FightAction], 0)
+
+	cowerState := fiv.qtable.GetMaxQAction("Cower")
+	if cowerState == "NoSaPairAvailable" {
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 10),
+		))
+	} else {
+		cowerStateSplit := strings.Split(cowerState, "-")
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewAndCondition(
+				proposal.NewAndCondition(fiv.findProposalHealth(cowerStateSplit[0]), fiv.findProposalStamina(cowerStateSplit[1])),
+				proposal.NewAndCondition(fiv.findProposalAT(cowerStateSplit[1], globalATMax), fiv.findProposalSH(cowerStateSplit[2], globalSHMax)))))
+	}
+
+	attckState := fiv.qtable.GetMaxQAction("Attck")
+	if attckState == "NoSaPairAvailable" {
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 500),
+		))
+	} else {
+		attckStateSplit := strings.Split(attckState, "-")
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewAndCondition(
+				proposal.NewAndCondition(fiv.findProposalHealth(attckStateSplit[0]), fiv.findProposalStamina(attckStateSplit[1])),
+				proposal.NewAndCondition(fiv.findProposalAT(attckStateSplit[1], globalATMax), fiv.findProposalSH(attckStateSplit[2], globalSHMax)))))
+	}
+
+	defndState := fiv.qtable.GetMaxQAction("Defnd")
+	if defndState == "NoSaPairAvailable" {
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 500),
+		))
+	} else {
+		defndStateSplit := strings.Split(defndState, "-")
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewAndCondition(
+				proposal.NewAndCondition(fiv.findProposalHealth(defndStateSplit[0]), fiv.findProposalStamina(defndStateSplit[1])),
+				proposal.NewAndCondition(fiv.findProposalAT(defndStateSplit[1], globalATMax), fiv.findProposalSH(defndStateSplit[2], globalSHMax)))))
+	}
+
+	prop := *commons.NewImmutableList(rules)
+	_ = baseAgent.SendFightProposalToLeader(prop)
 }
 
 func (fiv *FivAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
