@@ -28,7 +28,6 @@ func (tt *TrustTable) PositiveIndivlEvent(agID commons.ID, trustGain float32) {
 	} else {
 		tt.indivlTable[agID] = trustGain
 	}
-
 }
 
 func (tt *TrustTable) NegativeIndivlEvent(agID commons.ID, trustLoss float32) {
@@ -38,7 +37,6 @@ func (tt *TrustTable) NegativeIndivlEvent(agID commons.ID, trustLoss float32) {
 	} else {
 		tt.indivlTable[agID] = -trustLoss
 	}
-
 }
 
 func (tt *TrustTable) PositiveLeaderEvent(agID commons.ID, trustGain float32) {
