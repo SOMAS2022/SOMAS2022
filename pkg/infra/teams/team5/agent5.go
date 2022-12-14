@@ -7,7 +7,6 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/teams/team5/commons5"
-	"infra/teams/team5/socialNetwork"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -16,7 +15,7 @@ type agent5 struct {
 	//FightInformation
 	// InternalState   internalState
 	LootInformation commons5.Loot
-	SocialNetwork   socialNetwork.SocialNetwork
+	SocialNetwork   SocialNetwork
 }
 
 func (t *agent5) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
@@ -109,7 +108,7 @@ func (t *agent5) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 // 	//......
 // }
 
-func NewAgen5() agent.Strategy {
+func NewAgent5() agent.Strategy {
 	var agent5 agent.Strategy
 
 	return agent5
