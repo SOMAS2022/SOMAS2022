@@ -20,6 +20,7 @@ type FivAgent struct {
 	prePopNum   uint
 	exploreRate float32
 	qtable      *Qtable
+	ttable      *TrustTable
 }
 
 func (fiv *FivAgent) FightResolution(agent agent.BaseAgent, _ commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
@@ -334,5 +335,5 @@ func (fiv *FivAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeIn
 }
 
 func NewFivAgent() agent.Strategy {
-	return &FivAgent{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.25, 0.75)}
+	return &FivAgent{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.25, 0.75), ttable: NewTrustTable()}
 }
