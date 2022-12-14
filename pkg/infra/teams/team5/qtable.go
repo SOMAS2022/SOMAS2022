@@ -1,5 +1,9 @@
 package team5
 
+import (
+	"fmt"
+)
+
 type SaPair struct {
 	// State is always "health-stamina-attackLevel-defenseLevel",
 	// where attackLevel, defenseLevel are relative to other observable agents.
@@ -15,7 +19,7 @@ type Qtable struct {
 	saTaken SaPair
 }
 
-func (qt *Qtable) getMaxFR(fSas []SaPair) float32 {
+func (qt *Qtable) GetMaxFR(fSas []SaPair) float32 {
 	// find maximum future reward
 	var firstMark bool = true
 	var maxFR float32 = 0
@@ -28,8 +32,35 @@ func (qt *Qtable) getMaxFR(fSas []SaPair) float32 {
 	return maxFR
 }
 
-func (qt *Qtable) learn(reward float32, maxFR float32) {
+func (qt *Qtable) GetMaxQAction(state string) string {
+	fstCheck := true
+	var maxQ float32 = 0.0
+	var maxQPair SaPair
+	for sa, q := range qt.table {
+		if sa.state == state {
+			if fstCheck || q > maxQ {
+				fstCheck = false
+				maxQ = q
+				maxQPair = sa
+			}
+		}
+	}
+	if fstCheck {
+		return "NoSaPairAvailable"
+	}
+	return maxQPair.action
+}
+
+func (qt *Qtable) Learn(reward float32, maxFR float32) {
 	qt.table[qt.saTaken] += qt.alpha * (reward + qt.gamma*maxFR - qt.table[qt.saTaken])
+}
+
+func (qt *Qtable) Print() {
+	for qstate, qvalue := range qt.table {
+		fmt.Printf("|--  " + qstate.state + ":" + qstate.action)
+		fmt.Printf("  %.4f", qvalue)
+		fmt.Println("  --|")
+	}
 }
 
 func NewQTable(alpha float32, gamma float32) *Qtable {
