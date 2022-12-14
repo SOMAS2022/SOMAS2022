@@ -29,7 +29,7 @@ type agentProfile struct {
 // 	Evil
 // )
 
-type socialNetwork struct {
+type SocialNetwork struct {
 	AgentProfile map[commons.ID]agentProfile
 	LawfullMin   uint
 	ChaoticMax   uint
@@ -37,7 +37,7 @@ type socialNetwork struct {
 	EvilMax      uint
 }
 
-func updatePersonality(sn socialNetwork, agentID commons.ID, extraStrategeScore uint, extraGoodwillScore uint) socialNetwork {
+func updatePersonality(sn SocialNetwork, agentID commons.ID, extraStrategeScore uint, extraGoodwillScore uint) SocialNetwork {
 	nsn := sn
 	newStrategyScore := sn.AgentProfile[agentID].Trusts.StrategyScore + extraStrategeScore
 	nsn.AgentProfile[agentID].Trusts.StrategyScore = newStrategyScore
@@ -66,7 +66,7 @@ func updatePersonality(sn socialNetwork, agentID commons.ID, extraStrategeScore 
 	return nsn
 }
 
-func updatePersonalityBoundaries(sn socialNetwork) socialNetwork {
+func updatePersonalityBoundaries(sn SocialNetwork) SocialNetwork {
 	nsn := sn
 
 	return nsn
