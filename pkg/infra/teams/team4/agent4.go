@@ -29,13 +29,68 @@ type AgentFour struct {
 	TSN          []commons.ID
 }
 
-// Random value generator
-func randFloats(min, max float64, n int) []float64 {
-	res := make([]float64, n)
-	for i := range res {
-		res[i] = min + rand.Float64()*(max-min)
+// bravery and utility score defined
+func NewAgentFour() agent.Strategy {
+	return &AgentFour{
+		bravery:      rand.Intn(10),
+		utilityScore: make(map[string]int),
 	}
-	return res
+}
+
+// *********************************** STRATEGY INTERFACE FUNCTIONS ***********************************
+
+// we always pick our best shield
+func (a *AgentFour) HandleUpdateShield(baseAgent agent.BaseAgent) decision.ItemIdx {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+
+	shields := agentState.Shields
+
+	if shields.Len() > 0 { // if we have shields
+
+		largestItemValue := 0
+		itemIndex := 0
+
+		for i := 0; i < shields.Len(); i++ {
+			if shields.Get(i).Value() > largestItemValue {
+				largestItemValue = shields.Get(i).Value()
+				itemIndex = i
+			}
+		}
+
+		return decision.ItemIdx(itemIndex)
+
+	}
+
+	// what to do if we have no shields?
+	//return decision.ItemIdx(0)
+}
+
+// we always pick the best weapon
+func (a *AgentFour) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+
+	weapons := agentState.Weapons
+
+	if weapons.Len() > 0 { // if we have weapons
+
+		largestItemValue := 0
+		itemIndex := 0
+
+		for i := 0; i < weapons.Len(); i++ {
+			if weapons.Get(i).Value() > largestItemValue {
+				largestItemValue = weapons.Get(i).Value()
+				itemIndex = i
+			}
+		}
+
+		return decision.ItemIdx(itemIndex)
+
+	}
+
+	// what to do if we have no weapons?
+	//return decision.ItemIdx(0)
 }
 
 // Define and update the attributes for agent four
@@ -48,13 +103,81 @@ func (a *AgentFour) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.Im
 	a.C = 0
 }
 
-// bavery and utility score defined
-func NewAgentFour() agent.Strategy {
-	return &AgentFour{
-		bravery:      rand.Intn(10),
-		utilityScore: make(map[string]int),
-	}
+// *********************************** ELECTION INTERFACE FUNCTIONS ***********************************
+
+func (a *AgentFour) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+	//
 }
+
+func (a *AgentFour) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
+	//
+}
+
+func (a *AgentFour) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	//
+}
+
+// *********************************** FIGHT INTERFACE FUNCTIONS ***********************************
+
+func (a *AgentFour) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+	//
+}
+
+func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+	//
+}
+
+func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+	//
+}
+
+func (a *AgentFour) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	//
+}
+
+func (a *AgentFour) HandleFightProposalRequest(_ message.Proposal[decision.FightAction], _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
+	//
+}
+
+func (a *AgentFour) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
+	//
+}
+
+func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
+	//
+}
+
+// *********************************** LOOT INTERFACE FUNCTIONS ***********************************
+
+func (a *AgentFour) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+	//
+}
+
+func (a *AgentFour) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	//
+}
+
+func (a *AgentFour) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	//
+}
+
+func (a *AgentFour) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	//
+}
+
+func (a *AgentFour) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	//
+}
+
+func (a *AgentFour) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+	//
+}
+
+func (a *AgentFour) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}] {
+	//
+}
+
+// *********************************** HPPOOL INTERFACE FUNCTIONS ***********************************
 
 // HP pool donation
 func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
@@ -68,6 +191,26 @@ func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 		donation = 0
 	}
 	return uint(donation)
+}
+
+// *********************************** TRADE INTERFACE FUNCTIONS ***********************************
+
+func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
+	// respond to requests
+
+	// make requests
+
+}
+
+// *********************************** OTHER FUNCTIONS ***********************************
+
+// Random value generator
+func randFloats(min, max float64, n int) []float64 {
+	res := make([]float64, n)
+	for i := range res {
+		res[i] = min + rand.Float64()*(max-min)
+	}
+	return res
 }
 
 func (a *AgentFour) HPLevels(agent agent.BaseAgent) {
@@ -215,96 +358,16 @@ func EquipWeaponShield(iterator commons.Iterator[state.Item], ids []commons.ID, 
 // 	}
 // }
 
-// FUNCTIONS COPIED //
+// // FUNCTIONS COPIED //
 
-func (a *AgentFour) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	//
-}
+// func (a *AgentFour) CurrentAction() decision.FightAction {
+// 	//
+// }
 
-func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	//
-}
-
-func (a *AgentFour) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	//
-}
-
-func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
-	//
-}
-
-func (a *AgentFour) CurrentAction() decision.FightAction {
-	//
-}
-
-func (a *AgentFour) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	//
-}
-
-func (a *AgentFour) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
-	//
-}
-
-func (a *AgentFour) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	//
-}
-
-func (a *AgentFour) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	//
-}
-
-func (a *AgentFour) HandleFightProposalRequest(_ message.Proposal[decision.FightAction], _ agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) bool {
-	//
-}
-
-func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
-	//
-}
-
-func (a *AgentFour) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
-	//
-}
-
-func (a *AgentFour) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-	//
-}
-
-func (a *AgentFour) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	//
-}
-
-func (a *AgentFour) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	//
-}
-
-func (a *AgentFour) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
-	//
-}
-
-func (a *AgentFour) HandleUpdateShield(baseAgent agent.BaseAgent) decision.ItemIdx {
-	//
-}
-
-func (a *AgentFour) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {
-	//
-}
-
-func (a *AgentFour) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}] {
-	//
-}
-
-func (a *AgentFour) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
-	//
-}
-
-func (a *AgentFour) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	//
-}
-
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-	//
-}
+// func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+// 	//
+// }
 
 func (a *AgentFour) UpdateUtility(baseAgent agent.BaseAgent) {
-	//
+	//???????
 }
