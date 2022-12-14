@@ -1,4 +1,4 @@
-package example
+package team5
 
 import (
 	"infra/game/agent"
@@ -13,11 +13,15 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-type RandomAgent struct {
-	bravery int
+type FivAgent struct {
+	bravery     int
+	preHealth   uint
+	prePopNum   uint
+	exploreRate float32
+	qtable      *Qtable
 }
 
-func (r *RandomAgent) FightResolution(agent agent.BaseAgent, _ commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (fiv *FivAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -35,7 +39,7 @@ func (r *RandomAgent) FightResolution(agent agent.BaseAgent, _ commons.Immutable
 	return *builder.Map()
 }
 
-func (r *RandomAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+func (fiv *FivAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
 	loot := baseAgent.Loot()
 	weapons := loot.Weapons().Iterator()
 	shields := loot.Shields().Iterator()
@@ -75,42 +79,46 @@ func (r *RandomAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.
 	return *builder.Map()
 }
 
-func (r *RandomAgent) LootAction(
-	_ agent.BaseAgent,
+func (fiv *FivAgent) LootAction(
+	baseAgent agent.BaseAgent,
 	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
-	_ message.Proposal[decision.LootAction],
+	acceptedProposal message.Proposal[decision.LootAction],
 ) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
-func (r *RandomAgent) FightActionNoProposal(_ agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
+func (fiv *FivAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
+	if fiv.qtable.saTaken.state != "" {
+		fiv.UpdateQ(baseAgent)
 	}
+	fiv.preHealth = baseAgent.AgentState().Hp
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	fiv.prePopNum = uint(globalStates.Len())
+	qstate := fiv.CurrentQState(baseAgent)
+	if rand.Float32() < fiv.exploreRate || len(fiv.qtable.table) == 0 {
+		return fiv.Explore(qstate)
+	}
+	return fiv.Exploit(qstate)
 }
 
-func (r *RandomAgent) FightAction(
+func (fiv *FivAgent) FightAction(
 	baseAgent agent.BaseAgent,
-	_ decision.FightAction,
-	_ message.Proposal[decision.FightAction],
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
 ) decision.FightAction {
-	return r.FightActionNoProposal(baseAgent)
+	return fiv.FightActionNoProposal(baseAgent)
 }
 
-func (r *RandomAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], _ agent.BaseAgent) {
+func (fiv *FivAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
 }
 
-func (r *RandomAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	return nil
+func (fiv *FivAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+func (fiv *FivAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Positive
@@ -121,7 +129,7 @@ func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction]
 	}
 }
 
-func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+func (fiv *FivAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -130,7 +138,7 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (r *RandomAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (fiv *FivAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -164,27 +172,28 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 	}
 }
 
-func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+func (fiv *FivAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
-func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-	r.bravery += rand.Intn(10)
+func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+	fiv.bravery += rand.Intn(10)
 	log <- logging.AgentLog{
 		Name: a.Name(),
 		ID:   a.ID(),
 		Properties: map[string]float32{
-			"bravery": float32(r.bravery),
+			"bravery": float32(fiv.bravery),
 		},
 	}
+	fiv.UpdateQ(a)
 }
 
-func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(false, false, 10, 5)
 	return manifesto
 }
 
-func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+func (fiv *FivAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Abstain
@@ -195,7 +204,7 @@ func (r *RandomAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
 	}
 }
 
-func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+func (fiv *FivAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
@@ -224,11 +233,11 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 	}
 }
 
-func (r *RandomAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+func (fiv *FivAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
-func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (fiv *FivAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
 	view := b.View()
 	agentState := view.AgentState()
@@ -256,7 +265,7 @@ func (r *RandomAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (r *RandomAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+func (fiv *FivAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -265,7 +274,7 @@ func (r *RandomAgent) HandleFightProposal(_ message.Proposal[decision.FightActio
 	}
 }
 
-func (r *RandomAgent) HandleFightProposalRequest(
+func (fiv *FivAgent) HandleFightProposalRequest(
 	_ message.Proposal[decision.FightAction],
 	_ agent.BaseAgent,
 	_ *immutable.Map[commons.ID, decision.FightAction],
@@ -278,20 +287,24 @@ func (r *RandomAgent) HandleFightProposalRequest(
 	}
 }
 
-func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
+func (fiv *FivAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
+	// weapons := b.AgentState().weapons
+	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
+
 	// 0th weapon has the greatest attack points
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
-	// 0th weapon has the greatest shield points
+func (fiv *FivAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
+	// shields := b.AgentState().Shields
+	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
 	return decision.ItemIdx(0)
 }
 
-func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+func (fiv *FivAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
 
-func NewRandomAgent() agent.Strategy {
-	return &RandomAgent{bravery: rand.Intn(5)}
+func NewFivAgent() agent.Strategy {
+	return &FivAgent{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.25, 0.75)}
 }
