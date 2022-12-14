@@ -130,7 +130,7 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 }
 
 func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+	return 0
 }
 
 func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {

@@ -57,9 +57,7 @@ func (qt *Qtable) Learn(reward float32, maxFR float32) {
 
 func (qt *Qtable) Print() {
 	for qstate, qvalue := range qt.table {
-		fmt.Printf("|--  " + qstate.state + ":" + qstate.action)
-		fmt.Printf("  %.4f", qvalue)
-		fmt.Println("  --|")
+		fmt.Printf("|--  "+qstate.state+":"+qstate.action+"  %.4f"+"  --|\n", qvalue)
 	}
 }
 
