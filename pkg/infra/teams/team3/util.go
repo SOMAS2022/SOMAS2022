@@ -2,110 +2,134 @@ package team3
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
 	"infra/game/decision"
-	"math/rand"
+	"infra/game/message"
+
+	"github.com/benbjohnson/immutable"
 )
 
-// Update Utility
-func (a *AgentThree) UpdateUtility(baseAgent agent.BaseAgent) {
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, _, ok := itr.Next()
-		if !ok {
-			break
-		}
-
-		// We are already cool, don't need the utility score for ourselves
-		if id != baseAgent.ID() {
-			a.utilityScore[id] = rand.Intn(10)
-		}
-	}
-	// Sort utility map
-	// sort.Sort(a.utilityScore)
-}
-
-func (a *AgentThree) limitScore(score int) int {
+// Utility scores in range [0, 15]
+func limitScore(score int) int {
 	// Implement Boundaries
-    if score > 15 {
-        score = 15
+	if score > 15 {
+		score = 15
 	}
-    if score < 0 {
-        score = 0
+	if score < 0 {
+		score = 0
 	}
 	return score
 }
 
-//implemented the 3 functions resource, proposal, chair: considering the utility is between 0 to 15
-func (a *AgentThree) UtilityResource(baseAgent agent.BaseAgent) {
-	//should initiate a utilityResource to 7 (score= map[id]=utilityResource)
-    //punishment:
-	for id, score := range a.uR {
-		if trade[score.id] == Reject {
-			if score >= 12 {
-				score = score + 1
-			} else if score <= 12 && score >= 7 {
-				score = score - 2
-			} else {
-				score = score + 3
+// Resource (trading) utility
+func (a *AgentThree) UpdateUtilityResource(baseAgent agent.BaseAgent, msg message.TradeResponse, id commons.ID) {
+	// Check if msg type is correct
+
+	// Punishment depending on previous score:
+	switch msg.(type) {
+	case message.TradeReject:
+		if a.uR[id] >= 12 {
+			a.uR[id] -= 1
+		} else if a.uR[id] < 12 && a.uR[id] >= 7 {
+			a.uR[id] -= 2
+		} else {
+			a.uR[id] -= 3
+		}
+
+		// Rewarding the Agents (succesful trade):
+	case message.TradeAccept:
+		a.uR[id] += 3
+	}
+	a.uR[id] = limitScore(a.uR[id])
+}
+
+// Proposal utility
+func (a *AgentThree) UpdateUtilityProposal(baseAgent agent.BaseAgent, propAction decision.FightAction, id commons.ID) {
+	// calculate propAction from Agent[id] before calling this function! (based on his thresholds?)
+
+	// Check if agent is in accordance with us and asked us in the last round
+	// TODO: update contacts when receiving message
+	if a.contactsLastRound[id] {
+		if a.CurrentAction() != propAction {
+			a.proposalTolerance[id] += 1
+			// Tolerance
+			if a.proposalTolerance[id] >= 3 {
+				a.uP[id] -= 1
+				a.proposalTolerance[id] = 0
 			}
+		} else {
+			a.uP[id] += 1
 		}
 	}
-	//Update scoreresource map with agent's new scores
-
-    // Rewarding the Agents
-	if trade[agent.id] == Agree {// the trade has been made
-		score+=3
-	}
-    score = a.limitScore(score)
+	a.uP[id] = limitScore(a.uP[id])
 }
 
-func (a *AgentThree) UtilityProposal(baseAgent agent.BaseAgent) {
-	//should initiate a utilityProposal to 7 (score= map[id]=utilityResource)
-    Lp := 0
-
-    if agent has a proposal AND asked us about it AND proposal != our decision { //message boolean
-        Lp += 1
-	}
-    if Lp > 4 {
-        score := score + 1
-        Lp := 0
-	}
-    if agent proposal AND asked us about it AND proposal == our decision { //message boolean
-        score:= score + 1
-	}
-	score := a.limitScore(score)
-}
-
-        
-func (a *AgentThree) UtilityChair(baseAgent agent.BaseAgent) {
+// Chair utility
+func (a *AgentThree) UpdateUtilityChair(baseAgent agent.BaseAgent, prop immutable.Map[commons.ID, decision.FightAction]) {
 	//should initiate a utilityChair to 7 (score= map[id]=utilityResource)
-	Lc := 0
 
-    if fight_decision != proposal.our_fight_decision { //message changed to bool
-        Lc = Lc + 1
+	view := baseAgent.View()
+	chairID := view.CurrentLeader()
+
+	propAction, _ := prop.Get(baseAgent.ID())
+
+	// Check if chair is in accordance with us
+	if a.CurrentAction() != propAction {
+		a.chairTolerance += 1
+		// Tolerance
+		if a.chairTolerance >= 4 {
+			a.uC[chairID] -= 1
+			a.chairTolerance = 0
+		}
+	} else {
+		a.uC[chairID] += 1
 	}
-    if Lc > 4 {
-        score := score + 1 
-		Lc = 0
-	}
-    if our_fight == prop.our_fight_decision {
-        score := score + 1
-	}
-	score := a.limitScore(score)
+	a.uC[chairID] = limitScore(a.uC[chairID])
 }
 
-func (a *AgentThree) TotalUtility(baseAgent agent.BaseAgent) map[string]int {  
-	//average of the 3 score
-	return (UtilityChair() + UtilityProposal() + UtilityResource()) / 3
+func (a *AgentThree) UpdateTotalUtility(baseAgent agent.BaseAgent) {
+	// Weighted Average
+	for i, _ := range a.utilityScore {
+		a.utilityScore[i] = int((0.45*float64(a.uC[i]) + 0.45*float64(a.uR[i]) + 0.10*float64(a.uP[i])) / 3)
+	}
 }
 
-func (a *AgentThree) UpdateTSN(basebaseAgent agent.BaseAgent) {
-	//trusted social network, after each level
+// Add agent to TSN (if he doesn't exist already)
+func (a *AgentThree) AddToTSN(id commons.ID) {
+	exists := false
+	for _, TSNid := range a.TSN {
+
+		// check if agent exists
+		if TSNid == id {
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		a.TSN = append(a.TSN, id)
+	}
+}
+
+// Remove agent from TSN
+func (a *AgentThree) RemoveFromTSN(id commons.ID) []commons.ID {
+	for i, TSNid := range a.TSN {
+		// Put last element on deleted space and return N-1
+		if TSNid == id {
+			a.TSN[i] = a.TSN[len(a.TSN)-1]
+			a.TSN = a.TSN[:len(a.TSN)-1]
+			break
+		}
+	}
+	return a.TSN
+}
+
+// Update TSN
+func (a *AgentThree) UpdateTSN(baseAgent agent.BaseAgent) {
 	for id, util := range a.utilityScore {
 		if util >= 10 {
-			a.TSN[id] = util
+			a.AddToTSN(id)
+		} else {
+			a.RemoveFromTSN(id)
 		}
 	}
 }
