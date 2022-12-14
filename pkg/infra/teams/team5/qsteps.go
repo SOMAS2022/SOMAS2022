@@ -2,6 +2,7 @@ package team5
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"math/rand"
@@ -68,18 +69,19 @@ func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
 	var numAlive float32 = 0.0
 	var popATGreaterToCount float32 = 0.0
 	var popSHGreaterToCount float32 = 0.0
-	othersStates := myview.AgentState()
 
-	itr := othersStates.Iterator()
-	for !itr.Done() {
-		_, agState, ok := itr.Next()
-		if ok && agState.Hp > 0 {
+	globalStates := myview.AgentState()
+	for _, id := range commons.ImmutableMapKeys(globalStates) {
+		agState, _ := globalStates.Get(id)
+		if agState.Hp > 0 {
 			numAlive += 1
-			if agState.Attack+agState.BonusAttack < mystate.TotalAttack() {
-				popATGreaterToCount += 1
-			}
-			if agState.Defense+agState.BonusDefense < mystate.TotalDefense() {
-				popSHGreaterToCount += 1
+			if id != baseAgent.ID() {
+				if agState.Attack+agState.BonusAttack < mystate.TotalAttack() {
+					popATGreaterToCount += 1
+				}
+				if agState.Defense+agState.BonusDefense < mystate.TotalDefense() {
+					popSHGreaterToCount += 1
+				}
 			}
 		}
 	}
