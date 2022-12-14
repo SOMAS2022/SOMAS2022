@@ -19,6 +19,7 @@ import (
 	//? Add you team folder like this:
 	t0 "infra/teams/team0"
 	t1 "infra/teams/team1"
+	t5 "infra/teams/team5"
 )
 
 // Mode ? Changed at compile time. eg change in .env to `MODE=0` to set this to '0'.
@@ -50,6 +51,8 @@ func InitAgents(defaultStrategyMap map[commons.ID]func() agent.Strategy, gameCon
 		return t0.InitAgents(defaultStrategyMap, gameConfig, ptr)
 	case "1":
 		return t1.InitAgents(defaultStrategyMap, gameConfig, ptr)
+	case "5":
+		return t5.InitAgents(defaultStrategyMap, gameConfig, ptr)
 	default:
 		return initialise.InitAgents(defaultStrategyMap, gameConfig, ptr)
 	}
