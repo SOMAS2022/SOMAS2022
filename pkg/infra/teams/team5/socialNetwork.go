@@ -77,7 +77,6 @@ func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
 }
 
 func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
-
 	agentProfile := sn.AgentProfile[agentID]
 	agentProfile.Trusts.StrategyScore += extraStrategeScore
 	agentProfile.Trusts.GoodwillScore += extraGoodwillScore
