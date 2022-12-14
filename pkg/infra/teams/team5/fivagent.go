@@ -22,7 +22,7 @@ type FivAgent struct {
 	qtable      *Qtable
 }
 
-func (fiv *FivAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (fiv *FivAgent) FightResolution(agent agent.BaseAgent, _ commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -81,9 +81,9 @@ func (fiv *FivAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.S
 }
 
 func (fiv *FivAgent) LootAction(
-	baseAgent agent.BaseAgent,
+	_ agent.BaseAgent,
 	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
-	acceptedProposal message.Proposal[decision.LootAction],
+	_ message.Proposal[decision.LootAction],
 ) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
@@ -115,8 +115,7 @@ func (fiv *FivAgent) HandleLootInformation(m message.TaggedInformMessage[message
 }
 
 func (fiv *FivAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (fiv *FivAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
@@ -321,16 +320,12 @@ func (fiv *FivAgent) HandleFightProposalRequest(
 }
 
 func (fiv *FivAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().weapons
-	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
-
 	// 0th weapon has the greatest attack points
 	return decision.ItemIdx(0)
 }
 
 func (fiv *FivAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
-	// shields := b.AgentState().Shields
-	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
+	// 0th weapon has the greatest shield points
 	return decision.ItemIdx(0)
 }
 
