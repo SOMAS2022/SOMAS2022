@@ -35,12 +35,39 @@ func (fiv *FivAgent) CurrentAPState(mystate state.AgentState) string {
 	return myStamina
 }
 
-func (fiv *FivAgent) CurrentATSHState(mystate state.AgentState, myview state.View) string {
+func (fiv *FivAgent) CurrentATState(popATGreaterToCount float32, numAlive float32) string {
 	relativeAT := ""
+	switch {
+	case popATGreaterToCount < 0.25*numAlive:
+		relativeAT = "Weakee"
+	case 0.25*numAlive <= popATGreaterToCount && popATGreaterToCount < 0.75*numAlive:
+		relativeAT = "Ordin"
+	case 0.75 <= popATGreaterToCount && popATGreaterToCount <= numAlive:
+		relativeAT = "Master"
+	}
+	return relativeAT
+}
+
+func (fiv *FivAgent) CurrentSHState(popSHGreaterToCount float32, numAlive float32) string {
 	relativeSH := ""
-	numAlive := 0.0
-	popATGreaterToCount := 0.0
-	popSHGreaterToCount := 0.0
+	switch {
+	case popSHGreaterToCount < 0.25*numAlive:
+		relativeSH = "Weakee"
+	case 0.25*numAlive <= popSHGreaterToCount && popSHGreaterToCount < 0.75*numAlive:
+		relativeSH = "Ordin"
+	case 0.75 <= popSHGreaterToCount && popSHGreaterToCount <= numAlive:
+		relativeSH = "Master"
+	}
+	return relativeSH
+}
+
+func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
+	mystate := baseAgent.AgentState()
+	myview := baseAgent.View()
+
+	var numAlive float32 = 0.0
+	var popATGreaterToCount float32 = 0.0
+	var popSHGreaterToCount float32 = 0.0
 	othersStates := myview.AgentState()
 
 	itr := othersStates.Iterator()
@@ -57,32 +84,7 @@ func (fiv *FivAgent) CurrentATSHState(mystate state.AgentState, myview state.Vie
 		}
 	}
 
-	switch {
-	case popATGreaterToCount < 0.25*numAlive:
-		relativeAT = "Weakee"
-	case 0.25*numAlive <= popATGreaterToCount && popATGreaterToCount < 0.75*numAlive:
-		relativeAT = "Ordin"
-	case 0.75 <= popATGreaterToCount && popATGreaterToCount <= numAlive:
-		relativeAT = "Master"
-	}
-
-	switch {
-	case popSHGreaterToCount < 0.25*numAlive:
-		relativeSH = "Weakee"
-	case 0.25*numAlive <= popSHGreaterToCount && popSHGreaterToCount < 0.75*numAlive:
-		relativeSH = "Ordin"
-	case 0.75 <= popSHGreaterToCount && popSHGreaterToCount <= numAlive:
-		relativeSH = "Master"
-	}
-
-	return relativeAT + "-" + relativeSH
-}
-
-func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
-	mystate := baseAgent.AgentState()
-	myview := baseAgent.View()
-
-	return fiv.CurrentHPState(mystate) + "-" + fiv.CurrentAPState(mystate) + "-" + fiv.CurrentATSHState(mystate, myview)
+	return fiv.CurrentHPState(mystate) + "-" + fiv.CurrentAPState(mystate) + "-" + fiv.CurrentATState(popATGreaterToCount, numAlive) + "-" + fiv.CurrentSHState(popSHGreaterToCount, numAlive)
 }
 
 func (fiv *FivAgent) Explore(qstate string) decision.FightAction {
