@@ -2,6 +2,7 @@ package team5
 
 import (
 	"fmt"
+	"strconv"
 )
 
 type SaPair struct {
@@ -56,9 +57,11 @@ func (qt *Qtable) Learn(reward float32, maxFR float32) {
 }
 
 func (qt *Qtable) Print() {
+	strBuild := "\n ___________________________________________\n"
 	for qstate, qvalue := range qt.table {
-		fmt.Printf("|--  "+qstate.state+":"+qstate.action+"  %.4f"+"  --|\n", qvalue)
+		strBuild += "|--  " + qstate.state + ":" + qstate.action + "  " + strconv.FormatFloat(float64(qvalue), 'f', 4, 32) + "  --|\n"
 	}
+	fmt.Print(strBuild)
 }
 
 func NewQTable(alpha float32, gamma float32) *Qtable {

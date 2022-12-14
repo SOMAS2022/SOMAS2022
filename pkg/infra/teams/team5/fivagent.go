@@ -16,6 +16,7 @@ import (
 type FivAgent struct {
 	bravery     int
 	preHealth   uint
+	prePopNum   uint
 	exploreRate float32
 	qtable      *Qtable
 }
@@ -39,7 +40,43 @@ func (fiv *FivAgent) FightResolution(agent agent.BaseAgent, prop commons.Immutab
 }
 
 func (fiv *FivAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
-	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
+	loot := baseAgent.Loot()
+	weapons := loot.Weapons().Iterator()
+	shields := loot.Shields().Iterator()
+	hpPotions := loot.HpPotions().Iterator()
+	staminaPotions := loot.StaminaPotions().Iterator()
+
+	builder := immutable.NewSortedMapBuilder[commons.ItemID, struct{}](nil)
+
+	for !weapons.Done() {
+		weapon, _ := weapons.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(weapon.Id(), struct{}{})
+		}
+	}
+
+	for !shields.Done() {
+		shield, _ := shields.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(shield.Id(), struct{}{})
+		}
+	}
+
+	for !hpPotions.Done() {
+		pot, _ := hpPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	for !staminaPotions.Done() {
+		pot, _ := staminaPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	return *builder.Map()
 }
 
 func (fiv *FivAgent) LootAction(
@@ -55,6 +92,9 @@ func (fiv *FivAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 		fiv.UpdateQ(baseAgent)
 	}
 	fiv.preHealth = baseAgent.AgentState().Hp
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	fiv.prePopNum = uint(globalStates.Len())
 	qstate := fiv.CurrentQState(baseAgent)
 	if rand.Float32() < fiv.exploreRate || len(fiv.qtable.table) == 0 {
 		return fiv.Explore(qstate)
@@ -266,5 +306,5 @@ func (fiv *FivAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeIn
 }
 
 func NewFivAgent() agent.Strategy {
-	return &FivAgent{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.2, 0.8)}
+	return &FivAgent{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.25, 0.75)}
 }

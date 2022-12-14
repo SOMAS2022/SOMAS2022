@@ -42,7 +42,7 @@ func (fiv *FivAgent) CurrentATState(popATGreaterToCount float32, numAlive float3
 	case popATGreaterToCount < 0.25*numAlive:
 		relativeAT = "Weakee"
 	case 0.25*numAlive <= popATGreaterToCount && popATGreaterToCount < 0.75*numAlive:
-		relativeAT = "Ordin"
+		relativeAT = "Ordina"
 	case 0.75 <= popATGreaterToCount && popATGreaterToCount <= numAlive:
 		relativeAT = "Master"
 	}
@@ -55,7 +55,7 @@ func (fiv *FivAgent) CurrentSHState(popSHGreaterToCount float32, numAlive float3
 	case popSHGreaterToCount < 0.25*numAlive:
 		relativeSH = "Weakee"
 	case 0.25*numAlive <= popSHGreaterToCount && popSHGreaterToCount < 0.75*numAlive:
-		relativeSH = "Ordin"
+		relativeSH = "Ordina"
 	case 0.75 <= popSHGreaterToCount && popSHGreaterToCount <= numAlive:
 		relativeSH = "Master"
 	}
@@ -73,15 +73,13 @@ func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
 	globalStates := myview.AgentState()
 	for _, id := range commons.ImmutableMapKeys(globalStates) {
 		agState, _ := globalStates.Get(id)
-		if agState.Hp > 0 {
-			numAlive += 1
-			if id != baseAgent.ID() {
-				if agState.Attack+agState.BonusAttack < mystate.TotalAttack() {
-					popATGreaterToCount += 1
-				}
-				if agState.Defense+agState.BonusDefense < mystate.TotalDefense() {
-					popSHGreaterToCount += 1
-				}
+		numAlive += 1
+		if id != baseAgent.ID() {
+			if agState.Attack+agState.BonusAttack < mystate.TotalAttack() {
+				popATGreaterToCount += 1
+			}
+			if agState.Defense+agState.BonusDefense < mystate.TotalDefense() {
+				popSHGreaterToCount += 1
 			}
 		}
 	}
@@ -134,9 +132,20 @@ func (fiv *FivAgent) Exploit(qstate string) decision.FightAction {
 }
 
 func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
-	percentHealthLoss := (float32(baseAgent.AgentState().Hp) - float32(fiv.preHealth)) / float32(fiv.preHealth) * 100
+	// impact from self
+	percentHealthLoss := (float32(fiv.preHealth) - float32(baseAgent.AgentState().Hp)) / float32(fiv.preHealth)
+	// impact from group
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	var guilt float32 = -1.0
+	if fiv.qtable.saTaken.action == "Cower" {
+		guilt = float32(globalStates.Len()) - float32(fiv.prePopNum)
+	}
+	// combined reward
+	reward := -10*percentHealthLoss - 5*guilt
+
 	cqState := fiv.CurrentQState(baseAgent)
 	fSas := []SaPair{{state: cqState, action: "Cower"}, {state: cqState, action: "Attck"}, {state: cqState, action: "Defnd"}}
-	fiv.qtable.Learn(percentHealthLoss, fiv.qtable.GetMaxFR(fSas))
+	fiv.qtable.Learn(reward, fiv.qtable.GetMaxFR(fSas))
 	// fiv.qtable.Print()
 }
