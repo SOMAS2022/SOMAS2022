@@ -9,6 +9,24 @@ import (
 	"math/rand"
 )
 
+func (fiv *FivAgent) populateQTable() {
+	levelRange := [3]string{"Low", "Mid", "Hih"}
+	skillRange := [3]string{"Weakee", "Ordina", "Master"}
+	actonRange := [3]string{"Attck", "Cower", "Defnd"}
+	for _, hpLevel := range levelRange {
+		for _, apLevel := range levelRange {
+			for _, atLevel := range skillRange {
+				for _, shLevel := range skillRange {
+					for _, acton := range actonRange {
+						qstate := hpLevel + "-" + apLevel + "-" + atLevel + "-" + shLevel
+						fiv.qtable.table[SaPair{state: qstate, action: acton}] = 0.0
+					}
+				}
+			}
+		}
+	}
+}
+
 func (fiv *FivAgent) CurrentHPState(mystate state.AgentState) string {
 	initHealth := 1000.0
 	myHealth := ""
@@ -148,7 +166,9 @@ func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
 	cqState := fiv.CurrentQState(baseAgent)
 	fSas := []SaPair{{state: cqState, action: "Cower"}, {state: cqState, action: "Attck"}, {state: cqState, action: "Defnd"}}
 	fiv.qtable.Learn(reward, fiv.qtable.GetMaxFR(fSas))
-	// fiv.qtable.Print()
+	if myview.CurrentLevel() == 20 {
+		fiv.qtable.Print()
+	}
 }
 
 // Proposal related
