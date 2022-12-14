@@ -7,7 +7,7 @@ import (
 	"math/rand"
 )
 
-func (fiv *FivAgent) CurrentHPAPState(mystate state.AgentState) string {
+func (fiv *FivAgent) CurrentHPState(mystate state.AgentState) string {
 	initHealth := 1000.0
 	myHealth := ""
 	switch {
@@ -18,7 +18,10 @@ func (fiv *FivAgent) CurrentHPAPState(mystate state.AgentState) string {
 	case uint(0.6*initHealth) <= mystate.Hp:
 		myHealth = "Hih"
 	}
+	return myHealth
+}
 
+func (fiv *FivAgent) CurrentAPState(mystate state.AgentState) string {
 	initStamina := 2000.0
 	myStamina := ""
 	switch {
@@ -29,8 +32,7 @@ func (fiv *FivAgent) CurrentHPAPState(mystate state.AgentState) string {
 	case uint(0.6*initStamina) <= mystate.Stamina:
 		myStamina = "Hih"
 	}
-
-	return myHealth + "-" + myStamina
+	return myStamina
 }
 
 func (fiv *FivAgent) CurrentATSHState(mystate state.AgentState, myview state.View) string {
@@ -80,7 +82,7 @@ func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
 	mystate := baseAgent.AgentState()
 	myview := baseAgent.View()
 
-	return fiv.CurrentHPAPState(mystate) + "-" + fiv.CurrentATSHState(mystate, myview)
+	return fiv.CurrentHPState(mystate) + "-" + fiv.CurrentAPState(mystate) + "-" + fiv.CurrentATSHState(mystate, myview)
 }
 
 func (fiv *FivAgent) Explore(qstate string) decision.FightAction {
