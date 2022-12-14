@@ -139,7 +139,7 @@ func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
 	globalStates := myview.AgentState()
 	var guilt float32 = -1.0
 	if fiv.qtable.saTaken.action == "Cower" {
-		guilt = float32(globalStates.Len()) - float32(fiv.prePopNum)
+		guilt = float32(fiv.prePopNum) - float32(globalStates.Len())
 	}
 	// combined reward
 	reward := -10*percentHealthLoss - 5*guilt
