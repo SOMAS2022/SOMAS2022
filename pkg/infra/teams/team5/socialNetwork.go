@@ -1,37 +1,51 @@
 package team5
 
-import "infra/game/commons"
+import (
+	"infra/game/agent"
+	"infra/game/commons"
+)
 
 type AgentTrusts struct {
 	StrategyScore float32
 	GoodwillScore float32
 }
 
-type Personality struct {
-	Strategy string
-	Goodwill string
+func initTrust() AgentTrusts {
+	return AgentTrusts{
+		StrategyScore: 0.5,
+		GoodwillScore: 0.5,
+	}
 }
+
+type Strategy uint
+type Goodwill uint
 
 type AgentProfile struct {
-	AgentID     commons.ID
-	Trusts      AgentTrusts
-	Personality Personality
+	AgentID  commons.ID
+	Trusts   AgentTrusts
+	Strategy Strategy
+	Goodwill Goodwill
 }
 
-//provisional enum method, maybe helps with screen personalities in the applicaitons
-type strategy float32
-type goodwill float32
+func initAgentProfile(AgentID commons.ID) AgentProfile {
+	return AgentProfile{
+		AgentID:  AgentID,
+		Trusts:   initTrust(),
+		Strategy: StrategyNeutral,
+		Goodwill: GoodwillNeutral,
+	}
+}
 
 const (
-	Lawful strategy = iota
-	StrategyNeutral
-	Chaotic
+	Lawful          Strategy = iota
+	StrategyNeutral Strategy = iota
+	Chaotic         Strategy = iota
 )
 
 const (
-	Good goodwill = iota
-	GoodwillNeutral
-	Evil
+	Good            Goodwill = iota
+	GoodwillNeutral Goodwill = iota
+	Evil            Goodwill = iota
 )
 
 type SocialNetwork struct {
@@ -40,6 +54,26 @@ type SocialNetwork struct {
 	ChaoticMax   float32
 	GoodMin      float32
 	EvilMax      float32
+}
+
+func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
+	view := ba.View()
+	agentState := view.AgentState()
+
+	agentprofileMAP := make(map[commons.ID]AgentProfile)
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, _, _ := itr.Next()
+		agentprofileMAP[id] = initAgentProfile(id)
+	}
+
+	return SocialNetwork{
+		AgentProfile: agentprofileMAP,
+		LawfullMin:   0.8,
+		ChaoticMax:   0.2,
+		GoodMin:      0.8,
+		EvilMax:      0.2,
+	}
 }
 
 func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
@@ -51,24 +85,22 @@ func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScor
 
 	sn.normaliseTrust()
 
-	var goodwillPersonality, strategyPersonality string
 	if sn.AgentProfile[agentID].Trusts.StrategyScore <= sn.ChaoticMax {
-		goodwillPersonality = "Evil"
-	} else if sn.AgentProfile[agentID].Trusts.StrategyScore < sn.LawfullMin {
-		goodwillPersonality = "GoodwillNeutral"
+		agentProfile = AgentProfile{Strategy: Chaotic}
+	} else if sn.AgentProfile[agentID].Trusts.StrategyScore >= sn.LawfullMin {
+		agentProfile = AgentProfile{Strategy: Lawful}
 	} else {
-		goodwillPersonality = "Good"
+		agentProfile = AgentProfile{Strategy: StrategyNeutral}
 	}
 
-	if sn.AgentProfile[agentID].Trusts.GoodwillScore <= sn.ChaoticMax {
-		strategyPersonality = "Chaotic"
-	} else if sn.AgentProfile[agentID].Trusts.GoodwillScore < sn.LawfullMin {
-		strategyPersonality = "StrategyNeutral"
+	if sn.AgentProfile[agentID].Trusts.GoodwillScore <= sn.EvilMax {
+		agentProfile = AgentProfile{Goodwill: Evil}
+	} else if sn.AgentProfile[agentID].Trusts.GoodwillScore >= sn.GoodMin {
+		agentProfile = AgentProfile{Goodwill: Good}
 	} else {
-		strategyPersonality = "Lawful"
+		agentProfile = AgentProfile{Goodwill: GoodwillNeutral}
 	}
 
-	agentProfile.Personality = Personality{strategyPersonality, goodwillPersonality}
 	sn.AgentProfile[agentID] = agentProfile
 }
 
