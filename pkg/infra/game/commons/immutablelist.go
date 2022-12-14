@@ -4,6 +4,10 @@ type ImmutableList[A any] struct {
 	internalList []A
 }
 
+func (l ImmutableList[A]) Get(index int) A {
+	return l.internalList[index]
+}
+
 func (l ImmutableList[A]) Len() int {
 	return len(l.internalList)
 }

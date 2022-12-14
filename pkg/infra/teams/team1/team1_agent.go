@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/message/proposal"
 	"infra/teams/team1/internal"
 	"math/rand"
 
@@ -24,16 +23,19 @@ type SocialAgent struct {
 
 	graphID int // for logging
 
-	// manifesto states
-	sumSocialCapital map[string]float64
-	// TODO
-	// agentHarshnessScore            map[string]float64
-	agentsSurvivalLikelihood       map[string]float64
-	survivalLikelihood             float64
-	standardDeviationAgentSurvival float64
-	meanSurvivalLikelihood         float64
-	prevLeaderSurvivalEffect       float64
-	leaderRating                   float64
+	geometricMeanSocialCapital          map[string]float64 // Mean of social capital
+	agentsSurvivalLikelihood            map[string]float64 // A score indicating how good an  agents position is, 0 to 1
+	survivalLikelihood                  float64            // The score for this agent
+	standardDeviationSurvivalLikelihood float64            // Indication of the spread of the agent scores
+	meanSurvivalLikelihood              float64            // Mean of the scores should be shifted so that it is 0.5
+	prevLeaderSurvivalEffect            float64            // The effect of the previous leader on our standing -1 to 1
+	leaderRating                        float64            // How happy we are with the current leader 0 to 1
+	fightBiasMovingAverage              float64            // An indicator of the bias against us -1 to 1, -1 indicates a positive bias
+	averageFightMovingAverage           float64            // Helper used to calculate the fight chance multiplier
+	fightChanceBiasMultiplier           float64            // Estimation of the multiplier on the chance we will fight due to social standing
+	socialWelfareScore                  float64            // A score of how happy we are with the overall social score of all agents, negative is bad
+	shieldNeeded                        float64            // The total minimum amount of shield that needs to be used
+	totalStaminaExcessRatio             float64            // The total stamina excess from attacking expected to be left in the game
 }
 
 func (s *SocialAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
@@ -102,40 +104,6 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 		s.updateSocialCapital(self, fightDecisions)
 	}
 	s.UpdateLeadershipState(self, fightResult, decisions)
-}
-
-func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	switch m.Message().(type) {
-	case *message.StartFight:
-		s.sendGossip(baseAgent)
-	case message.ArrayInfo:
-		s.receiveGossip(m.Message().(message.ArrayInfo), m.Sender())
-	}
-	makesProposal := rand.Intn(100)
-	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-		))
-
-		prop := *commons.NewImmutableList(rules)
-		_ = baseAgent.SendFightProposalToLeader(prop)
-	}
 }
 
 func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
