@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"

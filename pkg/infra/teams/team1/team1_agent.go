@@ -29,7 +29,11 @@ type SocialAgent struct {
 	graphID int // for logging
 }
 
-func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (s *SocialAgent) FightResolution(
+	agent agent.BaseAgent,
+	prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
+	proposedActions immutable.Map[commons.ID, decision.FightAction],
+) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -115,7 +119,11 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (s *SocialAgent) LootAllocation(ba agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (s *SocialAgent) LootAllocation(
+	ba agent.BaseAgent,
+	proposal message.Proposal[decision.LootAction],
+	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
