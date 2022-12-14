@@ -30,6 +30,7 @@ var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"Agent5": team5.NewAgent5,
 	"TEAM1":  team1.NewSocialAgent,
 	"TEAM6":  team6.NewTeam6Agent,
+	"TEAM1":  team1.NewSocialAgent,
 }
 
 func main() {
