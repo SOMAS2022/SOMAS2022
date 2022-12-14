@@ -210,8 +210,7 @@ func formAllocationFromConflicts(wantedItems map[commons.ItemID]map[commons.ID]s
 	for item, agentSet := range wantedItems {
 		agents := maps.Keys(agentSet)
 		if len(agents) > 0 {
-			rand.Shuffle(len(agents), func(i, j int) { agents[i], agents[j] = agents[j], agents[i] })
-			if m, ok := allocations[agents[0]]; ok {
+			if m, ok := allocations[agents[rand.Intn(len(agents))]]; ok {
 				m[item] = struct{}{}
 			} else {
 				m := make(map[commons.ItemID]struct{})
