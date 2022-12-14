@@ -190,19 +190,17 @@ func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.Immutable
 }
 
 func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 5)
+	manifesto := decision.NewManifesto(false, false, 1, 20)
 	return manifesto
 }
 
-func (fiv *FivAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Abstain
-	case 1:
+func (fiv *FivAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
+	myview := baseAgent.View()
+	currentLeader := myview.CurrentLeader()
+	if fiv.ttable.leaderTable[currentLeader] < 0 {
 		return decision.Negative
-	default:
-		return decision.Positive
 	}
+	return decision.Positive
 }
 
 func (fiv *FivAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
