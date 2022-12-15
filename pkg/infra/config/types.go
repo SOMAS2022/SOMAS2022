@@ -10,4 +10,5 @@ type GameConfig struct {
 	Stamina                uint
 	VotingStrategy         uint
 	VotingPreferences      uint
+	Defection              bool
 }

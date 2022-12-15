@@ -20,12 +20,11 @@ import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 import { ColourModeContext } from "../App";
-import { Book, NoteAdd, SignalCellular4Bar, Summarize, WifiOff } from "@mui/icons-material";
+import { Book, NoteAdd, SignalCellular4Bar, WifiOff } from "@mui/icons-material";
 import { Tooltip } from "@mui/material";
-import Summary from "./Summary";
 import Schedule from "./Schedule";
 import Result from "./Result";
-import { simulation_result, simulation_status } from "../types/global";
+import { Run } from "../../../common/types";
 
 const drawerWidth = 240;
 
@@ -88,15 +87,15 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
     const colourMode = useContext(ColourModeContext);
     const [open, setOpen] = useState<boolean>(true);
     const [view, setView] = useState<number>(0);
-    const [selectedRes, setSelectedRes] = useState<simulation_result | null>(null);
-    const [simResults, setSimResults] = useState<simulation_result[]>([]);
+    const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+    const [runs, setRuns] = useState<Run[]>([]);
     
     useEffect(() => {
         async function fetchResults() {
-            const res = await fetch("http://localhost:9000/fetchSimResults");
+            const res = await fetch("http://localhost:9000/fetchRuns");
             const data = await res.json();
             console.log(data);
-            setSimResults(data);
+            setRuns(data);
         }
 
         fetchResults();
@@ -169,15 +168,7 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                 </DrawerHeader>
                 <Divider />
                 <List>
-                    <ListItem key={"summary"} disablePadding onClick={() => setView(0)}>
-                        <ListItemButton>
-                            <ListItemIcon>
-                                <Summarize />
-                            </ListItemIcon>
-                            <ListItemText primary={"Summary"} />
-                        </ListItemButton>
-                    </ListItem>
-                    <ListItem key={"create"} disablePadding onClick={() => setView(1)}>
+                    <ListItem key={"create"} disablePadding onClick={() => setView(0)}>
                         <ListItemButton>
                             <ListItemIcon>
                                 <NoteAdd />
@@ -189,21 +180,16 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                 <Divider />
                 <List>
                     {
-                        simResults.map((res) => {
-                            let iconColour = theme.palette.warning.main;
-                            if (res.sim_status === simulation_status.In_Queue) {
-                                iconColour = theme.palette.error.main;
-                            }else if (res.sim_status === simulation_status.Finished) {
-                                iconColour = theme.palette.success.main;
-                            }
+                        runs.map((run) => {
+                            const iconColour = theme.palette.success.main;
 
                             return (
-                                <ListItem key={res.id} disablePadding onClick={() => {setView(3); setSelectedRes(res);}}>
+                                <ListItem key={run.Meta.Id} disablePadding onClick={() => { setView(1); setSelectedRun(run);}}>
                                     <ListItemButton>
                                         <ListItemIcon>
                                             <Book style={{color: iconColour}} />
                                         </ListItemIcon>
-                                        <ListItemText primary={res.name} />
+                                        <ListItemText primary={run.Meta.Name} />
                                     </ListItemButton>
                                 </ListItem>
                             );
@@ -215,14 +201,11 @@ export default function Layout({ connected, latestGitCommit }: LayoutProps) {
                 <DrawerHeader />
                 {
                     view === 0 ?
-                        <Summary />
+                        <Schedule />
                         :
-                        view === 1 ?
-                            <Schedule />
-                            :
-                            selectedRes == null ? 
-                                <p>Loading...</p> :
-                                <Result simRes={selectedRes} />
+                        selectedRun == null ?
+                            <p>Loading...</p> :
+                            <Result run={selectedRun} />
                 }
             </Main>
         </Box>
