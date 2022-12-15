@@ -27,6 +27,11 @@ type SocialAgent struct {
 	propAdmire float64
 
 	graphID int // for logging
+
+	proposalAccuracyThreshold float64
+
+	currentProposalAccuracyThreshold float64
+	hasVotedThisRound                bool
 }
 
 func (s *SocialAgent) FightResolution(
@@ -170,6 +175,15 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 
 		s.updateSocialCapital(self, fightDecisions)
 	}
+
+	if s.hasVotedThisRound == false {
+		s.proposalAccuracyThreshold *= 0.9
+	} else {
+		// TODO better mechanism for increasing
+		s.proposalAccuracyThreshold *= 1.05
+	}
+	s.currentProposalAccuracyThreshold = s.proposalAccuracyThreshold
+	s.hasVotedThisRound = false
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -255,18 +269,41 @@ func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 }
 
 // TODO
-func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	view := baseAgent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	agents := view.AgentState()
 	rules := prop.Rules()
-	action_checker := proposal.ToSinglePredicate[decision.FightAction](rules)
+	action_checker := proposal.ToSinglePredicate(rules)
+	//TODO threshold should be set at the beginning of the round
+	//TODO should be decreased if no fight decision made
 
-	rules.ToSinglePredicate()
-
-	intent := rand.Intn(2)
-	if intent == 0 {
-		return decision.Positive
-	} else {
-		return decision.Negative
+	accuracy := 0.0
+	for id_index := 0; id_index < len(ids); id_index++ {
+		agent_state, _ := agents.Get(ids[id_index])
+		proposal_action := action_checker(state.AgentState{
+			Hp:      uint(agent_state.Hp),
+			Stamina: uint(agent_state.Stamina),
+			Attack:  agent_state.Attack,
+			Defense: agent_state.Defense,
+		})
+		qState := internal.HiddenAgentToQState(agent_state, view)
+		rewards := internal.CooperationQ(qState)
+		q_action := decision.FightAction(internal.Argmax(rewards[:]))
+		//TODO Find the agent fight action
+		//TODO find the proposal fight action
+		decision_match := q_action == proposal_action
+		if decision_match {
+			accuracy += 1.0
+		}
 	}
+	accuracy /= float64(len(ids))
+
+	if accuracy > s.currentProposalAccuracyThreshold {
+		return decision.Positive
+	}
+	s.currentProposalAccuracyThreshold *= 0.9
+	return decision.Negative
 }
 
 func (s *SocialAgent) HandleFightProposalRequest(
@@ -302,9 +339,10 @@ func (s *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeI
 
 func NewSocialAgent() agent.Strategy {
 	return &SocialAgent{
-		selfishness:     rand.Float64(),
-		gossipThreshold: 0.5,
-		propAdmire:      0.1,
-		propHate:        0.1,
+		selfishness:               rand.Float64(),
+		gossipThreshold:           0.5,
+		propAdmire:                0.1,
+		propHate:                  0.1,
+		proposalAccuracyThreshold: 0.7,
 	}
 }
