@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
+	"infra/logging"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -16,7 +17,11 @@ type RandomAgent struct {
 	bravery int
 }
 
-func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (r *RandomAgent) FightResolution(
+	agent agent.BaseAgent,
+	prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
+	proposedActions immutable.Map[commons.ID, decision.FightAction],
+) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -35,14 +40,54 @@ func (r *RandomAgent) FightResolution(agent agent.BaseAgent, prop commons.Immuta
 }
 
 func (r *RandomAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
-	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
+	loot := baseAgent.Loot()
+	weapons := loot.Weapons().Iterator()
+	shields := loot.Shields().Iterator()
+	hpPotions := loot.HpPotions().Iterator()
+	staminaPotions := loot.StaminaPotions().Iterator()
+
+	builder := immutable.NewSortedMapBuilder[commons.ItemID, struct{}](nil)
+
+	for !weapons.Done() {
+		weapon, _ := weapons.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(weapon.Id(), struct{}{})
+		}
+	}
+
+	for !shields.Done() {
+		shield, _ := shields.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(shield.Id(), struct{}{})
+		}
+	}
+
+	for !hpPotions.Done() {
+		pot, _ := hpPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	for !staminaPotions.Done() {
+		pot, _ := staminaPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	return *builder.Map()
 }
 
-func (r *RandomAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+func (r *RandomAgent) LootAction(
+	_ agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	_ message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
-func (r *RandomAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
+func (r *RandomAgent) FightActionNoProposal(_ agent.BaseAgent) decision.FightAction {
 	fight := rand.Intn(3)
 	switch fight {
 	case 0:
@@ -54,16 +99,19 @@ func (r *RandomAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	}
 }
 
-func (r *RandomAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+func (r *RandomAgent) FightAction(
+	baseAgent agent.BaseAgent,
+	_ decision.FightAction,
+	_ message.Proposal[decision.FightAction],
+) decision.FightAction {
 	return r.FightActionNoProposal(baseAgent)
 }
 
-func (r *RandomAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (r *RandomAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], _ agent.BaseAgent) {
 }
 
 func (r *RandomAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (r *RandomAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
@@ -86,17 +134,21 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (r *RandomAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (r *RandomAgent) LootAllocation(
+	baseAgent agent.BaseAgent,
+	proposal message.Proposal[decision.LootAction],
+	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := ba.View()
+	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := ba.Loot().Weapons().Iterator()
+	iterator := baseAgent.Loot().Weapons().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().Shields().Iterator()
+	iterator = baseAgent.Loot().Shields().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().HpPotions().Iterator()
+	iterator = baseAgent.Loot().HpPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = ba.Loot().StaminaPotions().Iterator()
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
 	allocateRandomly(iterator, ids, lootAllocation)
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
@@ -124,11 +176,19 @@ func (r *RandomAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
 }
 
-func (r *RandomAgent) UpdateInternalState(_ agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+func (r *RandomAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+	r.bravery += rand.Intn(10)
+	log <- logging.AgentLog{
+		Name: a.Name(),
+		ID:   a.ID(),
+		Properties: map[string]float32{
+			"bravery": float32(r.bravery),
+		},
+	}
 }
 
 func (r *RandomAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, true, 10, 50)
+	manifesto := decision.NewManifesto(false, false, 10, 5)
 	return manifesto
 }
 
@@ -227,16 +287,12 @@ func (r *RandomAgent) HandleFightProposalRequest(
 }
 
 func (r *RandomAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
-	// weapons := b.AgentState().weapons
-	// return decision.ItemIdx(rand.Intn(weapons.Len() + 1))
-
 	// 0th weapon has the greatest attack points
 	return decision.ItemIdx(0)
 }
 
 func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
-	// shields := b.AgentState().Shields
-	// return decision.ItemIdx(rand.Intn(shields.Len() + 1))
+	// 0th weapon has the greatest shield points
 	return decision.ItemIdx(0)
 }
 
@@ -245,5 +301,5 @@ func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeI
 }
 
 func NewRandomAgent() agent.Strategy {
-	return &RandomAgent{bravery: 0}
+	return &RandomAgent{bravery: rand.Intn(5)}
 }

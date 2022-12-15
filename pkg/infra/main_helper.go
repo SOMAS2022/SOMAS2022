@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"sort"
 
 	"github.com/google/uuid"
@@ -160,7 +159,7 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 	Hp Pool Helpers
 */
 
-func checkHpPool() {
+func checkHpPool() bool {
 	if globalState.HpPool >= globalState.MonsterHealth {
 		logging.Log(logging.Info, logging.LogField{
 			"Original HP Pool":  globalState.HpPool,
@@ -170,15 +169,19 @@ func checkHpPool() {
 
 		globalState.HpPool -= globalState.MonsterHealth
 		globalState.MonsterHealth = 0
+		return true
 	}
+	return false
 }
 
-func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
-	makeItems := func() *commons.ImmutableList[state.Item] {
-		nItems := rand.Intn(numAgents) / 10
+func generateLootPool(numAgents uint) *state.LootPool {
+	nWeapons, nShields := gamemath.GetEquipmentDistribution(numAgents)
+	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(numAgents)
+
+	makeItems := func(nItems uint, stats uint) *commons.ImmutableList[state.Item] {
 		items := make([]state.Item, nItems)
-		for i := 0; i < nItems; i++ {
-			items[i] = *state.NewItem(uuid.NewString(), currentLevel*uint(rand.Intn(3)+1))
+		for i := uint(0); i < nItems; i++ {
+			items[i] = *state.NewItem(uuid.NewString(), stats)
 		}
 		sort.SliceStable(items, func(i, j int) bool {
 			return items[i].Value() > items[j].Value()
@@ -187,9 +190,13 @@ func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
 	}
 
 	return state.NewLootPool(
-		makeItems(),
-		makeItems(),
-		makeItems(),
-		makeItems(),
+		// Weapons
+		makeItems(nWeapons, gamemath.GetWeaponDamage(globalState.MonsterHealth, numAgents)),
+		// Shields
+		makeItems(nShields, gamemath.GetShieldProtection(globalState.MonsterAttack, numAgents)),
+		// Health Potions
+		makeItems(nHealthPotions, gamemath.GetHealthPotionValue(globalState.MonsterAttack, numAgents)),
+		// Stamina Potions
+		makeItems(nStaminaPotions, gamemath.GetStaminaPotionValue(globalState.MonsterHealth, numAgents)),
 	)
 }

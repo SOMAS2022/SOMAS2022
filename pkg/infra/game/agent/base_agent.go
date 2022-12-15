@@ -85,7 +85,7 @@ func (ba *BaseAgent) SendBlockingMessage(id commons.ID, m message.Message) (e er
 func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.FightAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
-		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules), uuid.New())
+		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules, ba.ID()), uuid.New())
 		return nil
 	}
 	return communicationError("Leader not available for messaging, dead or bad!")
@@ -94,7 +94,7 @@ func (ba *BaseAgent) SendFightProposalToLeader(rules commons.ImmutableList[propo
 func (ba *BaseAgent) SendLootProposalToLeader(rules commons.ImmutableList[proposal.Rule[decision.LootAction]]) error {
 	channel, ok := ba.communication.peer.Get(ba.view.CurrentLeader())
 	if ok {
-		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules), uuid.New())
+		channel <- *message.NewTaggedMessage(ba.id, *message.NewProposal(rules, ba.ID()), uuid.New())
 		return nil
 	}
 	return communicationError("Leader not available for messaging, dead or bad!")

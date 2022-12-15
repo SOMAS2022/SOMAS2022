@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
+	"infra/logging"
 	"infra/teams/team1/internal"
 	"math/rand"
 	"os"
@@ -28,7 +29,11 @@ type SocialAgent struct {
 	graphID int // for logging
 }
 
-func (s *SocialAgent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (s *SocialAgent) FightResolution(
+	agent agent.BaseAgent,
+	prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
+	proposedActions immutable.Map[commons.ID, decision.FightAction],
+) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
@@ -50,7 +55,7 @@ func (s *SocialAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.
 	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
 }
 
-func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}]) immutable.SortedMap[commons.ItemID, struct{}] {
+func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}] {
 	return proposedLoot
 }
 
@@ -81,7 +86,7 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	return decision.FightAction(internal.Argmax(totalQSlice))
 }
 
-func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction) decision.FightAction {
+func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
 	return s.FightActionNoProposal(baseAgent)
 }
 
@@ -114,7 +119,11 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (s *SocialAgent) LootAllocation(
+	ba agent.BaseAgent,
+	proposal message.Proposal[decision.LootAction],
+	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
@@ -151,6 +160,7 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
+
 
 func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 
@@ -196,7 +206,7 @@ func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 
 }
 
-func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint]) {
+func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
 	// Update socialCapital at end of each round
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
@@ -326,7 +336,7 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+func (s *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
 

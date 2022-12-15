@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message"
 	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/game/tally"
@@ -16,39 +17,33 @@ import (
 
 func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent, currentLeader agent.Agent, manifesto decision.Manifesto, tally *tally.Tally[decision.FightAction]) decision.FightResult {
 	fightActions := make(map[commons.ID]decision.FightAction)
-	// todo: cleanup the nil check that acts to check if the leader died in combat
-	prop := tally.GetMax().Rules()
-	if manifesto.FightImposition() && currentLeader.Strategy != nil {
-		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, prop)
+	prop := tally.GetMax()
+	rules := prop.Rules()
+
+	predicate := proposal.ToSinglePredicate(rules)
+	if predicate == nil {
 		for id, a := range agentMap {
-			value, ok := resolution.Get(id)
-			if ok {
-				fightActions[id] = value
-			} else {
-				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
-			}
+			fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
 		}
 	} else {
-		predicate := proposal.ToSinglePredicate(prop)
-		if predicate == nil {
-			for id, a := range agentMap {
-				fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
-			}
-		} else {
-			for id, a := range agentMap {
-				expectedFightAction := predicate(a.AgentState())
-				if gs.Defection {
-					fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction)
-					if expectedFightAction != fightActions[id] {
-						agentState := gs.AgentState[id]
-						agentState.Defector.SetFight(true)
-						gs.AgentState[id] = agentState
-					}
-				} else {
-					fightActions[id] = expectedFightAction
+		for id, a := range agentMap {
+			expectedFightAction := predicate(a.AgentState())
+			if gs.Defection {
+				fightActions[id] = a.FightAction(*a.BaseAgent, expectedFightAction, prop)
+				if expectedFightAction != fightActions[id] {
+					agentState := gs.AgentState[id]
+					agentState.Defector.SetFight(true)
+					gs.AgentState[id] = agentState
 				}
+			} else {
+				fightActions[id] = expectedFightAction
 			}
 		}
+	}
+
+	if manifesto.FightDecisionPower() && currentLeader.Strategy != nil {
+		resolution := currentLeader.Strategy.FightResolution(*currentLeader.BaseAgent, rules, commons.MapToImmutable(fightActions))
+		handleDefectionFight(gs, agentMap, resolution, fightActions, prop)
 	}
 
 	return decision.FightResult{
@@ -61,6 +56,23 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	}
 }
 
+func handleDefectionFight(gs state.State, agentMap map[commons.ID]agent.Agent, resolution immutable.Map[commons.ID, decision.FightAction], fightActions map[commons.ID]decision.FightAction, prop message.Proposal[decision.FightAction]) {
+	for id, a := range agentMap {
+		value, ok := resolution.Get(id)
+		if ok {
+			actualAction := a.FightAction(*a.BaseAgent, value, prop)
+			if actualAction != value {
+				agentState := gs.AgentState[id]
+				agentState.Defector.SetFight(true)
+				gs.AgentState[id] = agentState
+			}
+			fightActions[id] = actualAction
+		} else {
+			fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)
+		}
+	}
+}
+
 func ResolveLootDiscussion(
 	gs state.State,
 	agentMap map[commons.ID]agent.Agent,
@@ -69,10 +81,17 @@ func ResolveLootDiscussion(
 	manifesto decision.Manifesto,
 	tally *tally.Tally[decision.LootAction],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	if manifesto.LootImposition() && leader.Strategy != nil {
-		// todo: eliminate double allocations here
-		leaderAllocation := leader.Strategy.LootAllocation(*leader.BaseAgent)
+	prop := tally.GetMax()
+	allocation := getAllocation(gs, agentMap, pool, prop)
+	if manifesto.LootDecisionPower() && leader.Strategy != nil {
+		leaderAllocation := leader.Strategy.LootAllocation(*leader.BaseAgent, prop, allocation)
 		iterator := leaderAllocation.Iterator()
+		actualAllocation := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
+
+		handleDefectionLoot(gs, agentMap, iterator, actualAllocation, prop)
+
+		defectedAllocation := commons.MapToImmutable(actualAllocation)
+		iterator = defectedAllocation.Iterator()
 		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
 		for !iterator.Done() {
 			agentID, items, _ := iterator.Next()
@@ -88,36 +107,60 @@ func ResolveLootDiscussion(
 				}
 			}
 		}
+
 		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
 	} else {
-		predicate := proposal.ToMultiPredicate(tally.GetMax().Rules())
-		if predicate == nil {
-			// either leader died or no proposal was made
-			return handleNilLootAllocation(agentMap)
-		}
-		getsWeapon, getsShield, getsHealthPotion, getsStaminaPotion := demandList(gs, agentMap, predicate)
-		m := make(map[commons.ID]map[commons.ItemID]struct{})
-		buildAllocation(pool.Weapons(), getsWeapon, m)
-		buildAllocation(pool.Shields(), getsShield, m)
-		buildAllocation(pool.HpPotions(), getsHealthPotion, m)
-		buildAllocation(pool.StaminaPotions(), getsStaminaPotion, m)
+		return allocation
+	}
+}
 
-		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
+func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *state.LootPool, prop message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	predicate := proposal.ToMultiPredicate(prop.Rules())
+	if predicate == nil {
+		// either leader died or no proposal was made
+		return handleNilLootAllocation(agentMap)
+	}
+	getsWeapon, getsShield, getsHealthPotion, getsStaminaPotion := demandList(gs, agentMap, predicate)
+	m := make(map[commons.ID]map[commons.ItemID]struct{})
+	buildAllocation(pool.Weapons(), getsWeapon, m)
+	buildAllocation(pool.Shields(), getsShield, m)
+	buildAllocation(pool.HpPotions(), getsHealthPotion, m)
+	buildAllocation(pool.StaminaPotions(), getsStaminaPotion, m)
 
-		for id, itemIDS := range m {
-			alloc := commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
-			if gs.Defection {
-				agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc)
-				addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
-				if !commons.ImmutableSetEquality(alloc, agentLoot) {
-					defector := gs.AgentState[id].Defector
-					defector.SetLoot(true)
-				}
-			} else {
-				addWantedLootToItemAllocMap(alloc, wantedItems, id)
+	wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
+
+	for id, itemIDS := range m {
+		alloc := commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
+		if gs.Defection {
+			agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc, prop)
+			addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
+			if !commons.ImmutableSetEquality(alloc, agentLoot) {
+				defector := gs.AgentState[id].Defector
+				defector.SetLoot(true)
 			}
+		} else {
+			addWantedLootToItemAllocMap(alloc, wantedItems, id)
 		}
-		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
+	}
+	return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
+}
+
+func handleDefectionLoot(
+	gs state.State,
+	agentMap map[commons.ID]agent.Agent,
+	iterator *immutable.MapIterator[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+	actualAllocation map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}],
+	prop message.Proposal[decision.LootAction],
+) {
+	for !iterator.Done() {
+		agentID, allocation, _ := iterator.Next()
+		a := agentMap[agentID]
+		newAllocation := a.LootAction(*a.BaseAgent, allocation, prop)
+		if !commons.ImmutableSetEquality(newAllocation, allocation) {
+			defector := gs.AgentState[agentID].Defector
+			defector.SetLoot(true)
+		}
+		actualAllocation[agentID] = newAllocation
 	}
 }
 
@@ -172,8 +215,7 @@ func formAllocationFromConflicts(wantedItems map[commons.ItemID]map[commons.ID]s
 	for item, agentSet := range wantedItems {
 		agents := maps.Keys(agentSet)
 		if len(agents) > 0 {
-			rand.Shuffle(len(agents), func(i, j int) { agents[i], agents[j] = agents[j], agents[i] })
-			if m, ok := allocations[agents[0]]; ok {
+			if m, ok := allocations[agents[rand.Intn(len(agents))]]; ok {
 				m[item] = struct{}{}
 			} else {
 				m := make(map[commons.ItemID]struct{})
