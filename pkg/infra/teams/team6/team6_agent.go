@@ -23,6 +23,8 @@ type Team6Agent struct {
 	trust      map[commons.ID]uint
 	leadership map[commons.ID]uint
 
+	timesCowered map[commons.ID]uint
+
 	HPThreshold float32
 	ATThreshold float32
 	SHThreshold float32
@@ -37,6 +39,7 @@ type Team6Agent struct {
 	currentLevel             uint
 	lastFightRound           uint
 	lastHPPoolDonationAmount uint
+	totalFightRounds         uint
 	agentsRemaining          []uint
 
 	fightProposal commons.ImmutableList[proposal.Rule[decision.FightAction]]
@@ -50,6 +53,8 @@ func NewTeam6Agent() agent.Strategy {
 		similarity: make(map[commons.ID]uint),
 		trust:      make(map[commons.ID]uint),
 		leadership: make(map[commons.ID]uint),
+
+		timesCowered: make(map[commons.ID]uint),
 
 		HPThreshold: 0.1,
 		ATThreshold: 0.1,
@@ -96,7 +101,7 @@ func (a *Team6Agent) HandleUpdateShield(ba agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(Max(0, shields.Len()-1))
 }
 
-func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	log <- logging.AgentLog{
 		Name: ba.Name(),
 		ID:   ba.ID(),
@@ -107,11 +112,30 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 		},
 	}
 
+	// Update number of times each agent has cowered
+	itr2 := fightRounds.Iterator()
+	for !itr2.Done() {
+		a.totalFightRounds++
+		fightResult, _ := itr2.Next()
+		coweringAgents := fightResult.CoweringAgents()
+		itr3 := coweringAgents.Iterator()
+		for !itr3.Done() {
+			_, id := itr3.Next()
+			_, ok := a.timesCowered[id]
+			if ok {
+				a.timesCowered[id]++
+			} else {
+				a.trust[id] = 1
+			}
+		}
+	}
+
 	view := ba.View()
 	agentStates := view.AgentState()
 	itr := agentStates.Iterator()
 	for !itr.Done() {
 		id, as, _ := itr.Next()
+		// Update trust
 		if as.Defector.IsDefector() {
 			_, ok := a.trust[id]
 			if ok {
@@ -126,6 +150,13 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 			} else {
 				a.trust[id] = 50
 			}
+		}
+		// Update bravery
+		_, ok := a.timesCowered[id]
+		if ok {
+			a.bravery[id] = 100 - uint(float32(a.timesCowered[id])*100/float32(a.totalFightRounds))
+		} else {
+			a.bravery[id] = 100
 		}
 	}
 
