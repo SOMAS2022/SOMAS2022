@@ -11,24 +11,13 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 	view := ba.View()
 
 	fightDecisionPower, lootDecisionPower := false, false
-	var leaderFightDecision, leaderLootDecision uint
 
-	if view.LeaderManifesto().FightDecisionPower() {
-		leaderFightDecision = 100
-	} else {
-		leaderFightDecision = 0
-	}
-
-	if view.LeaderManifesto().LootDecisionPower() {
-		leaderLootDecision = 100
-	} else {
-		leaderLootDecision = 0
-	}
-
-	a.fightDecisionPowerOpinion += Min(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.fightDecisionPowerOpinion*leaderFightDecision/100), 100)
-	a.lootDecisionPowerOpinion += Min(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.lootDecisionPowerOpinion*leaderLootDecision/100), 100)
-	a.termLengthOpinion += Min(float32(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.termLengthOpinion*float32(view.LeaderManifesto().TermLength())/100)), 100)
-	a.overthrowTHOpinion += Min(float32(commons.SaturatingSub(a.leadership[view.CurrentLeader()], 50)*uint(a.overthrowTHOpinion*float32(view.LeaderManifesto().OverthrowThreshold())/100)), 100)
+	a.fightDecisionPowerOpinion = a.newPowerOpinion(a.fightDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().FightDecisionPower())
+	a.lootDecisionPowerOpinion = a.newPowerOpinion(a.lootDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().LootDecisionPower())
+	a.termLengthOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().TermLength()) - a.termLengthOpinion) / 100.
+	a.termLengthOpinion = clamp(a.termLengthOpinion, 1, 10)
+	a.overthrowTHOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().OverthrowThreshold()) - a.overthrowTHOpinion) / 100.
+	a.overthrowTHOpinion = clamp(a.overthrowTHOpinion, 5, 75)
 
 	if a.fightDecisionPowerOpinion > 50 {
 		fightDecisionPower = true
@@ -38,7 +27,7 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 		lootDecisionPower = true
 	}
 
-	a.proposedManifesto = *decision.NewManifesto(fightDecisionPower, lootDecisionPower, uint(a.termLengthOpinion/10), uint(a.overthrowTHOpinion))
+	a.proposedManifesto = *decision.NewManifesto(fightDecisionPower, lootDecisionPower, uint(a.termLengthOpinion), uint(a.overthrowTHOpinion))
 
 	return &a.proposedManifesto
 }
@@ -130,4 +119,23 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 	}
 
 	return ballot
+}
+
+func (a *Team6Agent) newPowerOpinion(initial uint, leadership uint, power bool) uint {
+	powerValue := 0
+	if power {
+		powerValue = 100
+	}
+	fightDecisionDiff := (float32(leadership) - 50.) * ((float32(powerValue) - float32(a.fightDecisionPowerOpinion)) / 100.)
+	if float32(initial)+fightDecisionDiff >= 100. {
+		return uint(100)
+	} else if float32(initial)+fightDecisionDiff <= 0. {
+		return uint(0)
+	} else {
+		return uint(float32(initial) + fightDecisionDiff)
+	}
+}
+
+func clamp(v, lo, hi float32) float32 {
+	return Min(Max(v, lo), hi)
 }

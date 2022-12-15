@@ -59,8 +59,8 @@ func NewTeam6Agent() agent.Strategy {
 		proposedManifesto:         *decision.NewManifesto(false, false, 3, 51),
 		fightDecisionPowerOpinion: 25,
 		lootDecisionPowerOpinion:  25,
-		termLengthOpinion:         25,
-		overthrowTHOpinion:        25,
+		termLengthOpinion:         3.,
+		overthrowTHOpinion:        51.,
 
 		agentsRemaining: []uint{startingAgents, startingAgents},
 	}
