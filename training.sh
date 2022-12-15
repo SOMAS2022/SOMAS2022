@@ -4,5 +4,5 @@
 for i in {1..100}
 do
     go test ./pkg/infra -run ^TestTrainQ$ -v infra
-    python3 ../linreg.py
+    python3 ../linreg_qlearn.py
 done
