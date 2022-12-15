@@ -36,8 +36,7 @@ func (a *Team6Agent) HandleLootInformation(m message.TaggedInformMessage[message
 }
 
 func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
@@ -50,8 +49,7 @@ func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootA
 }
 
 func (a *Team6Agent) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	// TODO: Replace one of these with agent's own proposal
-	return proposalSimilarity(proposal.Rules(), proposal.Rules()) > 0.6
+	return proposalSimilarity(a.lootProposal, proposal.Rules()) > 0.6
 }
 
 func (a *Team6Agent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
