@@ -8,7 +8,13 @@
 *******************************************************/
 package internal
 
-import "infra/game/state"
+import (
+	"bufio"
+	"infra/game/state"
+	"log"
+	"os"
+	"strings"
+)
 
 type QState struct {
 	Hp            float64
@@ -26,16 +32,69 @@ type ActionStrategy struct {
 
 // Global variables for strategies?
 // For each action + coop/self have a set of 8 weights
-var CoopStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{1, 0, 0, 0, 0, 0, 0, 0}}, // Attack
-}
+// var CoopStrategies = [3]ActionStrategy{
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+// }
 
-var SelfishStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+// var SelfishStrategies = [3]ActionStrategy{
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
+// 	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+// }
+
+func ReadStrategy() ([3]ActionStrategy, [3]ActionStrategy) {
+	// Read strategy from final_weights.csv file
+	var coopstrat [3]ActionStrategy
+	var selfstrat [3]ActionStrategy
+
+	// Check if logging is turned on
+	if os.Getenv("QLOGGING") != "true" {
+		// Logging is not turned on so return
+		return coopstrat, selfstrat
+	}
+
+	// Open log file
+	logFile, err := os.Open("/mnt/c/Users/alexp/OneDrive - Imperial College London/Year 4/Y4_SOMAS/SOMAS2022/pkg/infra/teams/team1/final_weights.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logFile.Close()
+
+	// Create a new scanner on logFile
+	scanner := bufio.NewScanner(logFile)
+
+	// Read in strategy weights
+
+	for scanner.Scan() {
+		snapshotString := scanner.Text()
+
+		// Read cooperative weights
+		for action := 0; action < 3; action++ {
+			snapshot := strings.Split(snapshotString, ",")
+			if len(snapshot) == 8 {
+				for w := 0; w < 8; w++ {
+					coopstrat[action].LinRegWeights[w] = StringToFloat(snapshot[w])
+				}
+			}
+		}
+
+		// Read selfish weights
+		for action := 0; action < 3; action++ {
+			snapshot := strings.Split(snapshotString, ",")
+			if len(snapshot) == 8 {
+				for w := 0; w < 8; w++ {
+					selfstrat[action].LinRegWeights[w] = StringToFloat(snapshot[w])
+				}
+			}
+		}
+
+	}
+	logFile.Close()
+
+	return coopstrat, selfstrat
+
 }
 
 // Dot product between weights and array
@@ -65,14 +124,9 @@ func getQStateOther(state state.HiddenAgentState) [8]float64 {
 }
 
 // Output state -> reward (given strategy)
-func QFunction(qstate QState, coop bool) [3]float64 {
+func QFunction(qstate QState, strategy [3]ActionStrategy) [3]float64 {
+	// Update strategy
 	var reward [3]float64
-	var strategy [3]ActionStrategy
-	if coop {
-		strategy = CoopStrategies
-	} else {
-		strategy = SelfishStrategies
-	}
 	for i := 0; i < 3; i++ {
 		reward[i] = computeReward(strategy[i].LinRegWeights, QStateToArray(qstate))
 	}

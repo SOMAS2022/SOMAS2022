@@ -8,13 +8,15 @@
 *******************************************************/
 package internal
 
+// Deprecated: To remove
+
 // Estimate reward for agent actions
-func CooperationQ(state QState) [3]float64 {
-	reward := QFunction(state, true)
+func CooperationQ(state QState, strat [3]ActionStrategy) [3]float64 {
+	reward := QFunction(state, strat)
 	// fmt.Println(reward)
 	return reward
 }
 
-func SelfishQ(state QState) [3]float64 {
-	return QFunction(state, false)
+func SelfishQ(state QState, strat [3]ActionStrategy) [3]float64 {
+	return QFunction(state, strat)
 }

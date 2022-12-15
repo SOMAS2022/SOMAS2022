@@ -6,7 +6,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
-	"infra/logging"
 	"infra/teams/team1/internal"
 	"log"
 	"math/rand"
@@ -153,6 +152,11 @@ func PostprocessLog() {
 	}
 
 	for scanner.Scan() {
+
+		if rand.Float64() < 0.9 {
+			continue
+		}
+
 		snapshotString := scanner.Text()
 		snapshot := strings.Split(snapshotString, ",")
 		key := gameAgent{snapshot[0], snapshot[1]}
@@ -211,13 +215,15 @@ func LearnStrategies() {
 		snapshot := strings.Split(snapshotString, ",")
 
 		decision, _ := strconv.Atoi(snapshot[2])
-		action_data[decision] = append(action_data[decision], getStateFromSnapshot(snapshot))
+		if len(snapshot) == 13 {
+			action_data[decision] = append(action_data[decision], getStateFromSnapshot(snapshot))
 
-		// TODO Should really write these arrays directly instead of writing to csv first
-		//Cooperative: Mean round
-		coop_obs[decision] = append(coop_obs[decision], internal.StringToFloat(snapshot[12]))
-		//Selfish: Agent round
-		self_obs[decision] = append(self_obs[decision], internal.StringToFloat(snapshot[11]))
+			// TODO Should really write these arrays directly instead of writing to csv first
+			//Cooperative: Mean round
+			coop_obs[decision] = append(coop_obs[decision], internal.StringToFloat(snapshot[12]))
+			//Selfish: Agent round
+			self_obs[decision] = append(self_obs[decision], internal.StringToFloat(snapshot[11]))
+		}
 	}
 
 	logFile.Close()
@@ -233,19 +239,20 @@ func LearnStrategies() {
 	// Reduce size of tables
 
 	// Train q function and write weights to csv
-	// Coop then selfish
+	// Write cooperative weights (Defend, Cower, Attack)
 	for action := 0; action < 3; action++ {
 		coop_w := internal.FitLinReg(action_data[action], coop_obs[action])
-		self_w := internal.FitLinReg(action_data[action], self_obs[action])
-		logging.Log(logging.Error, nil, fmt.Sprintf("%f", coop_w))
-		// fmt.Println(coop_w)
-		// fmt.Println(self_w)
 
 		for _, weight := range coop_w {
 			weightFile.Write([]byte(fmt.Sprintf("%f,", weight)))
 		}
 
 		weightFile.Write([]byte("\n"))
+	}
+
+	// Write selfish weights (Defend, Cower, Attack)
+	for action := 0; action < 3; action++ {
+		self_w := internal.FitLinReg(action_data[action], self_obs[action])
 
 		for _, weight := range self_w {
 			weightFile.Write([]byte(fmt.Sprintf("%f,", weight)))

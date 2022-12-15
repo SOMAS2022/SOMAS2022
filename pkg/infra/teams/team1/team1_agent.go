@@ -27,6 +27,9 @@ type SocialAgent struct {
 	propAdmire float64
 
 	graphID int // for logging
+
+	coopstrat [3]internal.ActionStrategy // cooperative strategy
+	selfstrat [3]internal.ActionStrategy // selfish strategy
 }
 
 func (s *SocialAgent) FightResolution(
@@ -74,8 +77,8 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 	}
 
 	// Calculate best action based on current state and selfishness
-	coopTable := internal.CooperationQ(qState)
-	selfTable := internal.SelfishQ(qState)
+	coopTable := internal.QFunction(qState, s.coopstrat)
+	selfTable := internal.QFunction(qState, s.selfstrat)
 
 	multipliedCoop := internal.ConstMulSlice(1.0-s.selfishness, coopTable[:])
 	multipliedSelf := internal.ConstMulSlice(s.selfishness, selfTable[:])
@@ -294,10 +297,13 @@ func (s *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeI
 }
 
 func NewSocialAgent() agent.Strategy {
+	coopstrat, selfstrat := internal.ReadStrategy()
 	return &SocialAgent{
 		selfishness:     rand.Float64(),
 		gossipThreshold: 0.5,
 		propAdmire:      0.1,
 		propHate:        0.1,
+		coopstrat:       coopstrat,
+		selfstrat:       selfstrat,
 	}
 }
