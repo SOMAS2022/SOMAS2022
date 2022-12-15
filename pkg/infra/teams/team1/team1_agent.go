@@ -25,6 +25,8 @@ type SocialAgent struct {
 	propHate float64
 	// Proportion of agents to talk well about
 	propAdmire float64
+	// Propportion of agents to trade with
+	propTrade float64
 
 	graphID int // for logging
 }
@@ -332,7 +334,40 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (s *SocialAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+func (s *SocialAgent) HandleTradeNegotiation(BA agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
+	selfID := BA.ID()
+	agentWeapons := BA.AgentState().Weapons
+	agentShields := BA.AgentState().Shields
+
+	tradeID, accept, bestIdx := internal.ShouldAcceptOffer(BA, m)
+	if accept {
+		return message.TradeAccept{TradeID: tradeID}
+	}
+
+	if bestIdx == -1 { // Cant trade due to no next best weapon
+		return message.TradeRequest{}
+	}
+
+	sortedSC := internal.GetSortedAgentSubset(selfID, s.socialCapital)
+
+nextAgent:
+	for _, sci := range sortedSC {
+		if internal.OverallPerception(sci.Arr) < 0 {
+			break
+		}
+		// check if a trade negotiation is in place with that agent
+		for _, neg := range m.Negotiations {
+			if neg.Agent1 == selfID && neg.Agent2 == sci.ID {
+				continue nextAgent
+			}
+		}
+
+		// make a trade offer
+		TO, _ := message.NewTradeOffer(commons.Weapon, uint(bestIdx), agentWeapons, agentShields)
+		TD := message.NewTradeDemand(commons.Shield, 0)
+		return message.TradeRequest{CounterPartyID: sci.ID, Offer: TO, Demand: TD}
+	}
+
 	return message.TradeRequest{}
 }
 
