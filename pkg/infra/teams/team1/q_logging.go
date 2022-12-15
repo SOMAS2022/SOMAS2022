@@ -9,6 +9,7 @@ import (
 	"infra/logging"
 	"infra/teams/team1/internal"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -74,8 +75,8 @@ func LogDecisions(decisions map[commons.ID]decision.FightAction, gs state.State)
 			gs.MonsterHealth,
 			agentState.Hp,
 			agentState.Stamina,
-			agentState.TotalAttack(gs),
-			agentState.TotalDefense(gs),
+			agentState.TotalAttack(),
+			agentState.TotalDefense(),
 			agentState.Weapons.Len(),
 		))
 
@@ -264,7 +265,7 @@ func getStateFromSnapshot(snapshot []string) []float64 {
 		internal.StringToFloat(snapshot[7]), // Stamina
 		internal.StringToFloat(snapshot[8]), // TotalAttack
 		internal.StringToFloat(snapshot[9]), // TotalDefense
-		internal.StringToFloat(snapshot[3]), // CurrLevel
+		rand.Float64(),                      //internal.StringToFloat(snapshot[3]), // CurrLevel
 		internal.StringToFloat(snapshot[5]), // MonsterHealth
 		internal.StringToFloat(snapshot[4]), // MonsterAttack
 	}
