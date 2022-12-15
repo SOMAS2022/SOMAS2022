@@ -23,207 +23,30 @@ type FivAgent struct {
 	ttable      *TrustTable
 }
 
-func (fiv *FivAgent) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[commons.ID, decision.FightAction]) immutable.Map[commons.ID, decision.FightAction] {
-	view := baseAgent.View()
-	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
-		var fightAction decision.FightAction
-		switch rand.Intn(3) {
-		case 0:
-			fightAction = decision.Attack
-		case 1:
-			fightAction = decision.Defend
-		default:
-			fightAction = decision.Cower
-		}
-		builder.Set(id, fightAction)
-	}
-	return *builder.Map()
-}
-
-func (fiv *FivAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
-	loot := baseAgent.Loot()
-	weapons := loot.Weapons().Iterator()
-	shields := loot.Shields().Iterator()
-	hpPotions := loot.HpPotions().Iterator()
-	staminaPotions := loot.StaminaPotions().Iterator()
-
-	builder := immutable.NewSortedMapBuilder[commons.ItemID, struct{}](nil)
-
-	for !weapons.Done() {
-		weapon, _ := weapons.Next()
-		if rand.Int()%2 == 0 {
-			builder.Set(weapon.Id(), struct{}{})
-		}
-	}
-
-	for !shields.Done() {
-		shield, _ := shields.Next()
-		if rand.Int()%2 == 0 {
-			builder.Set(shield.Id(), struct{}{})
-		}
-	}
-
-	for !hpPotions.Done() {
-		pot, _ := hpPotions.Next()
-		if rand.Int()%2 == 0 {
-			builder.Set(pot.Id(), struct{}{})
-		}
-	}
-
-	for !staminaPotions.Done() {
-		pot, _ := staminaPotions.Next()
-		if rand.Int()%2 == 0 {
-			builder.Set(pot.Id(), struct{}{})
-		}
-	}
-
-	return *builder.Map()
-}
-
-func (fiv *FivAgent) LootAction(
-	_ agent.BaseAgent,
-	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
-	_ message.Proposal[decision.LootAction],
-) immutable.SortedMap[commons.ItemID, struct{}] {
-	return proposedLoot
-}
-
-func (fiv *FivAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	if fiv.qtable.saTaken.state != "" {
-		fiv.UpdateQ(baseAgent)
-	}
-	fiv.preHealth = baseAgent.AgentState().Hp
-	myview := baseAgent.View()
-	globalStates := myview.AgentState()
-	fiv.prePopNum = uint(globalStates.Len())
-	qstate := fiv.CurrentQState(baseAgent)
-	if rand.Float32() < fiv.exploreRate || len(fiv.qtable.table) == 0 {
-		return fiv.Explore(qstate)
-	}
-	return fiv.Exploit(qstate)
-}
-
-func (fiv *FivAgent) FightAction(
-	baseAgent agent.BaseAgent,
-	proposedAction decision.FightAction,
-	acceptedProposal message.Proposal[decision.FightAction],
-) decision.FightAction {
-	return fiv.FightActionNoProposal(baseAgent)
-}
-
-func (fiv *FivAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
-}
-
-func (fiv *FivAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	return nil
-}
-
-func (fiv *FivAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Positive
-	case 1:
-		return decision.Negative
-	default:
-		return decision.Abstain
-	}
-}
-
-func (fiv *FivAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	switch rand.Intn(2) {
-	case 0:
-		return true
-	default:
-		return false
-	}
-}
-
-func (fiv *FivAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := baseAgent.View()
-	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := baseAgent.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-	for id, itemIDS := range lootAllocation {
-		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
-	}
-	return commons.MapToImmutable(mMapped)
-}
-
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-	for !iterator.Done() {
-		next, _ := iterator.Next()
-		toBeAllocated := ids[rand.Intn(len(ids))]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		}
-	}
-}
-
-func (fiv *FivAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	return 0
-}
-
-func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
-	fiv.ttable.Decay()
-
-	myview := baseAgent.View()
-	globalStates := myview.AgentState()
-	currentLeader := myview.CurrentLeader()
-
-	// lead trust loss due to population death
-	deathLastRound := fiv.prePopNum - uint(globalStates.Len())
-	if deathLastRound > 0 {
-		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(deathLastRound))
-	}
-	// lead trust gain due to no health loss (being protected)
-	hpLossLastRound := fiv.preHealth - baseAgent.AgentState().Hp
-	if hpLossLastRound <= 0 {
-		fiv.ttable.PositiveLeaderEvent(currentLeader, 1)
-	}
-
-	for _, id := range commons.ImmutableMapKeys(globalStates) {
-		agState, _ := globalStates.Get(id)
-		// individual trust loss due to low health (not performing well)
-		if uint(agState.Hp) == state.LowHealth {
-			fiv.ttable.NegativeIndivlEvent(id, 1)
-		}
-		// individual trust gain due to high health (performing well)
-		if uint(agState.Hp) == state.HighHealth {
-			fiv.ttable.PositiveIndivlEvent(id, 1)
-		}
-	}
-}
-
-func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-	fiv.bravery += rand.Intn(10)
-	log <- logging.AgentLog{
-		Name: a.Name(),
-		ID:   a.ID(),
-		Properties: map[string]float32{
-			"bravery": float32(fiv.bravery),
-		},
-	}
-	fiv.UpdateQ(a)
-	fiv.UpdateTrust(a)
-}
+// --------------- Election ---------------
 
 func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	manifesto := decision.NewManifesto(false, false, 1, 20)
 	return manifesto
+}
+
+func (fiv *FivAgent) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	var ballot decision.Ballot
+	var trustee commons.ID
+	fstCheck := true
+
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	itr := globalStates.Iterator()
+	for !itr.Done() {
+		id, _, _ := itr.Next()
+		if fstCheck || fiv.ttable.EstimateLeadTrust(id) > fiv.ttable.EstimateLeadTrust(trustee) {
+			trustee = id
+		}
+	}
+	ballot = append(ballot, trustee)
+
+	return ballot
 }
 
 func (fiv *FivAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
@@ -233,6 +56,22 @@ func (fiv *FivAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.In
 		return decision.Negative
 	}
 	return decision.Positive
+}
+
+// --------------- Fight ---------------
+
+func (fiv *FivAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
+	// 0th weapon has the greatest attack points
+	return decision.ItemIdx(0)
+}
+
+func (fiv *FivAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
+	// 0th weapon has the greatest shield points
+	return decision.ItemIdx(0)
+}
+
+func (fiv *FivAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+	return nil
 }
 
 func (fiv *FivAgent) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
@@ -296,39 +135,8 @@ func (fiv *FivAgent) HandleFightInformation(_ message.TaggedInformMessage[messag
 	_ = baseAgent.SendFightProposalToLeader(prop)
 }
 
-func (fiv *FivAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
-	return nil
-}
-
-func (fiv *FivAgent) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
-	var ballot decision.Ballot
-	var trustee commons.ID
-	fstCheck := true
-
-	myview := baseAgent.View()
-	globalStates := myview.AgentState()
-	itr := globalStates.Iterator()
-	for !itr.Done() {
-		id, _, _ := itr.Next()
-		if fstCheck || fiv.ttable.EstimateLeadTrust(id) > fiv.ttable.EstimateLeadTrust(trustee) {
-			trustee = id
-		}
-	}
-	ballot = append(ballot, trustee)
-
-	return ballot
-}
-
-func (fiv *FivAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
-	if intent == 0 {
-		return decision.Positive
-	} else {
-		return decision.Negative
-	}
-}
-
 func (fiv *FivAgent) HandleFightProposalRequest(
+	// Leader fight function
 	_ message.Proposal[decision.FightAction],
 	_ agent.BaseAgent,
 	proposals *immutable.Map[commons.ID, decision.FightAction],
@@ -347,18 +155,229 @@ func (fiv *FivAgent) HandleFightProposalRequest(
 	return percentCow <= 0.4
 }
 
-func (fiv *FivAgent) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
-	// 0th weapon has the greatest attack points
-	return decision.ItemIdx(0)
+func (fiv *FivAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+	intent := rand.Intn(2)
+	if intent == 0 {
+		return decision.Positive
+	} else {
+		return decision.Negative
+	}
 }
 
-func (fiv *FivAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
-	// 0th weapon has the greatest shield points
-	return decision.ItemIdx(0)
+// resolve fight
+
+func (fiv *FivAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
+	if fiv.qtable.saTaken.state != "" {
+		fiv.UpdateQ(baseAgent)
+	}
+	fiv.preHealth = baseAgent.AgentState().Hp
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	fiv.prePopNum = uint(globalStates.Len())
+	qstate := fiv.CurrentQState(baseAgent)
+	if rand.Float32() < fiv.exploreRate || len(fiv.qtable.table) == 0 {
+		return fiv.Explore(qstate)
+	}
+	return fiv.Exploit(qstate)
 }
+
+func (fiv *FivAgent) FightAction(
+	baseAgent agent.BaseAgent,
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
+) decision.FightAction {
+	return fiv.FightActionNoProposal(baseAgent)
+}
+
+func (fiv *FivAgent) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[commons.ID, decision.FightAction]) immutable.Map[commons.ID, decision.FightAction] {
+	view := baseAgent.View()
+	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
+		var fightAction decision.FightAction
+		switch rand.Intn(3) {
+		case 0:
+			fightAction = decision.Attack
+		case 1:
+			fightAction = decision.Defend
+		default:
+			fightAction = decision.Cower
+		}
+		builder.Set(id, fightAction)
+	}
+	return *builder.Map()
+}
+
+// --------------- Loot ---------------
+
+// Loot allocation
+
+func (fiv *FivAgent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := baseAgent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	iterator := baseAgent.Loot().Weapons().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().Shields().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().HpPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
+	for id, itemIDS := range lootAllocation {
+		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
+	}
+	return commons.MapToImmutable(mMapped)
+}
+
+func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		toBeAllocated := ids[rand.Intn(len(ids))]
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
+}
+
+// resolve loot discussion
+
+func (fiv *FivAgent) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+	loot := baseAgent.Loot()
+	weapons := loot.Weapons().Iterator()
+	shields := loot.Shields().Iterator()
+	hpPotions := loot.HpPotions().Iterator()
+	staminaPotions := loot.StaminaPotions().Iterator()
+
+	builder := immutable.NewSortedMapBuilder[commons.ItemID, struct{}](nil)
+
+	for !weapons.Done() {
+		weapon, _ := weapons.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(weapon.Id(), struct{}{})
+		}
+	}
+
+	for !shields.Done() {
+		shield, _ := shields.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(shield.Id(), struct{}{})
+		}
+	}
+
+	for !hpPotions.Done() {
+		pot, _ := hpPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	for !staminaPotions.Done() {
+		pot, _ := staminaPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	return *builder.Map()
+}
+
+func (fiv *FivAgent) LootAction(
+	_ agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	_ message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
+	return proposedLoot
+}
+
+func (fiv *FivAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+}
+
+func (fiv *FivAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	return nil
+}
+
+func (fiv *FivAgent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Positive
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Abstain
+	}
+}
+
+func (fiv *FivAgent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+// --------------- Trade ---------------
 
 func (fiv *FivAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
+}
+
+// --------------- Hp Pool ---------------
+
+func (fiv *FivAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	return 0
+}
+
+// --------------- Internal State ---------------
+
+func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
+	fiv.ttable.Decay()
+
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	currentLeader := myview.CurrentLeader()
+
+	// lead trust loss due to population death
+	deathLastRound := fiv.prePopNum - uint(globalStates.Len())
+	if deathLastRound > 0 {
+		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(deathLastRound))
+	}
+	// lead trust gain due to no health loss (being protected)
+	hpLossLastRound := fiv.preHealth - baseAgent.AgentState().Hp
+	if hpLossLastRound <= 0 {
+		fiv.ttable.PositiveLeaderEvent(currentLeader, 1)
+	}
+
+	for _, id := range commons.ImmutableMapKeys(globalStates) {
+		agState, _ := globalStates.Get(id)
+		// individual trust loss due to low health (not performing well)
+		if uint(agState.Hp) == state.LowHealth {
+			fiv.ttable.NegativeIndivlEvent(id, 1)
+		}
+		// individual trust gain due to high health (performing well)
+		if uint(agState.Hp) == state.HighHealth {
+			fiv.ttable.PositiveIndivlEvent(id, 1)
+		}
+	}
+}
+
+func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+	fiv.bravery += rand.Intn(10)
+	log <- logging.AgentLog{
+		Name: a.Name(),
+		ID:   a.ID(),
+		Properties: map[string]float32{
+			"bravery": float32(fiv.bravery),
+		},
+	}
+	fiv.UpdateQ(a)
+	fiv.UpdateTrust(a)
 }
 
 func NewFivAgent() agent.Strategy {
