@@ -63,7 +63,7 @@ func (a *AgentFour) HandleUpdateShield(baseAgent agent.BaseAgent) decision.ItemI
 	}
 
 	// what to do if we have no shields?
-	//return decision.ItemIdx(0)
+	return decision.ItemIdx(0)
 }
 
 // we always pick the best weapon
@@ -90,7 +90,7 @@ func (a *AgentFour) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemI
 	}
 
 	// what to do if we have no weapons?
-	//return decision.ItemIdx(0)
+	return decision.ItemIdx(0)
 }
 
 // Define and update the attributes for agent four
@@ -196,6 +196,7 @@ func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 // *********************************** TRADE INTERFACE FUNCTIONS ***********************************
 
 func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
+	return message.TradeRequest{}
 	// respond to requests
 
 	// make requests
