@@ -50,7 +50,7 @@ func (a *AgentThree) UpdateUtilityProposal(baseAgent agent.BaseAgent, propAction
 	// Check if agent is in accordance with us and asked us in the last round
 	// TODO: update contacts when receiving message
 	if a.contactsLastRound[id] {
-		if a.CurrentAction() != propAction {
+		if a.CurrentAction(baseAgent) != propAction {
 			a.proposalTolerance[id] += 1
 			// Tolerance
 			if a.proposalTolerance[id] >= 3 {
@@ -74,7 +74,7 @@ func (a *AgentThree) UpdateUtilityChair(baseAgent agent.BaseAgent, prop immutabl
 	propAction, _ := prop.Get(baseAgent.ID())
 
 	// Check if chair is in accordance with us
-	if a.CurrentAction() != propAction {
+	if a.CurrentAction(baseAgent) != propAction {
 		a.chairTolerance += 1
 		// Tolerance
 		if a.chairTolerance >= 4 {

@@ -33,28 +33,28 @@ func (a *AgentThree) FightAction(
 }
 
 func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
+	agentState := baseAgent.AgentState()
+	// alg 8
+	if float64(agentState.Hp) < 1.25*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 1.25*AverageArray(GetStaminaAllAgents(baseAgent)) {
 		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
+	} else if agentState.BonusDefense() >= agentState.BonusAttack() {
 		return decision.Defend
+	} else {
+		return decision.Attack
 	}
 }
 
 func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
 	view := baseAgent.View()
-	// agentState := view.AgentState()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		var fightAction decision.FightAction
 
 		// Check for our agent and assign what we want to do
 		if id == baseAgent.ID() {
-			fightAction = a.CurrentAction()
-			baseAgent.Log(logging.Trace, logging.LogField{"bravery": a.bravery, "hp": a.HP, "choice": a.CurrentAction(), "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
+			action := a.CurrentAction(baseAgent)
+			fightAction = action
+			baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "choice": action, "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
 		} else {
 			// Send some messages to other agents
 			// send := rand.Intn(5)
@@ -62,14 +62,7 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 			// 	m := message.FightInform()
 			// 	_ = baseAgent.SendBlockingMessage(id, m)
 			// }
-			switch rand.Intn(3) {
-			case 0:
-				fightAction = decision.Attack
-			case 1:
-				fightAction = decision.Defend
-			default:
-				fightAction = decision.Cower
-			}
+
 		}
 		builder.Set(id, fightAction)
 	}
@@ -108,19 +101,31 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 }
 
 // Calculate our agents action
-func (a *AgentThree) CurrentAction() decision.FightAction {
-	// Always check how bravee we are and if we have the Stamina to do it...
-	if a.bravery > 3 && a.ST > PERCENTAGE {
-		fight := rand.Intn(2)
-		switch fight {
-		case 0:
-			return decision.Attack
-		default:
-			return decision.Defend
-		}
-	} else {
+func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightAction {
+	// !!!!!!!!!!!!!!!!!!!!! need to implement
+	StartingMonsterHP := 0
+	view := baseAgent.View()
+	agentState := baseAgent.AgentState()
+
+	currentLevel := int(view.CurrentLevel())
+	// edge case - alg 9
+	if float64(agentState.Hp) < 0.6*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 0.6*AverageArray(GetStaminaAllAgents(baseAgent)) {
 		return decision.Cower
 	}
+	// change decision, already not edge case - alg 10
+	// every 5 levels, alpha +1
+	alpha := int(currentLevel / 5)
+	damageTaken := GetStartingHP() - int(agentState.Hp)
+	attackDealt := (StartingMonsterHP - int(view.MonsterHealth())) / StartingMonsterHP
+
+	if attackDealt <= damageTaken && currentLevel > alpha+5 {
+		return decision.Attack
+	} else if attackDealt > damageTaken && currentLevel > alpha+5 {
+		return decision.Defend
+	}
+
+	// catchall, execution will never get here
+	return decision.Cower
 }
 
 // Vote on proposal
