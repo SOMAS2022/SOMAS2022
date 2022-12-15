@@ -369,15 +369,16 @@ func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
 
 func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	fiv.bravery += rand.Intn(10)
+	fiv.UpdateQ(a)
+	fiv.UpdateTrust(a)
 	log <- logging.AgentLog{
 		Name: a.Name(),
 		ID:   a.ID(),
 		Properties: map[string]float32{
-			"bravery": float32(fiv.bravery),
+			"bravery":        float32(fiv.bravery),
+			fiv.qtable.Log(): 0,
 		},
 	}
-	fiv.UpdateQ(a)
-	fiv.UpdateTrust(a)
 }
 
 func NewFivAgent() agent.Strategy {

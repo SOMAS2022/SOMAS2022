@@ -3,6 +3,7 @@ package team5
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type SaPair struct {
@@ -81,6 +82,15 @@ func (qt *Qtable) Print() {
 		strBuild += "|--  " + qstate.state + ":" + qstate.action + "  " + strconv.FormatFloat(float64(qvalue), 'f', 4, 32) + "  --|\n"
 	}
 	fmt.Print(strBuild)
+}
+
+func (qt *Qtable) Log() string {
+	strBuild := "{"
+	for qstate, qvalue := range qt.table {
+		strBuild += "{" + qstate.state + "-" + qstate.action + "|" + strconv.FormatFloat(float64(qvalue), 'f', 4, 32) + "},"
+	}
+	strBuild = strings.TrimSuffix(strBuild, ",") + "}"
+	return strBuild
 }
 
 func NewQTable(alpha float32, gamma float32) *Qtable {
