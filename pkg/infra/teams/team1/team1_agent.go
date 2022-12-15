@@ -161,9 +161,7 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
-
 func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
-
 	// Find utility of agents own state
 	selfUtility := internal.UtilityOfState(agent.AgentState())
 
@@ -201,9 +199,7 @@ func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 		s.selfishness -= 0.01
 	} else { // If agents with better state than oneself has lower trustworthiness
 		s.selfishness += 0.01
-
 	}
-
 }
 
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {

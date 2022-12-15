@@ -84,7 +84,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 
 			// Update the socialCapital array based on calculated delta for trustworthiness and honour
 			s.socialCapital[agentID] = internal.BoundArray(internal.AddArrays(s.socialCapital[agentID], [4]float64{deltaInstitutions, 0.0, deltaTrust, deltaHonour}))
-
 		}
 	}
 }
