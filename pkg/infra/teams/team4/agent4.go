@@ -196,6 +196,8 @@ func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 // *********************************** TRADE INTERFACE FUNCTIONS ***********************************
 
 func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
+	
+	
 	return message.TradeRequest{}
 	// respond to requests
 
@@ -204,6 +206,62 @@ func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.T
 }
 
 // *********************************** OTHER FUNCTIONS ***********************************
+//
+view := agent.View()
+agentState := view.AgentState()
+agentStateIterator := agentState.Iterator()
+sliceOfAgentsWithLowHealth := make([]commons.ID, 0)
+sliceOfAgentsWithMidHealth := make([]commons.ID, 0)
+sliceOfAgentsWithHighHealth := make([]commons.ID, 0)
+for !agentStateIterator.Done() {
+	key, value, _ := agentStateIterator.Next()
+	switch {
+	case value.Hp == state.HealthRange(state.LowHealth):
+		sliceOfAgentsWithLowHealth = append(sliceOfAgentsWithLowHealth, key)
+	case value.Hp == state.HealthRange(state.MidHealth):
+		sliceOfAgentsWithMidHealth = append(sliceOfAgentsWithMidHealth, key)
+	case value.Hp == state.HealthRange(state.HighHealth):
+		sliceOfAgentsWithHighHealth = append(sliceOfAgentsWithHighHealth, key)
+	}
+}
+
+//PrefightComms
+func (a * AgentFour) PrefightComms(agent agent.BaseAgent){
+	//actions array stores all agent actions from the beginning to the end of the game.
+	actions := make([]commons.ID, 0) //[[agent_id, [action_round1, action_round2,.....]]]
+	agents_contributions = :=make([]commons.ID, 0)//[C1, C2, ……]
+	num_agents_fight := 0
+	num_agents_defend := 0
+	num_agents_cower := 0
+
+	for i < logging.LevelStats.NumberOfAgents{
+		asks what is the action of agent[i]
+		switch{
+			case action[i] == fight:
+				num_agents_fight += 1
+				actions[agent_id] == decision.Attack
+				if (a.HP == state.LowHealth || a.ST = state.LowStamina){
+					agents_contributions[agent_ID] += 2 
+				}
+		}
+		   case action[i] == defend: 
+				num_agents_defend += 1
+				actions[agent_id] == decision.Defend
+				agents_contributions[agent_ID] += 1
+				if (a.HP == state.LowHealth or a.ST = state.LowStamina) {
+					agents_contributions[agent_ID] += 2 
+				}
+		 	case action[i] == cower:
+				num_agents_cower += 1
+				actions[agent_id, ] = decision.Cower
+				if (a.HP == state.HighHealth and a.ST = state.HighStamina) {
+					agents_contributions[agent_ID] -= 1 
+				}
+	}
+}
+
+
+
 
 // Random value generator
 func randFloats(min, max float64, n int) []float64 {
@@ -338,10 +396,6 @@ func (a *AgentFour) FightManifesto(agent agent.BaseAgent, prop commons.Immutable
 // 	return decisionMap
 // }
 
-// Equip weapon and shield
-func EquipWeaponShield(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-	//
-}
 
 // Replenish Health
 // func (a *AgentFour) RepenlishHealth(baseAgent agent.BaseAgent) uint {
