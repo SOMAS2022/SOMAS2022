@@ -98,7 +98,7 @@ func (negotiation *TradeNegotiation) Notarize(agents map[commons.ID]state.AgentS
 		}
 	}
 
-	return numberOfValidAgents == 2 && negotiation.RoundNum > 1
+	return numberOfValidAgents == 2 && negotiation.RoundNum >= 1
 }
 
 func (negotiation *TradeNegotiation) UpdateOffer(agentID commons.ID, offer TradeOffer) (oldOffer TradeOffer, ok bool) {
