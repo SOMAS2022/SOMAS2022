@@ -166,9 +166,9 @@ func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
 	cqState := fiv.CurrentQState(baseAgent)
 	fSas := []SaPair{{state: cqState, action: "Cower"}, {state: cqState, action: "Attck"}, {state: cqState, action: "Defnd"}}
 	fiv.qtable.Learn(reward, fiv.qtable.GetMaxFR(fSas))
-	if myview.CurrentLevel() == 20 {
-		fiv.qtable.Print()
-	}
+	// if myview.CurrentLevel() == 20 {
+	// 	fiv.qtable.Print()
+	// }
 }
 
 // Proposal related

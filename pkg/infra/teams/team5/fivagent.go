@@ -177,6 +177,37 @@ func (fiv *FivAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
+func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
+	fiv.ttable.Decay()
+
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	currentLeader := myview.CurrentLeader()
+
+	// lead trust loss due to population death
+	deathLastRound := fiv.prePopNum - uint(globalStates.Len())
+	if deathLastRound > 0 {
+		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(deathLastRound))
+	}
+	// lead trust gain due to no health loss (being protected)
+	hpLossLastRound := fiv.preHealth - baseAgent.AgentState().Hp
+	if hpLossLastRound <= 0 {
+		fiv.ttable.PositiveLeaderEvent(currentLeader, 1)
+	}
+
+	for _, id := range commons.ImmutableMapKeys(globalStates) {
+		agState, _ := globalStates.Get(id)
+		// individual trust loss due to low health (not performing well)
+		if uint(agState.Hp) == state.LowHealth {
+			fiv.ttable.NegativeIndivlEvent(id, 1)
+		}
+		// individual trust gain due to high health (performing well)
+		if uint(agState.Hp) == state.HighHealth {
+			fiv.ttable.PositiveIndivlEvent(id, 1)
+		}
+	}
+}
+
 func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	fiv.bravery += rand.Intn(10)
 	log <- logging.AgentLog{
@@ -187,6 +218,7 @@ func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.Immutable
 		},
 	}
 	fiv.UpdateQ(a)
+	fiv.UpdateTrust(a)
 }
 
 func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -197,7 +229,7 @@ func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 func (fiv *FivAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	myview := baseAgent.View()
 	currentLeader := myview.CurrentLeader()
-	if fiv.ttable.leaderTable[currentLeader] < 0 {
+	if fiv.ttable.EstimateLeadTrust(currentLeader) < 0 {
 		return decision.Negative
 	}
 	return decision.Positive
@@ -268,30 +300,21 @@ func (fiv *FivAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.F
 	return nil
 }
 
-func (fiv *FivAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
-	view := b.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
-	i := 0
-	itr := agentState.Iterator()
+func (fiv *FivAgent) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	var ballot decision.Ballot
+	var trustee commons.ID
+	fstCheck := true
+
+	myview := baseAgent.View()
+	globalStates := myview.AgentState()
+	itr := globalStates.Iterator()
 	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
+		id, _, _ := itr.Next()
+		if fstCheck || fiv.ttable.EstimateLeadTrust(id) > fiv.ttable.EstimateLeadTrust(trustee) {
+			trustee = id
 		}
 	}
-
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := rand.Intn(numAliveAgents)
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
-	}
+	ballot = append(ballot, trustee)
 
 	return ballot
 }

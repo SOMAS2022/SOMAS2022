@@ -57,8 +57,8 @@ func (tt *TrustTable) NegativeLeaderEvent(agID commons.ID, trustLoss float32) {
 	}
 }
 
-func (tt *TrustTable) EstimateLeadTrust(agID commons.ID) {
-	tt.leaderTable[agID] = tt.leadWeight*tt.leaderTable[agID] + tt.indivlWeight*tt.indivlTable[agID]
+func (tt *TrustTable) EstimateLeadTrust(agID commons.ID) float32 {
+	return tt.leadWeight*tt.leaderTable[agID] + tt.indivlWeight*tt.indivlTable[agID]
 }
 
 func NewTrustTable() *TrustTable {
