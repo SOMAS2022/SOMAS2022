@@ -34,6 +34,16 @@ func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.Immutab
 
 func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
+
+	//Update similarity SC value
+	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
+	diff := int(10 * (similarity - 0.5))
+	if diff < 0 {
+		a.similarity[proposal.ProposerID()] = commons.SaturatingSub(init, uint(-diff))
+	} else {
+		a.similarity[proposal.ProposerID()] = SCSaturatingAdd(init, uint(diff), 100)
+	}
+
 	if similarity >= 0.8 {
 		return decision.Positive
 	} else {
@@ -43,10 +53,18 @@ func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.Figh
 
 // HandleFightProposalRequest only called as leader
 func (a *Team6Agent) HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
-	// Do we want to forward proposal to other agents to get opinion?
+	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
 
-	// TODO: Replace one of these with agent's own proposal
-	return proposalSimilarity(a.fightProposal, proposal.Rules()) > 0.6
+	//Update similarity SC value
+	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
+	diff := int(10 * (similarity - 0.5))
+	if diff < 0 {
+		a.similarity[proposal.ProposerID()] = commons.SaturatingSub(init, uint(-diff))
+	} else {
+		a.similarity[proposal.ProposerID()] = SCSaturatingAdd(init, uint(diff), 100)
+	}
+
+	return similarity > 0.6
 }
 
 func (a *Team6Agent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {

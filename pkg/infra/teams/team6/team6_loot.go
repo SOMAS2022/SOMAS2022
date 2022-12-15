@@ -41,6 +41,16 @@ func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.Lo
 
 func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
 	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
+
+	//Update similarity SC value
+	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
+	diff := int(10 * (similarity - 0.5))
+	if diff < 0 {
+		a.similarity[proposal.ProposerID()] = commons.SaturatingSub(init, uint(-diff))
+	} else {
+		a.similarity[proposal.ProposerID()] = SCSaturatingAdd(init, uint(diff), 100)
+	}
+
 	if similarity >= 0.8 {
 		return decision.Positive
 	} else {
@@ -49,7 +59,18 @@ func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootA
 }
 
 func (a *Team6Agent) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	return proposalSimilarity(a.lootProposal, proposal.Rules()) > 0.6
+	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
+
+	//Update similarity SC value
+	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
+	diff := int(10 * (similarity - 0.5))
+	if diff < 0 {
+		a.similarity[proposal.ProposerID()] = commons.SaturatingSub(init, uint(-diff))
+	} else {
+		a.similarity[proposal.ProposerID()] = SCSaturatingAdd(init, uint(diff), 100)
+	}
+
+	return similarity > 0.6
 }
 
 func (a *Team6Agent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
