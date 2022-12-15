@@ -22,7 +22,17 @@ func (a *Team6Agent) LootAction(
 	return proposedLoot
 }
 
-func (a *Team6Agent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (a *Team6Agent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
+	switch m.Message().(type) {
+	case *message.StartLoot:
+		a.generateLootProposal()
+		sendsProposal := rand.Intn(100)
+		if sendsProposal > 90 {
+			baseAgent.SendLootProposalToLeader(a.lootProposal)
+		}
+	default:
+		return
+	}
 }
 
 func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {

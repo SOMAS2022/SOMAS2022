@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
+	"infra/game/message/proposal"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -37,6 +38,9 @@ type Team6Agent struct {
 	lastFightRound           uint
 	lastHPPoolDonationAmount uint
 	agentsRemaining          []uint
+
+	fightProposal commons.ImmutableList[proposal.Rule[decision.FightAction]]
+	lootProposal  commons.ImmutableList[proposal.Rule[decision.LootAction]]
 }
 
 func NewTeam6Agent() agent.Strategy {

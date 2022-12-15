@@ -12,31 +12,16 @@ import (
 )
 
 func (a *Team6Agent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	// makesProposal := rand.Intn(100)
-
-	// if makesProposal > 80 {
-	// 	rules := make([]proposal.Rule[decision.FightAction], 0)
-
-	// 	rules = append(rules, *proposal.NewRule(decision.Attack,
-	// 		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-	// 			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-	// 	))
-
-	// 	rules = append(rules, *proposal.NewRule(decision.Defend,
-	// 		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-	// 	))
-
-	// 	rules = append(rules, *proposal.NewRule(decision.Cower,
-	// 		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-	// 	))
-
-	// 	rules = append(rules, *proposal.NewRule(decision.Attack,
-	// 		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-	// 	))
-
-	// 	prop := *commons.NewImmutableList(rules)
-	// 	_ = baseAgent.SendFightProposalToLeader(prop)
-	// }
+	switch m.Message().(type) {
+	case *message.StartFight:
+		a.generateFightProposal()
+		sendsProposal := rand.Intn(100)
+		if sendsProposal > 90 {
+			baseAgent.SendFightProposalToLeader(a.fightProposal)
+		}
+	default:
+		return
+	}
 }
 
 func (a *Team6Agent) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
@@ -61,7 +46,7 @@ func (a *Team6Agent) HandleFightProposalRequest(proposal message.Proposal[decisi
 	// Do we want to forward proposal to other agents to get opinion?
 
 	// TODO: Replace one of these with agent's own proposal
-	return proposalSimilarity(proposal.Rules(), proposal.Rules()) > 0.6
+	return proposalSimilarity(a.fightProposal, proposal.Rules()) > 0.6
 }
 
 func (a *Team6Agent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
