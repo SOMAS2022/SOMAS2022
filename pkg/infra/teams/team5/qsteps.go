@@ -9,7 +9,7 @@ import (
 	"math/rand"
 )
 
-func (fiv *FivAgent) populateQTable() {
+func (t5 *Agent5) populateQTable() {
 	levelRange := [3]string{"Low", "Mid", "Hih"}
 	skillRange := [3]string{"Weakee", "Ordina", "Master"}
 	actonRange := [3]string{"Attck", "Cower", "Defnd"}
@@ -19,7 +19,7 @@ func (fiv *FivAgent) populateQTable() {
 				for _, shLevel := range skillRange {
 					for _, acton := range actonRange {
 						qstate := hpLevel + "-" + apLevel + "-" + atLevel + "-" + shLevel
-						fiv.qtable.table[SaPair{state: qstate, action: acton}] = 0.0
+						t5.qtable.table[SaPair{state: qstate, action: acton}] = 0.0
 					}
 				}
 			}
@@ -27,7 +27,7 @@ func (fiv *FivAgent) populateQTable() {
 	}
 }
 
-func (fiv *FivAgent) CurrentHPState(mystate state.AgentState) string {
+func (t5 *Agent5) CurrentHPState(mystate state.AgentState) string {
 	initHealth := 1000.0
 	myHealth := ""
 	switch {
@@ -41,7 +41,7 @@ func (fiv *FivAgent) CurrentHPState(mystate state.AgentState) string {
 	return myHealth
 }
 
-func (fiv *FivAgent) CurrentAPState(mystate state.AgentState) string {
+func (t5 *Agent5) CurrentAPState(mystate state.AgentState) string {
 	initStamina := 2000.0
 	myStamina := ""
 	switch {
@@ -55,7 +55,7 @@ func (fiv *FivAgent) CurrentAPState(mystate state.AgentState) string {
 	return myStamina
 }
 
-func (fiv *FivAgent) CurrentATState(popATGreaterToCount float32, numAlive float32) string {
+func (t5 *Agent5) CurrentATState(popATGreaterToCount float32, numAlive float32) string {
 	relativeAT := ""
 	switch {
 	case popATGreaterToCount < 0.25*numAlive:
@@ -68,7 +68,7 @@ func (fiv *FivAgent) CurrentATState(popATGreaterToCount float32, numAlive float3
 	return relativeAT
 }
 
-func (fiv *FivAgent) CurrentSHState(popSHGreaterToCount float32, numAlive float32) string {
+func (t5 *Agent5) CurrentSHState(popSHGreaterToCount float32, numAlive float32) string {
 	relativeSH := ""
 	switch {
 	case popSHGreaterToCount < 0.25*numAlive:
@@ -81,7 +81,7 @@ func (fiv *FivAgent) CurrentSHState(popSHGreaterToCount float32, numAlive float3
 	return relativeSH
 }
 
-func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
+func (t5 *Agent5) CurrentQState(baseAgent agent.BaseAgent) string {
 	mystate := baseAgent.AgentState()
 	myview := baseAgent.View()
 
@@ -103,10 +103,10 @@ func (fiv *FivAgent) CurrentQState(baseAgent agent.BaseAgent) string {
 		}
 	}
 
-	return fiv.CurrentHPState(mystate) + "-" + fiv.CurrentAPState(mystate) + "-" + fiv.CurrentATState(popATGreaterToCount, numAlive) + "-" + fiv.CurrentSHState(popSHGreaterToCount, numAlive)
+	return t5.CurrentHPState(mystate) + "-" + t5.CurrentAPState(mystate) + "-" + t5.CurrentATState(popATGreaterToCount, numAlive) + "-" + t5.CurrentSHState(popSHGreaterToCount, numAlive)
 }
 
-func (fiv *FivAgent) Explore(qstate string) decision.FightAction {
+func (t5 *Agent5) Explore(qstate string) decision.FightAction {
 	var sa SaPair
 	var fightDecision decision.FightAction
 	fight := rand.Intn(3)
@@ -121,21 +121,21 @@ func (fiv *FivAgent) Explore(qstate string) decision.FightAction {
 		sa = SaPair{state: qstate, action: "Defnd"}
 		fightDecision = decision.Defend
 	}
-	_, exist := fiv.qtable.table[sa]
+	_, exist := t5.qtable.table[sa]
 	if !exist {
-		fiv.qtable.table[sa] = 0
+		t5.qtable.table[sa] = 0
 	}
-	fiv.qtable.saTaken = sa
+	t5.qtable.saTaken = sa
 	return fightDecision
 }
 
-func (fiv *FivAgent) Exploit(qstate string) decision.FightAction {
-	maxQAction := fiv.qtable.GetMaxQAction(qstate)
+func (t5 *Agent5) Exploit(qstate string) decision.FightAction {
+	maxQAction := t5.qtable.GetMaxQAction(qstate)
 	var sa SaPair
 	var fightDecision decision.FightAction
 	switch maxQAction {
 	case "NoSaPairAvailable":
-		return fiv.Explore(qstate)
+		return t5.Explore(qstate)
 	case "Cower":
 		sa = SaPair{state: qstate, action: "Cower"}
 		fightDecision = decision.Cower
@@ -146,34 +146,34 @@ func (fiv *FivAgent) Exploit(qstate string) decision.FightAction {
 		sa = SaPair{state: qstate, action: "Defnd"}
 		fightDecision = decision.Defend
 	}
-	fiv.qtable.saTaken = sa
+	t5.qtable.saTaken = sa
 	return fightDecision
 }
 
-func (fiv *FivAgent) UpdateQ(baseAgent agent.BaseAgent) {
+func (t5 *Agent5) UpdateQ(baseAgent agent.BaseAgent) {
 	// impact from self
-	percentHealthLoss := (float32(fiv.preHealth) - float32(baseAgent.AgentState().Hp)) / float32(fiv.preHealth)
+	percentHealthLoss := (float32(t5.preHealth) - float32(baseAgent.AgentState().Hp)) / float32(t5.preHealth)
 	// impact from group
 	myview := baseAgent.View()
 	globalStates := myview.AgentState()
 	var guilt float32 = -1.0
-	if fiv.qtable.saTaken.action == "Cower" {
-		guilt = float32(fiv.prePopNum) - float32(globalStates.Len())
+	if t5.qtable.saTaken.action == "Cower" {
+		guilt = float32(t5.prePopNum) - float32(globalStates.Len())
 	}
 	// combined reward
 	reward := -10*percentHealthLoss - 5*guilt
 
-	cqState := fiv.CurrentQState(baseAgent)
+	cqState := t5.CurrentQState(baseAgent)
 	fSas := []SaPair{{state: cqState, action: "Cower"}, {state: cqState, action: "Attck"}, {state: cqState, action: "Defnd"}}
-	fiv.qtable.Learn(reward, fiv.qtable.GetMaxFR(fSas))
+	t5.qtable.Learn(reward, t5.qtable.GetMaxFR(fSas))
 	// if myview.CurrentLevel() == 20 {
-	// 	fiv.qtable.Print()
+	// 	t5.qtable.Print()
 	// }
 }
 
 // Proposal related
 
-func (fiv *FivAgent) findProposalHealth(level string) proposal.ComparativeCondition {
+func (t5 *Agent5) findProposalHealth(level string) proposal.ComparativeCondition {
 	var healthThresh proposal.ComparativeCondition
 	switch level {
 	case "Low":
@@ -186,7 +186,7 @@ func (fiv *FivAgent) findProposalHealth(level string) proposal.ComparativeCondit
 	return healthThresh
 }
 
-func (fiv *FivAgent) findProposalStamina(level string) proposal.ComparativeCondition {
+func (t5 *Agent5) findProposalStamina(level string) proposal.ComparativeCondition {
 	var staminaThresh proposal.ComparativeCondition
 	switch level {
 	case "Low":
@@ -199,7 +199,7 @@ func (fiv *FivAgent) findProposalStamina(level string) proposal.ComparativeCondi
 	return staminaThresh
 }
 
-func (fiv *FivAgent) findProposalAT(level string, globalATMax float32) proposal.ComparativeCondition {
+func (t5 *Agent5) findProposalAT(level string, globalATMax float32) proposal.ComparativeCondition {
 	var atThresh proposal.ComparativeCondition
 	switch level {
 	case "Weakee":
@@ -212,7 +212,7 @@ func (fiv *FivAgent) findProposalAT(level string, globalATMax float32) proposal.
 	return atThresh
 }
 
-func (fiv *FivAgent) findProposalSH(level string, globalSHMax float32) proposal.ComparativeCondition {
+func (t5 *Agent5) findProposalSH(level string, globalSHMax float32) proposal.ComparativeCondition {
 	var shThresh proposal.ComparativeCondition
 	switch level {
 	case "Weakee":
