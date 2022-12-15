@@ -175,8 +175,8 @@ func checkHpPool() bool {
 }
 
 func generateLootPool(numAgents uint) *state.LootPool {
-	nWeapons, nShields := gamemath.GetEquipmentDistribution(uint(numAgents))
-	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(uint(numAgents))
+	nWeapons, nShields := gamemath.GetEquipmentDistribution(numAgents)
+	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(numAgents)
 
 	makeItems := func(nItems uint, stats uint) *commons.ImmutableList[state.Item] {
 		items := make([]state.Item, nItems)
