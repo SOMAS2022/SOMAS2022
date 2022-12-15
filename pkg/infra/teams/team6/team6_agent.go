@@ -44,6 +44,9 @@ type Team6Agent struct {
 
 	fightProposal commons.ImmutableList[proposal.Rule[decision.FightAction]]
 	lootProposal  commons.ImmutableList[proposal.Rule[decision.LootAction]]
+
+	currentProposalsReceived uint
+	totalProposalsReceived   uint
 }
 
 func NewTeam6Agent() agent.Strategy {
@@ -163,4 +166,24 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 	a.agentsRemaining = append(a.agentsRemaining, uint(agentStates.Len()))
 	a.lastFightRound++ // No. of levels since last fight
 	a.currentLevel++
+
+	// Update leadership based on number of proposals received
+	a.totalProposalsReceived += a.currentProposalsReceived
+	averageProposalsReceived := a.totalProposalsReceived / a.currentLevel
+
+	leader := view.CurrentLeader()
+	diff := (int(a.currentProposalsReceived) - int(averageProposalsReceived)) / 4
+	diff = clamp(diff, -5, 5)
+	_, ok := a.leadership[leader]
+	if ok {
+		if diff > 0 {
+			a.leadership[leader] = SCSaturatingAdd(a.leadership[leader], uint(diff), 100)
+		} else {
+			a.leadership[leader] = commons.SaturatingSub(a.leadership[leader], uint(-diff))
+		}
+	} else {
+		a.leadership[leader] = uint(50 + diff)
+	}
+
+	a.currentProposalsReceived = 0
 }

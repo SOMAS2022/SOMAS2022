@@ -33,6 +33,8 @@ func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.Immutab
 }
 
 func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	a.currentProposalsReceived++
+
 	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
 
 	//Update similarity SC value

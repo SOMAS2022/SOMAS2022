@@ -49,3 +49,7 @@ func FindMaxAgentInMap[K comparable, V constraints.Ordered](in map[K]V) (K, V) {
 
 	return smallest, in[smallest]
 }
+
+func clamp[T constraints.Ordered](v, lo, hi T) T {
+	return Min(Max(v, lo), hi)
+}

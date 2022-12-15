@@ -135,7 +135,3 @@ func (a *Team6Agent) newPowerOpinion(initial uint, leadership uint, power bool) 
 		return uint(float32(initial) + fightDecisionDiff)
 	}
 }
-
-func clamp(v, lo, hi float32) float32 {
-	return Min(Max(v, lo), hi)
-}

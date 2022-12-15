@@ -40,6 +40,8 @@ func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.Lo
 }
 
 func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	a.currentProposalsReceived++
+
 	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
 
 	//Update similarity SC value
