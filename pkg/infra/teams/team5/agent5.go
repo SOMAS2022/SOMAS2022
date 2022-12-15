@@ -16,23 +16,22 @@ import (
 )
 
 type Agent5 struct {
-	//FightInformation
-	// InternalState   internalState
-	LootInformation commons5.Loot
-	SocialNetwork   SocialNetwork
-	LeaderCombo     uint
-	bravery         int
-	preHealth       uint
-	prePopNum       uint
-	exploreRate     float32
-	qtable          *Qtable
-	ttable          *TrustTable
+	lootInformation commons5.Loot
+	socialNetwork   SocialNetwork
+	t5Manifesto     *T5Manifesto
+
+	bravery     int
+	preHealth   uint
+	prePopNum   uint
+	exploreRate float32
+	qtable      *Qtable
+	ttable      *TrustTable
 }
 
 // --------------- Election ---------------
 
 func (t5 *Agent5) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
-	returnType := decision.NewManifesto(false, true, t5.LeaderCombo+1, 50)
+	returnType := decision.NewManifesto(false, true, uint(t5.t5Manifesto.LeaderCombo+1), 50)
 	return returnType
 }
 
@@ -374,6 +373,9 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 }
 
 func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+
+	t5.t5Manifesto.updateLeaderCombo(a)
+
 	t5.bravery += rand.Intn(10)
 	t5.UpdateQ(a)
 	t5.UpdateTrust(a)
@@ -388,5 +390,9 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 }
 
 func NewAgent5() agent.Strategy {
-	return &Agent5{bravery: rand.Intn(5), exploreRate: float32(0.25), qtable: NewQTable(0.25, 0.75), ttable: NewTrustTable()}
+	return &Agent5{
+		bravery:     rand.Intn(5),
+		exploreRate: float32(0.25),
+		qtable:      NewQTable(0.25, 0.75),
+		ttable:      NewTrustTable()}
 }
