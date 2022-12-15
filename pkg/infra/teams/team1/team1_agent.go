@@ -9,8 +9,10 @@ import (
 	"infra/game/state"
 	"infra/logging"
 	"infra/teams/team1/internal"
+	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 
 	"github.com/benbjohnson/immutable"
@@ -30,6 +32,9 @@ type SocialAgent struct {
 
 	proposalAccuracyThreshold float64
 
+	//
+	socialCapitalMean map[string]float64
+
 	// helper for agent accuracy
 	currentProposalAccuracyThreshold float64
 	hasVotedThisRound                bool
@@ -43,19 +48,56 @@ func (s *SocialAgent) FightResolution(
 	proposedActions immutable.Map[commons.ID, decision.FightAction],
 ) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
+	agents := view.AgentState()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
-		var fightAction decision.FightAction
-		switch rand.Intn(3) {
-		case 0:
-			fightAction = decision.Attack
-		case 1:
-			fightAction = decision.Defend
-		default:
-			fightAction = decision.Cower
-		}
-		builder.Set(id, fightAction)
+
+	// find the percentile social wellbeing of an agent
+	type AgentCapital struct {
+		capital float64
+		id      string
 	}
+	capitals := make([]AgentCapital, 0)
+	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
+		capitals = append(capitals, AgentCapital{
+			capital: s.socialCapitalMean[id],
+			id:      id,
+		})
+	}
+	sort.SliceStable(capitals, func(i, j int) bool {
+		return capitals[i].capital < capitals[j].capital
+	})
+
+	for index := 0; index < len(capitals); index++ {
+		agent_state, _ := agents.Get(capitals[index].id)
+		qState := internal.HiddenAgentToQState(agent_state, view)
+		coop_rewards := internal.CooperationQ(qState)
+		coop_q_action := decision.FightAction(internal.Argmax(coop_rewards[:]))
+		selfish_rewards := internal.SelfishQ(qState)
+		selfish_q_action := decision.FightAction(internal.Argmax(selfish_rewards[:]))
+
+		use_selfish := rand.Float64() < math.Pow(float64(index)/float64(len(capitals)), 8)
+		var action decision.FightAction
+		if use_selfish {
+			action = selfish_q_action
+		} else {
+			action = coop_q_action
+		}
+
+		// add a degree of complete randomness
+		if rand.Float64() > 0.9 {
+			switch rand.Intn(3) {
+			case 0:
+				action = decision.Attack
+			case 1:
+				action = decision.Defend
+			default:
+				action = decision.Cower
+			}
+		}
+
+		builder.Set(capitals[index].id, action)
+	}
+
 	return *builder.Map()
 }
 
@@ -95,7 +137,30 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	return s.FightActionNoProposal(baseAgent)
+	qState := internal.BaseAgentToQState(baseAgent)
+	rewards_coop := internal.CooperationQ(qState)
+	rewards_self := internal.SelfishQ(qState)
+	multipliedCoop := internal.ConstMulSlice(1.0-s.selfishness, rewards_coop[:])
+	multipliedSelf := internal.ConstMulSlice(s.selfishness, rewards_self[:])
+	totalQSlice := internal.AddSlices(multipliedCoop, multipliedSelf)
+	desired_action := decision.FightAction(internal.Argmax(totalQSlice))
+	if desired_action == proposedAction {
+		return desired_action
+	}
+	max := math.Max(math.Max(totalQSlice[0], totalQSlice[1]), totalQSlice[2])
+	min := math.Min(math.Min(totalQSlice[0], totalQSlice[1]), totalQSlice[2])
+	diff := max - min
+	avg := (max + min) / 2.0
+	totalQSlice = []float64{
+		(totalQSlice[0] - avg) / diff,
+		(totalQSlice[1] - avg) / diff,
+		(totalQSlice[2] - avg) / diff,
+	}
+
+	if totalQSlice[proposedAction]+3*(1-s.selfishness) > 1 {
+		return proposedAction
+	}
+	return desired_action
 }
 
 func (s *SocialAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
@@ -128,22 +193,135 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 }
 
 // TODO
+func SampleDistribution(distribution []float64) int {
+	random := rand.Float64() * distribution[len(distribution)-1]
+	// Add max iteration
+	change := int(len(distribution) / 4)
+	index := int(len(distribution) / 2)
+	for count := 0; count < 100; count++ {
+		if index == len(distribution)-1 || index == 0 {
+			return index
+		}
+		if index >= 1 {
+			if distribution[index] > random && distribution[index-1] < random {
+				return index
+			} else if distribution[index] > random {
+				index -= change
+			} else {
+				index += change
+			}
+		}
+		change /= 2
+		if change < 1 {
+			change = 1
+		}
+	}
+	return index
+}
+func AllocateWithProbabilityDistribution(distribution []float64, iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		item, _ := iterator.Next()
+		var toBeAllocated string
+		toBeAllocated = ids[SampleDistribution(distribution)]
+
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, item.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, item.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
+}
+
+// TODO
 func (s *SocialAgent) LootAllocation(
-	ba agent.BaseAgent,
+	baseAgent agent.BaseAgent,
 	proposal message.Proposal[decision.LootAction],
 	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	// func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	ba := baseAgent
 	view := ba.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
+	agents := view.AgentState()
+	var max_attack uint = 0
+	var max_health state.HealthRange = 0
+	var max_defense uint = 0
+	var max_stamina state.StaminaRange = 0
+	max_social := 0.0
+
+	// find the maximum values
+	for id_index := range ids {
+		agent_state, _ := agents.Get(ids[id_index])
+		if agent_state.Attack > max_attack {
+			max_attack = agent_state.Attack
+		}
+		if agent_state.Hp > max_health {
+			max_health = agent_state.Hp
+		}
+		if agent_state.Defense > max_defense {
+			max_defense = agent_state.Defense
+		}
+		if agent_state.Stamina > max_stamina {
+			max_stamina = agent_state.Stamina
+		}
+		if s.socialCapitalMean[ids[id_index]] > max_social {
+			max_social = s.socialCapitalMean[ids[id_index]]
+		}
+	}
+
+	var weapon_cumulative_prop []float64
+	last_weapon_prop := 0.0
+	var defense_cumulative_prob []float64
+	last_defense_prop := 0.0
+	var hp_cumulative_prob []float64
+	last_hp_prop := 0.0
+	var stamina_cumulative_prob []float64
+	last_stamina_prob := 0.0
+
+	// find cumulative probabilities of receiving different loot types
+	for id_index := range ids {
+		weapon_prob := 0.0
+		defense_prob := 0.0
+		hp_prob := 0.0
+		stamina_prob := 0.0
+
+		// social_score := s.sumSocialCapital[ids[id_index]]
+		survival_likelihood := s.socialCapitalMean[ids[id_index]]
+		agent_state, _ := agents.Get(ids[id_index])
+
+		if survival_likelihood > 0.05 {
+			weapon_prob += 1.0
+			// stamina_prob += 1.0
+		}
+		weapon_prob += float64(agent_state.Hp)/float64(max_health)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stamina)
+		defense_prob += float64(max_defense) / (math.Pow(float64(agent_state.Defense), 4) + 0.1)
+		hp_prob += float64(max_health) / (math.Pow(float64(agent_state.Hp), 4) + 0.1)
+		stamina_prob += float64(max_stamina) / (math.Pow(float64(agent_state.Stamina), 4) + 0.1)
+
+		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
+		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
+		hp_cumulative_prob = append(hp_cumulative_prob, hp_prob+last_hp_prop)
+		stamina_cumulative_prob = append(stamina_cumulative_prob, last_stamina_prob+stamina_prob)
+		last_weapon_prop = weapon_prob + last_weapon_prop
+		last_defense_prop = defense_prob + last_defense_prop
+		last_hp_prop = hp_prob + last_hp_prop
+		last_stamina_prob = stamina_prob + last_stamina_prob
+	}
+
+	// distribute according to the cumulative prob distributions
 	iterator := ba.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	AllocateWithProbabilityDistribution(weapon_cumulative_prop, iterator, ids, lootAllocation)
 	iterator = ba.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	AllocateWithProbabilityDistribution(defense_cumulative_prob, iterator, ids, lootAllocation)
 	iterator = ba.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	AllocateWithProbabilityDistribution(hp_cumulative_prob, iterator, ids, lootAllocation)
 	iterator = ba.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	AllocateWithProbabilityDistribution(stamina_cumulative_prob, iterator, ids, lootAllocation)
+
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
 		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
@@ -151,20 +329,43 @@ func (s *SocialAgent) LootAllocation(
 	return commons.MapToImmutable(mMapped)
 }
 
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-	for !iterator.Done() {
-		next, _ := iterator.Next()
-		toBeAllocated := ids[rand.Intn(len(ids))]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		}
-	}
-}
+// func (s *SocialAgent) LootAllocation(
+// 	ba agent.BaseAgent,
+// 	proposal message.Proposal[decision.LootAction],
+// 	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+// ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+// 	lootAllocation := make(map[commons.ID][]commons.ItemID)
+// 	view := ba.View()
+// 	ids := commons.ImmutableMapKeys(view.AgentState())
+// 	iterator := ba.Loot().Weapons().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().Shields().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().HpPotions().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	iterator = ba.Loot().StaminaPotions().Iterator()
+// 	allocateRandomly(iterator, ids, lootAllocation)
+// 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
+// 	for id, itemIDS := range lootAllocation {
+// 		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
+// 	}
+// 	return commons.MapToImmutable(mMapped)
+// }
+
+// func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+// 	for !iterator.Done() {
+// 		next, _ := iterator.Next()
+// 		toBeAllocated := ids[rand.Intn(len(ids))]
+// 		if l, ok := lootAllocation[toBeAllocated]; ok {
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		} else {
+// 			l := make([]commons.ItemID, 0)
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		}
+// 	}
+// }
 
 func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
@@ -190,6 +391,14 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 	s.hasVotedThisRound = false
 	s.votedOnFirstRound = false
 	s.isFirstRound = true
+
+	// social capital mean
+	var geometricMeanSocialCapital = make(map[string]float64)
+
+	for id, element := range s.socialCapital {
+		geometricMeanSocialCapital[id] = math.Pow(element[0]*element[1]*element[2]*element[3], 1.0/4.0)
+	}
+	s.socialCapitalMean = geometricMeanSocialCapital
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -212,33 +421,11 @@ func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[messa
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	switch m.Message().(type) {
 	case *message.StartFight:
+		prop := *commons.NewImmutableList(s.CreateFightProposal(baseAgent))
+		_ = baseAgent.SendFightProposalToLeader(prop)
 		s.sendGossip(baseAgent)
 	case message.ArrayInfo:
 		s.receiveGossip(m.Message().(message.ArrayInfo), m.Sender())
-	}
-	makesProposal := rand.Intn(100)
-	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-		))
-
-		prop := *commons.NewImmutableList(rules)
-		_ = baseAgent.SendFightProposalToLeader(prop)
 	}
 }
 
@@ -277,11 +464,6 @@ func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.Rule[decision.FightAction] {
 	// find the action each agent will make
 	// check what the average of each state type is
-	type AgentAction struct {
-		action      decision.FightAction
-		agent_state state.HiddenAgentState
-	}
-	agent_actions := make([]AgentAction, 0)
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	agents := view.AgentState()
@@ -291,46 +473,23 @@ func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.
 		agent_state, _ := agents.Get(ids[id_index])
 		average_attack += float64(agent_state.Attack)
 		average_defense += float64(agent_state.Defense)
-		// qState := internal.HiddenAgentToQState(agent_state, view)
-		// rewards := internal.CooperationQ(qState)
-		// q_action := decision.FightAction(internal.Argmax(rewards[:]))
-		// agent_actions = append(agent_actions, AgentAction{action: q_action, agent_state: agent_state})
 	}
-
 	average_attack /= float64(len(ids))
 	average_defense /= float64(len(ids))
-
-	// find the average of each stat
-	// agent_averages := [3][4]float64{{0.0, 0.0, 0.0, 0.0}} // defend cower attack, health attack stamina defense
-	// for _, agent_action := range agent_actions {
-	// 	agent_averages[agent_action.action] = [4]float64{
-	// 		agent_averages[agent_action.action][0] + float64(agent_action.agent_state.Hp),
-	// 		agent_averages[agent_action.action][1] + float64(agent_action.agent_state.Attack),
-	// 		agent_averages[agent_action.action][2] + float64(agent_action.agent_state.Stamina),
-	// 		agent_averages[agent_action.action][3] + float64(agent_action.agent_state.Defense),
-	// 	}
-	// }
-	// for index := 0; index < 3; index++ {
-	// 	agent_averages[index] = [4]float64{
-	// 		agent_averages[index][0] / float64(len(agent_actions)),
-	// 		agent_averages[index][1] / float64(len(agent_actions)),
-	// 		agent_averages[index][2] / float64(len(agent_actions)),
-	// 		agent_averages[index][3] / float64(len(agent_actions)),
-	// 	}
-	// }
-	halved_attack_average := 0.0
-	halved_defend_average := 0.0
+	halved_attack_average := average_attack / 2.0
+	halved_defend_average := average_defense / 2.0
 	// construct rules based on these agent averages, 36 different rules each corresponding to a range of the possible state space
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 	for health_range := 1; health_range <= 3; health_range++ {
+		health_val_min := 250 * health_range
 		for stamina_range := 1; stamina_range <= 3; stamina_range++ {
-			health_val_min := 250 * health_range
 			stamina_val_min := 500 * stamina_range
 			for attack_quartile := 1.0; attack_quartile < 4.0; attack_quartile += 2.0 {
+				attack_mid := halved_attack_average * attack_quartile
 				for defend_quartile := 1.0; defend_quartile < 4.0; defend_quartile += 2.0 {
-					// create a rule for the current quartile health and attack rule
-					attack_mid := halved_attack_average * attack_quartile
 					defend_mid := halved_defend_average * defend_quartile
+
+					// find what an agent with the current stats would do using the q function
 					qState := internal.HiddenAgentToQState(state.HiddenAgentState{
 						Hp:      state.HealthRange(health_val_min),
 						Stamina: state.StaminaRange(stamina_val_min),
@@ -368,7 +527,7 @@ func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.
 		}
 
 	}
-
+	return rules
 }
 
 // TODO
