@@ -47,6 +47,10 @@ type Team6Agent struct {
 
 	currentProposalsReceived uint
 	totalProposalsReceived   uint
+
+	leaderID commons.ID
+	//leader bravery when elected
+	leaderBravery uint
 }
 
 func NewTeam6Agent() agent.Strategy {
@@ -134,6 +138,23 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 	}
 
 	view := ba.View()
+
+	leader := view.CurrentLeader()
+	if leader != a.leaderID {
+		// New leader was elected - update leadership for old leader
+		diff := (int(SafeMapReadOrDefault(a.bravery, a.leaderID, 100)) - int(a.leaderBravery)) / 10
+		leadership := SafeMapReadOrDefault(a.leadership, a.leaderID, 50)
+		if diff > 0 {
+			a.leadership[a.leaderID] = SCSaturatingAdd(leadership, uint(diff), 100)
+		} else {
+			a.leadership[a.leaderID] = commons.SaturatingSub(leadership, uint(-diff))
+		}
+
+		a.leaderID = leader
+		bravery := SafeMapReadOrDefault(a.bravery, leader, 100)
+		a.leaderBravery = bravery
+	}
+
 	agentStates := view.AgentState()
 	itr := agentStates.Iterator()
 	for !itr.Done() {
@@ -171,18 +192,13 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 	a.totalProposalsReceived += a.currentProposalsReceived
 	averageProposalsReceived := a.totalProposalsReceived / a.currentLevel
 
-	leader := view.CurrentLeader()
 	diff := (int(a.currentProposalsReceived) - int(averageProposalsReceived)) / 4
 	diff = clamp(diff, -5, 5)
-	_, ok := a.leadership[leader]
-	if ok {
-		if diff > 0 {
-			a.leadership[leader] = SCSaturatingAdd(a.leadership[leader], uint(diff), 100)
-		} else {
-			a.leadership[leader] = commons.SaturatingSub(a.leadership[leader], uint(-diff))
-		}
+	leadership := SafeMapReadOrDefault(a.leadership, leader, 50)
+	if diff > 0 {
+		a.leadership[leader] = SCSaturatingAdd(leadership, uint(diff), 100)
 	} else {
-		a.leadership[leader] = uint(50 + diff)
+		a.leadership[leader] = commons.SaturatingSub(leadership, uint(-diff))
 	}
 
 	a.currentProposalsReceived = 0
