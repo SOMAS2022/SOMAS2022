@@ -51,7 +51,7 @@ func (a *Team6Agent) HandleLootProposalRequest(_ message.Proposal[decision.LootA
 	}
 }
 
-func (a *Team6Agent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func (a *Team6Agent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())

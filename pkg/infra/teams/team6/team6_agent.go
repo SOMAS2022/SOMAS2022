@@ -13,6 +13,7 @@ var startingHP = uint(1000)
 var startingAT = uint(20)
 var startingSH = uint(20)
 var startingST = uint(2000)
+var startingAgents = uint(100)
 
 type Team6Agent struct {
 	bravery    map[commons.ID]uint
@@ -35,6 +36,7 @@ type Team6Agent struct {
 	currentLevel             uint
 	lastFightRound           uint
 	lastHPPoolDonationAmount uint
+	agentsRemaining          []uint
 }
 
 func NewTeam6Agent() agent.Strategy {
@@ -55,6 +57,8 @@ func NewTeam6Agent() agent.Strategy {
 		lootDecisionPowerOpinion:  25,
 		termLengthOpinion:         25,
 		overthrowTHOpinion:        25,
+
+		agentsRemaining: []uint{startingAgents, startingAgents},
 	}
 }
 
@@ -121,6 +125,7 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, _ *commons.Immutabl
 		}
 	}
 
-	a.lastFightRound++
+	a.agentsRemaining = append(a.agentsRemaining, uint(agentStates.Len()))
+	a.lastFightRound++ // No. of levels since last fight
 	a.currentLevel++
 }

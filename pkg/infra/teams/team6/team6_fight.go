@@ -43,7 +43,7 @@ func (a *Team6Agent) HandleFightRequest(m message.TaggedRequestMessage[message.F
 	return nil
 }
 
-func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[commons.ID, decision.FightAction]) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
