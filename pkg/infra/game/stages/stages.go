@@ -74,8 +74,8 @@ func AgentFightDecisions(state state.State, agents map[commons.ID]agent.Agent, p
 
 func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *state.State, immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) map[commons.ID]logging.AgentLog {
 	switch Mode {
-	// case "0":
-
+	case "1":
+		return t1.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
 	default:
 		return update.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
 	}
