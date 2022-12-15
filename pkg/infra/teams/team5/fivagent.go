@@ -371,12 +371,14 @@ func (fiv *FivAgent) UpdateInternalState(a agent.BaseAgent, _ *commons.Immutable
 	fiv.bravery += rand.Intn(10)
 	fiv.UpdateQ(a)
 	fiv.UpdateTrust(a)
+	myview := a.View()
 	log <- logging.AgentLog{
 		Name: a.Name(),
 		ID:   a.ID(),
 		Properties: map[string]float32{
 			"bravery":        float32(fiv.bravery),
 			fiv.qtable.Log(): 0,
+			"trustToLeader":  fiv.ttable.EstimateLeadTrust(myview.CurrentLeader()),
 		},
 	}
 }
