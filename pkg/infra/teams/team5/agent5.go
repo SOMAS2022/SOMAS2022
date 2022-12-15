@@ -16,10 +16,11 @@ type agent5 struct {
 	// InternalState   internalState
 	LootInformation commons5.Loot
 	SocialNetwork   SocialNetwork
+	LeaderCombo     uint
 }
 
 func (t *agent5) CreateManifesto(baseAgent agent.BaseAgent) *decision.Manifesto {
-	var returnType *decision.Manifesto
+	returnType := decision.NewManifesto(false, true, t.LeaderCombo+1, 50)
 	return returnType
 }
 func (t *agent5) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
@@ -96,6 +97,7 @@ func (t *agent5) HandleUpdateShield(baseAgent agent.BaseAgent) decision.ItemIdx 
 }
 
 func (t *agent5) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint]) {
+	//update leader combo
 }
 
 func (t *agent5) DonateToHpPool(baseAgent agent.BaseAgent) uint {

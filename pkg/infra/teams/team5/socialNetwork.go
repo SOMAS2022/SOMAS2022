@@ -126,11 +126,17 @@ func (sn *SocialNetwork) normaliseTrust() {
 	}
 	distanceGW := maxGW - minGW
 	distanceSTG := maxSTG - minSTG
-	for id = range sn.AgentProfile {
-		agentProfile := sn.AgentProfile[id]
-		agentProfile.Trusts.GoodwillScore = (sn.AgentProfile[id].Trusts.GoodwillScore - minGW) / distanceGW
-		agentProfile.Trusts.StrategyScore = (sn.AgentProfile[id].Trusts.StrategyScore - minSTG) / distanceSTG
-		sn.AgentProfile[id] = agentProfile
+
+	if (distanceGW <= 1) && (distanceSTG <= 1) {
+		for id = range sn.AgentProfile {
+		}
+	} else {
+		for id = range sn.AgentProfile {
+			agentProfile := sn.AgentProfile[id]
+			agentProfile.Trusts.GoodwillScore = (sn.AgentProfile[id].Trusts.GoodwillScore - minGW) / distanceGW
+			agentProfile.Trusts.StrategyScore = (sn.AgentProfile[id].Trusts.StrategyScore - minSTG) / distanceSTG
+			sn.AgentProfile[id] = agentProfile
+		}
 	}
 }
 
