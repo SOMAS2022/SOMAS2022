@@ -174,13 +174,13 @@ func checkHpPool() bool {
 	return false
 }
 
-func generateLootPool(numAgents int) *state.LootPool {
+func generateLootPool(numAgents uint) *state.LootPool {
 	nWeapons, nShields := gamemath.GetEquipmentDistribution(uint(numAgents))
 	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(uint(numAgents))
 
-	makeItems := func(nItems int, stats uint) *commons.ImmutableList[state.Item] {
+	makeItems := func(nItems uint, stats uint) *commons.ImmutableList[state.Item] {
 		items := make([]state.Item, nItems)
-		for i := 0; i < nItems; i++ {
+		for i := uint(0); i < nItems; i++ {
 			items[i] = *state.NewItem(uuid.NewString(), stats)
 		}
 		sort.SliceStable(items, func(i, j int) bool {
@@ -191,12 +191,12 @@ func generateLootPool(numAgents int) *state.LootPool {
 
 	return state.NewLootPool(
 		// Weapons
-		makeItems(int(nWeapons), gamemath.GetWeaponDamage(globalState.MonsterHealth, uint(numAgents))),
+		makeItems(nWeapons, gamemath.GetWeaponDamage(globalState.MonsterHealth, numAgents)),
 		// Shields
-		makeItems(int(nShields), gamemath.GetShieldProtection(globalState.MonsterAttack, uint(numAgents))),
+		makeItems(nShields, gamemath.GetShieldProtection(globalState.MonsterAttack, numAgents)),
 		// Health Potions
-		makeItems(int(nHealthPotions), gamemath.GetHealthPotionValue(globalState.MonsterAttack, uint(numAgents))),
+		makeItems(nHealthPotions, gamemath.GetHealthPotionValue(globalState.MonsterAttack, numAgents)),
 		// Stamina Potions
-		makeItems(int(nStaminaPotions), gamemath.GetStaminaPotionValue(globalState.MonsterHealth, uint(numAgents))),
+		makeItems(nStaminaPotions, gamemath.GetStaminaPotionValue(globalState.MonsterHealth, numAgents)),
 	)
 }
