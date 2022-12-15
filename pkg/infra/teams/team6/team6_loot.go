@@ -5,7 +5,6 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
-	"infra/game/state"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -42,45 +41,11 @@ func (a *Team6Agent) HandleLootProposal(_ message.Proposal[decision.LootAction],
 	}
 }
 
-func (a *Team6Agent) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	switch rand.Intn(2) {
-	case 0:
-		return true
-	default:
-		return false
-	}
+func (a *Team6Agent) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	// TODO: Replace one of these with agent's own proposal
+	return proposalSimilarity(proposal.Rules(), proposal.Rules()) > 0.6
 }
 
 func (a *Team6Agent) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := baseAgent.View()
-	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := baseAgent.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	iterator = baseAgent.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
-	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-	for id, itemIDS := range lootAllocation {
-		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
-	}
-	return commons.MapToImmutable(mMapped)
-}
-
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-	for !iterator.Done() {
-		next, _ := iterator.Next()
-		toBeAllocated := ids[rand.Intn(len(ids))]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		}
-	}
+	return proposedAllocations
 }

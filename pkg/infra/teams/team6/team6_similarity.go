@@ -14,7 +14,7 @@ type BasicAgentState struct {
 }
 
 // Currently converts rules to a single predicate rather than multiple predicates, and doesn't consider defecting
-func ProposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[proposal.Rule[A]], rules2 commons.ImmutableList[proposal.Rule[A]]) float32 {
+func proposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[proposal.Rule[A]], rules2 commons.ImmutableList[proposal.Rule[A]]) float32 {
 	hp := [10]uint{1000, 1000, 750, 750, 500, 500, 250, 250, 100, 100}
 	stamina := [10]uint{2000, 2000, 1500, 1500, 1000, 1000, 500, 500, 200, 200}
 	attack := [10]uint{20, 60, 20, 60, 30, 20, 40, 30, 80, 20}
