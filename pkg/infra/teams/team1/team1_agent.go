@@ -192,7 +192,6 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
-// TODO
 func SampleDistribution(distribution []float64) int {
 	random := rand.Float64() * distribution[len(distribution)-1]
 	// Add max iteration
@@ -218,11 +217,11 @@ func SampleDistribution(distribution []float64) int {
 	}
 	return index
 }
+
 func AllocateWithProbabilityDistribution(distribution []float64, iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
 		item, _ := iterator.Next()
-		var toBeAllocated string
-		toBeAllocated = ids[SampleDistribution(distribution)]
+		toBeAllocated := ids[SampleDistribution(distribution)]
 
 		if l, ok := lootAllocation[toBeAllocated]; ok {
 			l = append(l, item.Id())
@@ -235,16 +234,14 @@ func AllocateWithProbabilityDistribution(distribution []float64, iterator common
 	}
 }
 
-// TODO
-func (s *SocialAgent) LootAllocation(
-	baseAgent agent.BaseAgent,
-	proposal message.Proposal[decision.LootAction],
-	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
-) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	// func (s *SocialAgent) LootAllocation(ba agent.BaseAgent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	ba := baseAgent
-	view := ba.View()
+func (s *SocialAgent) FindMaxStats(baseAgent agent.BaseAgent) struct {
+	MaxAttack  float64
+	MaxHealth  float64
+	MaxStamina float64
+	MaxDefense float64
+	MaxSocial  float64
+} {
+	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	agents := view.AgentState()
 	var max_attack uint = 0
@@ -273,6 +270,32 @@ func (s *SocialAgent) LootAllocation(
 		}
 	}
 
+	return struct {
+		MaxAttack  float64
+		MaxHealth  float64
+		MaxStamina float64
+		MaxDefense float64
+		MaxSocial  float64
+	}{
+		MaxAttack:  float64(max_attack),
+		MaxDefense: float64(max_defense),
+		MaxHealth:  float64(max_health),
+		MaxStamina: float64(max_stamina),
+		MaxSocial:  float64(max_social),
+	}
+}
+
+func (s *SocialAgent) LootAllocation(
+	baseAgent agent.BaseAgent,
+	proposal message.Proposal[decision.LootAction],
+	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := baseAgent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	agents := view.AgentState()
+	max_stats := s.FindMaxStats(baseAgent)
+
 	var weapon_cumulative_prop []float64
 	last_weapon_prop := 0.0
 	var defense_cumulative_prob []float64
@@ -289,18 +312,11 @@ func (s *SocialAgent) LootAllocation(
 		hp_prob := 0.0
 		stamina_prob := 0.0
 
-		// social_score := s.sumSocialCapital[ids[id_index]]
-		survival_likelihood := s.socialCapitalMean[ids[id_index]]
 		agent_state, _ := agents.Get(ids[id_index])
-
-		if survival_likelihood > 0.05 {
-			weapon_prob += 1.0
-			// stamina_prob += 1.0
-		}
-		weapon_prob += float64(agent_state.Hp)/float64(max_health)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stamina)
-		defense_prob += float64(max_defense) / (math.Pow(float64(agent_state.Defense), 4) + 0.1)
-		hp_prob += float64(max_health) / (math.Pow(float64(agent_state.Hp), 4) + 0.1)
-		stamina_prob += float64(max_stamina) / (math.Pow(float64(agent_state.Stamina), 4) + 0.1)
+		weapon_prob += float64(agent_state.Hp)/float64(max_stats.MaxHealth)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stats.MaxStamina)
+		defense_prob += float64(max_stats.MaxDefense) / (math.Pow(float64(agent_state.Defense), 4) + 0.1)
+		hp_prob += float64(max_stats.MaxHealth)/(math.Pow(float64(agent_state.Hp), 4)+0.1) + s.socialCapitalMean[ids[id_index]]
+		stamina_prob += float64(max_stats.MaxStamina) / (math.Pow(float64(agent_state.Stamina), 4) + 0.1)
 
 		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
 		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
@@ -313,13 +329,13 @@ func (s *SocialAgent) LootAllocation(
 	}
 
 	// distribute according to the cumulative prob distributions
-	iterator := ba.Loot().Weapons().Iterator()
+	iterator := baseAgent.Loot().Weapons().Iterator()
 	AllocateWithProbabilityDistribution(weapon_cumulative_prop, iterator, ids, lootAllocation)
-	iterator = ba.Loot().Shields().Iterator()
+	iterator = baseAgent.Loot().Shields().Iterator()
 	AllocateWithProbabilityDistribution(defense_cumulative_prob, iterator, ids, lootAllocation)
-	iterator = ba.Loot().HpPotions().Iterator()
+	iterator = baseAgent.Loot().HpPotions().Iterator()
 	AllocateWithProbabilityDistribution(hp_cumulative_prob, iterator, ids, lootAllocation)
-	iterator = ba.Loot().StaminaPotions().Iterator()
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
 	AllocateWithProbabilityDistribution(stamina_cumulative_prob, iterator, ids, lootAllocation)
 
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
@@ -328,44 +344,6 @@ func (s *SocialAgent) LootAllocation(
 	}
 	return commons.MapToImmutable(mMapped)
 }
-
-// func (s *SocialAgent) LootAllocation(
-// 	ba agent.BaseAgent,
-// 	proposal message.Proposal[decision.LootAction],
-// 	proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
-// ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-// 	lootAllocation := make(map[commons.ID][]commons.ItemID)
-// 	view := ba.View()
-// 	ids := commons.ImmutableMapKeys(view.AgentState())
-// 	iterator := ba.Loot().Weapons().Iterator()
-// 	allocateRandomly(iterator, ids, lootAllocation)
-// 	iterator = ba.Loot().Shields().Iterator()
-// 	allocateRandomly(iterator, ids, lootAllocation)
-// 	iterator = ba.Loot().HpPotions().Iterator()
-// 	allocateRandomly(iterator, ids, lootAllocation)
-// 	iterator = ba.Loot().StaminaPotions().Iterator()
-// 	allocateRandomly(iterator, ids, lootAllocation)
-// 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-// 	for id, itemIDS := range lootAllocation {
-// 		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
-// 	}
-// 	return commons.MapToImmutable(mMapped)
-// }
-
-// func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
-// 	for !iterator.Done() {
-// 		next, _ := iterator.Next()
-// 		toBeAllocated := ids[rand.Intn(len(ids))]
-// 		if l, ok := lootAllocation[toBeAllocated]; ok {
-// 			l = append(l, next.Id())
-// 			lootAllocation[toBeAllocated] = l
-// 		} else {
-// 			l := make([]commons.ItemID, 0)
-// 			l = append(l, next.Id())
-// 			lootAllocation[toBeAllocated] = l
-// 		}
-// 	}
-// }
 
 func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
