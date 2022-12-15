@@ -119,6 +119,7 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 	}
 }
 
+// TODO
 func (s *SocialAgent) LootAllocation(
 	ba agent.BaseAgent,
 	proposal message.Proposal[decision.LootAction],
@@ -253,7 +254,13 @@ func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
-func (s *SocialAgent) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+// TODO
+func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+	rules := prop.Rules()
+	action_checker := proposal.ToSinglePredicate[decision.FightAction](rules)
+
+	rules.ToSinglePredicate()
+
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
