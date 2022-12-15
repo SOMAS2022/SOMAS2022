@@ -30,8 +30,11 @@ type SocialAgent struct {
 
 	proposalAccuracyThreshold float64
 
+	// helper for agent accuracy
 	currentProposalAccuracyThreshold float64
 	hasVotedThisRound                bool
+	votedOnFirstRound                bool
+	isFirstRound                     bool
 }
 
 func (s *SocialAgent) FightResolution(
@@ -176,14 +179,17 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 		s.updateSocialCapital(self, fightDecisions)
 	}
 
-	if s.hasVotedThisRound == false {
+	// proposal voting reset
+	if !s.hasVotedThisRound {
 		s.proposalAccuracyThreshold *= 0.9
-	} else {
-		// TODO better mechanism for increasing
-		s.proposalAccuracyThreshold *= 1.05
+	}
+	if s.votedOnFirstRound {
+		s.proposalAccuracyThreshold *= 1.1
 	}
 	s.currentProposalAccuracyThreshold = s.proposalAccuracyThreshold
 	s.hasVotedThisRound = false
+	s.votedOnFirstRound = false
+	s.isFirstRound = true
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -268,16 +274,111 @@ func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.Electi
 	return ballot
 }
 
+func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.Rule[decision.FightAction] {
+	// find the action each agent will make
+	// check what the average of each state type is
+	type AgentAction struct {
+		action      decision.FightAction
+		agent_state state.HiddenAgentState
+	}
+	agent_actions := make([]AgentAction, 0)
+	view := baseAgent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	agents := view.AgentState()
+	average_attack := 0.0
+	average_defense := 0.0
+	for id_index := 0; id_index < len(ids); id_index++ {
+		agent_state, _ := agents.Get(ids[id_index])
+		average_attack += float64(agent_state.Attack)
+		average_defense += float64(agent_state.Defense)
+		// qState := internal.HiddenAgentToQState(agent_state, view)
+		// rewards := internal.CooperationQ(qState)
+		// q_action := decision.FightAction(internal.Argmax(rewards[:]))
+		// agent_actions = append(agent_actions, AgentAction{action: q_action, agent_state: agent_state})
+	}
+
+	average_attack /= float64(len(ids))
+	average_defense /= float64(len(ids))
+
+	// find the average of each stat
+	// agent_averages := [3][4]float64{{0.0, 0.0, 0.0, 0.0}} // defend cower attack, health attack stamina defense
+	// for _, agent_action := range agent_actions {
+	// 	agent_averages[agent_action.action] = [4]float64{
+	// 		agent_averages[agent_action.action][0] + float64(agent_action.agent_state.Hp),
+	// 		agent_averages[agent_action.action][1] + float64(agent_action.agent_state.Attack),
+	// 		agent_averages[agent_action.action][2] + float64(agent_action.agent_state.Stamina),
+	// 		agent_averages[agent_action.action][3] + float64(agent_action.agent_state.Defense),
+	// 	}
+	// }
+	// for index := 0; index < 3; index++ {
+	// 	agent_averages[index] = [4]float64{
+	// 		agent_averages[index][0] / float64(len(agent_actions)),
+	// 		agent_averages[index][1] / float64(len(agent_actions)),
+	// 		agent_averages[index][2] / float64(len(agent_actions)),
+	// 		agent_averages[index][3] / float64(len(agent_actions)),
+	// 	}
+	// }
+	halved_attack_average := 0.0
+	halved_defend_average := 0.0
+	// construct rules based on these agent averages, 36 different rules each corresponding to a range of the possible state space
+	rules := make([]proposal.Rule[decision.FightAction], 0)
+	for health_range := 1; health_range <= 3; health_range++ {
+		for stamina_range := 1; stamina_range <= 3; stamina_range++ {
+			health_val_min := 250 * health_range
+			stamina_val_min := 500 * stamina_range
+			for attack_quartile := 1.0; attack_quartile < 4.0; attack_quartile += 2.0 {
+				for defend_quartile := 1.0; defend_quartile < 4.0; defend_quartile += 2.0 {
+					// create a rule for the current quartile health and attack rule
+					attack_mid := halved_attack_average * attack_quartile
+					defend_mid := halved_defend_average * defend_quartile
+					qState := internal.HiddenAgentToQState(state.HiddenAgentState{
+						Hp:      state.HealthRange(health_val_min),
+						Stamina: state.StaminaRange(stamina_val_min),
+						Attack:  uint(attack_mid),
+						Defense: uint(defend_mid),
+					}, view)
+					rewards := internal.CooperationQ(qState)
+					q_action := decision.FightAction(internal.Argmax(rewards[:]))
+
+					// make a rule that implements this q_action, four sets of ranges
+					rules = append(rules, *proposal.NewRule(q_action, proposal.NewAndCondition(
+						proposal.NewAndCondition( //
+							proposal.NewAndCondition(
+								proposal.NewComparativeCondition(proposal.TotalAttack, proposal.GreaterThan, proposal.Value(attack_mid-halved_attack_average)),
+								proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, proposal.Value(attack_mid+halved_attack_average)),
+							), // attack
+							proposal.NewAndCondition(
+								proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, proposal.Value(defend_mid-halved_defend_average)),
+								proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, proposal.Value(defend_mid+halved_defend_average)),
+							), // defense
+						),
+						proposal.NewAndCondition(
+							proposal.NewAndCondition(
+								proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, proposal.Value(health_val_min)),
+								proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, proposal.Value(health_val_min+250)),
+							), // health
+							proposal.NewAndCondition(
+								proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, proposal.Value(stamina_val_min)),
+								proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, proposal.Value(stamina_val_min+500)),
+							), // stamina
+						),
+					)))
+				}
+			}
+		}
+
+	}
+
+}
+
 // TODO
 func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	var result decision.Intent
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	agents := view.AgentState()
 	rules := prop.Rules()
 	action_checker := proposal.ToSinglePredicate(rules)
-	//TODO threshold should be set at the beginning of the round
-	//TODO should be decreased if no fight decision made
-
 	accuracy := 0.0
 	for id_index := 0; id_index < len(ids); id_index++ {
 		agent_state, _ := agents.Get(ids[id_index])
@@ -290,8 +391,6 @@ func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAc
 		qState := internal.HiddenAgentToQState(agent_state, view)
 		rewards := internal.CooperationQ(qState)
 		q_action := decision.FightAction(internal.Argmax(rewards[:]))
-		//TODO Find the agent fight action
-		//TODO find the proposal fight action
 		decision_match := q_action == proposal_action
 		if decision_match {
 			accuracy += 1.0
@@ -300,10 +399,18 @@ func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAc
 	accuracy /= float64(len(ids))
 
 	if accuracy > s.currentProposalAccuracyThreshold {
-		return decision.Positive
+		result = decision.Positive
+		s.hasVotedThisRound = true
+		if s.isFirstRound {
+			s.votedOnFirstRound = true
+		}
+	} else {
+		result = decision.Negative
+		s.currentProposalAccuracyThreshold *= 0.9
 	}
-	s.currentProposalAccuracyThreshold *= 0.9
-	return decision.Negative
+
+	s.isFirstRound = false
+	return result
 }
 
 func (s *SocialAgent) HandleFightProposalRequest(
@@ -343,6 +450,6 @@ func NewSocialAgent() agent.Strategy {
 		gossipThreshold:           0.5,
 		propAdmire:                0.1,
 		propHate:                  0.1,
-		proposalAccuracyThreshold: 0.7,
+		proposalAccuracyThreshold: 0.8,
 	}
 }
