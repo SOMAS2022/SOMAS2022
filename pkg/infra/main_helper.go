@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"sort"
 
 	"github.com/google/uuid"
@@ -176,11 +175,13 @@ func checkHpPool() bool {
 }
 
 func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
-	makeItems := func() *commons.ImmutableList[state.Item] {
-		nItems := rand.Intn(numAgents) / 10
+	nWeapons, nShields := gamemath.GetEquipmentDistribution(uint(numAgents))
+	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(uint(numAgents))
+
+	makeItems := func(nItems int, stats uint) *commons.ImmutableList[state.Item] {
 		items := make([]state.Item, nItems)
 		for i := 0; i < nItems; i++ {
-			items[i] = *state.NewItem(uuid.NewString(), currentLevel*uint(rand.Intn(3)+1))
+			items[i] = *state.NewItem(uuid.NewString(), stats)
 		}
 		sort.SliceStable(items, func(i, j int) bool {
 			return items[i].Value() > items[j].Value()
@@ -189,9 +190,13 @@ func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
 	}
 
 	return state.NewLootPool(
-		makeItems(),
-		makeItems(),
-		makeItems(),
-		makeItems(),
+		// Weapons
+		makeItems(int(nWeapons), gamemath.GetWeaponDamage(globalState.MonsterHealth, uint(numAgents))),
+		// Shields
+		makeItems(int(nShields), gamemath.GetShieldProtection(globalState.MonsterAttack, uint(numAgents))),
+		// Health Potions
+		makeItems(int(nHealthPotions), gamemath.GetHealthPotionValue(globalState.MonsterAttack, uint(numAgents))),
+		// Stamina Potions
+		makeItems(int(nStaminaPotions), gamemath.GetStaminaPotionValue(globalState.MonsterHealth, uint(numAgents))),
 	)
 }
