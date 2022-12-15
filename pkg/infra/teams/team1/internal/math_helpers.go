@@ -103,9 +103,9 @@ func AddArrays(A [4]float64, B [4]float64) [4]float64 {
 
 func DecayNumber(inputNumber float64) float64 {
 	if inputNumber < 0 {
-		return 0.70 * inputNumber
+		return 0.9 * inputNumber
 	} else {
-		return 0.90 * inputNumber
+		return 0.95 * inputNumber
 	}
 }
 
@@ -195,8 +195,8 @@ func BaseAgentToQState(agent agent.BaseAgent) QState {
 	return QState{
 		float64(agentState.Hp),
 		float64(agentState.Stamina),
-		float64(agentState.Attack),
-		float64(agentState.Defense),
+		float64(agentState.TotalAttack()),
+		float64(agentState.TotalDefense()),
 		float64(view.CurrentLevel()),
 		float64(view.MonsterHealth()),
 		float64(view.MonsterAttack()),
@@ -207,8 +207,8 @@ func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
 	return QState{
 		float64(agent.Hp),
 		float64(agent.Stamina),
-		float64(agent.Attack),
-		float64(agent.Defense),
+		float64(agent.Attack + agent.BonusAttack),
+		float64(agent.Defense + agent.BonusDefense),
 		float64(view.CurrentLevel()),
 		float64(view.MonsterHealth()),
 		float64(view.MonsterAttack()),
