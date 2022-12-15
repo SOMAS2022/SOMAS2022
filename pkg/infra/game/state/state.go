@@ -72,7 +72,7 @@ func (s *AgentState) BonusDefense() uint {
 	iterator := s.Shields.Iterator()
 	for !iterator.Done() {
 		_, value := iterator.Next()
-		if value.Id() == s.WeaponInUse {
+		if value.Id() == s.ShieldInUse {
 			return value.Value()
 		}
 	}
