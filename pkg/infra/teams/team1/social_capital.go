@@ -57,6 +57,13 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			// Get hidden state of agent
 			otherAgentState, _ := agentState.Get(agentID)
 
+			// Calculate value for institutions
+			if otherAgentState.Defector.IsDefector() {
+				s.socialCapital[agentID] = [4]float64{-1, s.socialCapital[agentID][1], s.socialCapital[agentID][2], s.socialCapital[agentID][3]}
+			} else {
+				s.socialCapital[agentID] = [4]float64{0, s.socialCapital[agentID][1], s.socialCapital[agentID][2], s.socialCapital[agentID][3]}
+			}
+
 			// Calculate how cooperative each action is in other agents current state
 			cooperativeQ := internal.CooperationQ(internal.HiddenAgentToQState(otherAgentState, view))
 
@@ -69,8 +76,15 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
 			// Calculate update of based on how cooperative action was compared to the agents own action
 			deltaHonour := 0.1 * (cooperationScale[int(action)] - selfCooperation)
 
+			// Calculate update to institutions based on whether or not agent is leader
+			deltaInstitutions := 0.0
+			if agentID == view.CurrentLeader() {
+				deltaInstitutions = 1.0
+			}
+
 			// Update the socialCapital array based on calculated delta for trustworthiness and honour
-			s.socialCapital[agentID] = internal.BoundArray(internal.AddArrays(s.socialCapital[agentID], [4]float64{0.0, 0.0, deltaTrust, deltaHonour}))
+			s.socialCapital[agentID] = internal.BoundArray(internal.AddArrays(s.socialCapital[agentID], [4]float64{deltaInstitutions, 0.0, deltaTrust, deltaHonour}))
+
 		}
 	}
 }
