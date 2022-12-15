@@ -40,14 +40,12 @@ func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.Lo
 	panic("implement me")
 }
 
-func (a *Team6Agent) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
+func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
+	if similarity >= 0.8 {
 		return decision.Positive
-	case 1:
+	} else {
 		return decision.Negative
-	default:
-		return decision.Abstain
 	}
 }
 

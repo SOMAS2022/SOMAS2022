@@ -33,8 +33,8 @@ func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.Immutab
 }
 
 func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
-	if intent == 0 {
+	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
+	if similarity >= 0.8 {
 		return decision.Positive
 	} else {
 		return decision.Negative
