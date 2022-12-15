@@ -380,7 +380,7 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(true, true, 10, 50)
+	manifesto := decision.NewManifesto(true, true, uint(rand.Intn(20)+5), uint(rand.Intn(30)+20))
 	return manifesto
 }
 
