@@ -380,7 +380,7 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, true, 10, 50)
+	manifesto := decision.NewManifesto(true, true, 10, 50)
 	return manifesto
 }
 
@@ -411,31 +411,16 @@ func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.
 	return nil
 }
 
-func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
-	view := b.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
-	i := 0
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
+func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, electionParams *decision.ElectionParams) decision.Ballot {
+	var ballot decision.Ballot
+	candidates := electionParams.CandidateList().Iterator()
+	for !candidates.Done() {
+		id, _, _ := candidates.Next()
+		if rand.Float64() < (s.socialCapitalMean[id]+1)/2.0 {
+			ballot = append(ballot, id)
 		}
 	}
-
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := rand.Intn(numAliveAgents)
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
-	}
-
+	ballot = append(ballot, b.ID())
 	return ballot
 }
 
@@ -508,7 +493,6 @@ func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.
 	return rules
 }
 
-// TODO
 func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	var result decision.Intent
 	view := baseAgent.View()
