@@ -44,6 +44,31 @@ func NewAgent2() Strategy {
 }
 
 /* ---- HELPER FUNCTIONS ----*/
+// Returns minimum Health that a healthy agent should have.
+// Returns minimum Health that a healthy agent should have.
+// Returns minimum Health that a healthy agent should have.
+// Returns minimum Health that a healthy agent should have.
+func minDefend() proposal.Value {
+	return 1000
+}
+
+func minAttack() proposal.Value {
+	return 1000
+}
+
+func baseHealth() proposal.Value {
+	return 1000
+}
+
+func minStamina() proposal.Value {
+	return 1000
+}
+
+// Returns minimum Health that a healthy agent should have.
+func minHealth() proposal.Value {
+	return 1000
+}
+
 // Returns Manifesto Effectiveness based on History
 func manifestoEffectPercentage(agent BaseAgent) float64 {
 	return 0.0
@@ -509,21 +534,23 @@ func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.Fight
 func (a *Agent2) FightResolution(agent BaseAgent) commons.ImmutableList[proposal.Rule[decision.FightAction]] {
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth()),
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth()),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina())),
 	))
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth()),
+			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.GreaterThan, minAttack())),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth()),
+			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, minDefend())),
 	))
 
 	return *commons.NewImmutableList(rules)
