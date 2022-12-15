@@ -35,12 +35,12 @@ func (a *AgentThree) FightAction(
 func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
 	agentState := baseAgent.AgentState()
 	// alg 8
-	if float64(agentState.Hp) < 1.25*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 1.25*AverageArray(GetStaminaAllAgents(baseAgent)) {
+	if float64(agentState.Hp) < 1.05*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 1.05*AverageArray(GetStaminaAllAgents(baseAgent)) {
 		return decision.Cower
-	} else if agentState.BonusDefense() >= agentState.BonusAttack() {
-		return decision.Defend
-	} else {
+	} else if agentState.BonusDefense() <= agentState.BonusAttack() {
 		return decision.Attack
+	} else {
+		return decision.Defend
 	}
 }
 
@@ -56,13 +56,14 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 			fightAction = action
 			baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "choice": action, "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
 		} else {
-			// Send some messages to other agents
-			// send := rand.Intn(5)
-			// if send == 0 {
-			// 	m := message.FightInform()
-			// 	_ = baseAgent.SendBlockingMessage(id, m)
-			// }
-
+			switch rand.Intn(3) {
+			case 0:
+				fightAction = decision.Attack
+			case 1:
+				fightAction = decision.Defend
+			default:
+				fightAction = decision.Cower
+			}
 		}
 		builder.Set(id, fightAction)
 	}
@@ -74,25 +75,28 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	makesProposal := rand.Intn(100)
 
+	baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "decision": a.CurrentAction(baseAgent)}, "HP")
+	baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
+
 	// Well, not everytime. Just sometimes
 	if makesProposal > 80 {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
 		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 500),
 				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
 		))
 
 		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 50),
 		))
 
 		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 100),
 		))
 
 		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, baseAgent.AgentState().Stamina),
 		))
 
 		prop := *commons.NewImmutableList(rules)
@@ -102,42 +106,43 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 
 // Calculate our agents action
 func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightAction {
-	// !!!!!!!!!!!!!!!!!!!!! need to implement
-	StartingMonsterHP := 0
-	view := baseAgent.View()
-	agentState := baseAgent.AgentState()
+	// // !!!!!!!!!!!!!!!!!!!!! need to implement
+	// StartingMonsterHP := 1000
+	// view := baseAgent.View()
+	// agentState := baseAgent.AgentState()
 
-	currentLevel := int(view.CurrentLevel())
-	// edge case - alg 9
-	if float64(agentState.Hp) < 0.6*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 0.6*AverageArray(GetStaminaAllAgents(baseAgent)) {
-		return decision.Cower
-	}
-	// change decision, already not edge case - alg 10
-	// every 5 levels, alpha +1
-	alpha := int(currentLevel / 5)
-	damageTaken := GetStartingHP() - int(agentState.Hp)
-	attackDealt := (StartingMonsterHP - int(view.MonsterHealth())) / StartingMonsterHP
+	// currentLevel := int(view.CurrentLevel())
+	// // edge case - alg 9
+	// if float64(agentState.Hp) < 0.6*AverageArray(GetHealthAllAgents(baseAgent)) || float64(agentState.Stamina) < 0.6*AverageArray(GetStaminaAllAgents(baseAgent)) {
+	// 	return decision.Cower
+	// }
+	// // change decision, already not edge case - alg 10
+	// // every 5 levels, alpha +1
+	// alpha := int(currentLevel / 5)
+	// damageTaken := GetStartingHP() - int(agentState.Hp)
+	// attackDealt := (StartingMonsterHP - int(view.MonsterHealth())) / StartingMonsterHP
 
-	if attackDealt <= damageTaken && currentLevel > alpha+5 {
-		return decision.Attack
-	} else if attackDealt > damageTaken && currentLevel > alpha+5 {
-		return decision.Defend
-	}
+	// if attackDealt <= damageTaken && currentLevel > alpha+5 {
+	// 	return decision.Attack
+	// } else if attackDealt > damageTaken && currentLevel > alpha+5 {
+	// 	return decision.Defend
+	// }
 
-	// catchall, execution will never get here
-	return decision.Cower
+	// // catchall, execution will never get here
+	// return decision.Cower
+	return decision.Attack
 }
 
 // Vote on proposal
 func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	agree := true
 
-	rules := m.Rules()
-	itr := rules.Iterator()
-	for !itr.Done() {
-		rule, _ := itr.Next()
-		baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
-	}
+	// rules := m.Rules()
+	// itr := rules.Iterator()
+	// for !itr.Done() {
+	// 	rule, _ := itr.Next()
+	// 	// baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
+	// }
 
 	// Selfish, only agree if our decision is ok
 	if agree {

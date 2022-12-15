@@ -23,29 +23,36 @@ func (u UtilityMap) Swap(i, j int)      { u[i], u[j] = u[j], u[i] }
 func (u UtilityMap) Less(i, j int) bool { return u[i].score < u[j].score }
 
 type AgentThree struct {
-	HP                int
-	ST                int
-	AT                int
-	SH                int
-	uR                map[commons.ID]int
-	uP                map[commons.ID]int
-	uC                map[commons.ID]int
-	utilityScore      map[commons.ID]int
-	TSN               []commons.ID
-	contactsLastRound map[commons.ID]bool
-	chairTolerance    int
-	proposalTolerance map[commons.ID]int
+	HP                    int
+	ST                    int
+	AT                    int
+	SH                    int
+	uR                    map[commons.ID]int
+	uP                    map[commons.ID]int
+	uC                    map[commons.ID]int
+	utilityScore          map[commons.ID]int
+	TSN                   []commons.ID
+	contactsLastRound     map[commons.ID]bool
+	chairTolerance        int
+	proposalTolerance     map[commons.ID]int
+	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
 }
 
 // Update internal parameters at the end of each stage
-func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-	a.HP = int(baseAgent.AgentState().Hp)
-	a.ST = int(baseAgent.AgentState().Stamina)
-	a.AT = int(baseAgent.AgentState().Attack)
-	a.SH = int(baseAgent.AgentState().Defense)
+func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+
+	AS := baseAgent.AgentState()
+
+	a.HP = int(AS.Hp)
+	a.ST = int(AS.Stamina)
+	a.AT = int(AS.Attack + AS.BonusAttack())
+	a.SH = int(AS.Defense + AS.BonusDefense())
+
+	a.fightDecisionsHistory = *history
 
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
+	a.UpdateTSN(baseAgent)
 }
 
 func CreateUtility() map[commons.ID]int {
