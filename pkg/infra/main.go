@@ -165,7 +165,7 @@ func startGameLoop() {
 
 		// TODO: Loot Discussion Stage
 
-		lootPool := generateLootPool(len(agentMap), globalState.CurrentLevel)
+		lootPool := generateLootPool(len(agentMap))
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)

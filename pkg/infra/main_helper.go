@@ -174,7 +174,7 @@ func checkHpPool() bool {
 	return false
 }
 
-func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
+func generateLootPool(numAgents int) *state.LootPool {
 	nWeapons, nShields := gamemath.GetEquipmentDistribution(uint(numAgents))
 	nHealthPotions, nStaminaPotions := gamemath.GetPotionDistribution(uint(numAgents))
 
