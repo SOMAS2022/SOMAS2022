@@ -335,20 +335,74 @@ func (s *SocialAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 }
 
 func (s *SocialAgent) HandleTradeNegotiation(BA agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
-	selfID := BA.ID()
-	agentWeapons := BA.AgentState().Weapons
-	agentShields := BA.AgentState().Shields
 
-	tradeID, accept, bestIdx := internal.ShouldAcceptOffer(BA, m)
-	if accept {
-		return message.TradeAccept{TradeID: tradeID}
+	agentState := BA.AgentState()
+
+	bestWeaponDonation := uint(0)
+	bestShieldDonation := uint(0)
+	var bestWeaponDonationID string
+	var bestShieldDonationID string
+	for negId, neg := range m.Negotiations {
+		//fmt.Println(neg.Agent2)
+		if neg.Agent2 == BA.ID() {
+			//fmt.Println("offer made to me")
+			if offer, ok := neg.GetOffer(neg.Agent1); ok {
+				if offer.ItemType == commons.Weapon && offer.Item.Value() > bestWeaponDonation {
+					bestWeaponDonation = offer.Item.Value()
+					bestWeaponDonationID = negId
+				} else if offer.ItemType == commons.Shield && offer.Item.Value() > bestShieldDonation {
+					bestShieldDonation = offer.Item.Value()
+					bestShieldDonationID = negId
+				}
+			}
+		}
 	}
 
-	if bestIdx == -1 { // Cant trade due to no next best weapon
+	if bestWeaponDonation > agentState.BonusAttack() {
+		//fmt.Println("Accepted weapons offer")
+		return message.TradeAccept{TradeID: bestWeaponDonationID}
+	} else if bestShieldDonation > agentState.BonusDefense() {
+		//fmt.Println("Accepted shield offer")
+		return message.TradeAccept{TradeID: bestShieldDonationID}
+	}
+
+	if agentState.Weapons.Len() < 2 && agentState.Shields.Len() < 2 { // Cant trade due to no next best weapon
 		return message.TradeRequest{}
 	}
 
-	sortedSC := internal.GetSortedAgentSubset(selfID, s.socialCapital)
+	sortedSC := internal.GetSortedAgentSubset(BA.ID(), s.socialCapital)
+
+	// check what the second best weapon held is
+	bestFreeWStats := uint(0)
+	bestFreeWIdx := int(-1)
+	it := agentState.Weapons.Iterator()
+	for !it.Done() {
+		i, w := it.Next()
+		if w.Id() != agentState.WeaponInUse {
+			if bestFreeWStats < w.Value() {
+				bestFreeWStats = w.Value()
+				bestFreeWIdx = i
+			}
+		}
+	}
+
+	bestFreeSStats := uint(0)
+	bestFreeSIdx := int(-1)
+	it = agentState.Shields.Iterator()
+	for !it.Done() {
+		i, w := it.Next()
+		if w.Id() != agentState.ShieldInUse {
+			if bestFreeSStats < w.Value() {
+				bestFreeSStats = w.Value()
+				bestFreeSIdx = i
+			}
+		}
+	}
+
+	if bestFreeWIdx == -1 && bestFreeSIdx == -1 {
+		//fmt.Println(agentState.Weapons.Len(), agentState.Shields.Len())
+		return message.TradeRequest{}
+	}
 
 nextAgent:
 	for _, sci := range sortedSC {
@@ -357,15 +411,23 @@ nextAgent:
 		}
 		// check if a trade negotiation is in place with that agent
 		for _, neg := range m.Negotiations {
-			if neg.Agent1 == selfID && neg.Agent2 == sci.ID {
+			if neg.Agent1 == BA.ID() && neg.Agent2 == sci.ID {
 				continue nextAgent
 			}
 		}
 
-		// make a trade offer
-		TO, _ := message.NewTradeOffer(commons.Weapon, uint(bestIdx), agentWeapons, agentShields)
-		TD := message.NewTradeDemand(commons.Shield, 0)
-		return message.TradeRequest{CounterPartyID: sci.ID, Offer: TO, Demand: TD}
+		//fmt.Println(sci.ID)
+		if agentState.Weapons.Len() > agentState.Shields.Len() {
+			//fmt.Println("Offered weapon")
+			TO, _ := message.NewTradeOffer(commons.Weapon, uint(bestFreeWIdx), agentState.Weapons, agentState.Shields)
+			TD := message.NewTradeDemand(commons.Shield, 0)
+			return message.TradeRequest{CounterPartyID: sci.ID, Offer: TO, Demand: TD}
+		} else {
+			//fmt.Println("Offered shield")
+			TO, _ := message.NewTradeOffer(commons.Shield, uint(bestFreeSIdx), agentState.Weapons, agentState.Shields)
+			TD := message.NewTradeDemand(commons.Shield, 0)
+			return message.TradeRequest{CounterPartyID: sci.ID, Offer: TO, Demand: TD}
+		}
 	}
 
 	return message.TradeRequest{}
