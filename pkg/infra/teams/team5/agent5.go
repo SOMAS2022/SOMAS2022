@@ -414,6 +414,10 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 	iter := as.Iterator()
 	leaderID := view.CurrentLeader()
 
+	//initialise social network after all agent has been spawned
+	if view.CurrentLevel() == 1 {
+		InitSocialNetwork(a)
+	}
 	//if deflect, goodwill += 0.2*(0.5-leader's goodwill), strategy += 0.2*(0.5-leader's strategy)
 	//it not deflect, goodwill +0.03
 	for !iter.Done() {
@@ -469,6 +473,13 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 func NewAgent5() agent.Strategy {
 	return &Agent5{
+		socialNetwork: SocialNetwork{
+			AgentProfile: make(map[commons.ID]AgentProfile),
+			LawfullMin:   0.8,
+			ChaoticMax:   0.2,
+			GoodMin:      0.8,
+			EvilMax:      0.2,
+		},
 		bravery:     rand.Intn(5),
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
