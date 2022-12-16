@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/benbjohnson/immutable"
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
@@ -10,8 +11,8 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
-
-	"github.com/benbjohnson/immutable"
+	"reflect"
+	"sort"
 )
 
 // Agent2 type : private attributes of agent
@@ -33,6 +34,52 @@ type Agent2 struct {
 	baseAgentPerLevel   []BaseAgent
 	fightResultPerLevel []commons.ImmutableList[decision.ImmutableFightResult]
 	voteResultPerLevel  []immutable.Map[decision.Intent, uint]
+	governmentTimeline  []leaderInfo
+	haveElections       bool
+	// CurrentLevelAverages
+
+	avgHp      uint
+	avgDefend  uint
+	avgAttack  uint
+	avgStamina uint
+
+	// To decide how to vote in no-confidence vote at the end of each level, use a social capital framework with weighted factors and a binary activation function to decide yes/no
+	// These are:
+	avgSurvivalCurrTerm       float64 // average % of agents alive at the end of a level during current leadership term (+ve relationship, high weighting)
+	avgSurvivalPastTerms      float64 // average % of agents alive at the end of a level from past leadership terms of that agent (+ve)
+	avgSurvival               float64 // average % of agents alive at the end of a level from all past leadership terms (for comparison - namely normalize by this amount)
+	avgBroadcastRateCurrTerm  float64 // % of the proposals we submitted that were actually accepted/broadcast by the leader, in current term (+ve, high weighting)
+	avgBroadcastRatePastTerms float64 // % of the proposals we submitted that were actually accepted/broadcast by the leader, from past terms of that leader (+ve)
+	avgBroadcastRate          float64 // % of the proposals we submitted that were actually accepted/broadcast, from all past leadership terms (again, normalize by this)
+	leadershipXp              float64 // fraction of levels up to now that they were leader (+ve)
+	noConfRate                float64 // fraction of their terms they were voted out prematurely (-ve))
+	avgLeadershipXp           float64 // avg fraction of levels up to now that any one agent is leader
+	avgNoConfRate             float64 // avg fraction of an agent's leaderships terms that he is voted out
+	// These variables are marked with -- below
+	// For these, firstly we need a history data helper function that returns an array of the form:
+	// leader_timeline_array [{id, manifesto, duration, leader_stats}, {id, manifesto, duration, leader_stats}, ...]
+	// The object of type leader_stats will contain the following items, corresponding JUST to that elapsed leadership term:
+	avgTermSurvival      float64 // (calculate for each level of their leadership and average)
+	avgTermBroadcastRate float64 // (calculate for each round/level? of their leadership and average)
+	noConf               bool    // whether they were voted out of that term
+	// This array is best created in the election function that is only called at the end of one leadership term / start of another
+	// It's best to have private attributes that accrue raw data and then reset - some every new term, some every new level
+	// These are used by the confidence function at the end of every level to actually yield the no conf vote, and by the election function at the end of a term to calculate stats and append to leader_timeline_array, and to vote
+	// Namely, the ones we reset after every level:
+	numAgentsBeginLevel uint //(actually, do we only have list of agent IDs?)
+	numAgentsEndLevel   uint
+	proposalsTotal      uint // how many proposals we put forward that level (necessarily equal to rounds?)
+	proposalsBroadcast  uint // how many of these were broadcast
+	// And variables we re-calculate every level, but reset every election (no need for arrays for the raw data from which we calculate them):
+	survivalRates  []float64 // array of % of agents alive at the end of each level (this array is appended to at the end of every level, and resets every election, so that each elem corresponds to a level in a leadership term)
+	broadcastRates []float64 // % of the proposals we submitted during the level that were actually accepted/broadcast (ditto)
+	// And variables we re-calculate every level but never reset:
+	// Then the ones we reset every election:
+	termBeginLevel uint // level at which the leadership term began (can read from viewMap every time election func is called)
+	termEndLevel   uint // level at which the leadership term ended (again, from viewMap, in election func)
+	// And variables we calculate every election (using all previous vars), to add to leader_timeline_array (esp leader_stats):
+	termDuration uint //  number of levels that leadership term lasted before elapsed or deposed (term_end_level - term_begin_level)
+
 }
 
 // NewAgent2 : Constructor of Agent2 FIXME:!!!INITIALISE AGENT WITH (MEANINGFUL) VALUES!!!
@@ -41,78 +88,246 @@ func NewAgent2() Strategy {
 	personalTendency := rand.Float64()*0.25 + 0.5
 	replacementTendency := rand.Float64()*0.25 + 0.5
 	estimationTendency := rand.Float64()*0.25 + 0.5
-	return &Agent2{personalTendency: personalTendency, replacementTendency: replacementTendency, estimationTendency: estimationTendency}
+	return &Agent2{
+		personalTendency:    personalTendency,
+		replacementTendency: replacementTendency,
+		estimationTendency:  estimationTendency,
+		haveElections:       false,
+	}
 }
 
-/* ---- HELPER FUNCTIONS ----*/
-// Returns minimum Health that a healthy agent should have.
-// Returns minimum Health that a healthy agent should have.
-// Returns minimum Health that a healthy agent should have.
-// Returns minimum Health that a healthy agent should have.
-func minDefend() proposal.Value {
-	return 1000
+/* ---- HELPER FUNCTIONS ---- */
+type leaderInfo struct {
+	id         commons.ID
+	manifesto  decision.Manifesto
+	duration   uint
+	overthrown bool
 }
 
-func minAttack() proposal.Value {
-	return 1000
+func (a *Agent2) newGovernmentTimeline(agent BaseAgent, haveElections bool) {
+	view := agent.View()
+	if haveElections == true {
+		newLeaderInfo := leaderInfo{
+			id:         view.CurrentLeader(),
+			manifesto:  view.LeaderManifesto(),
+			duration:   1,
+			overthrown: false,
+		}
+		a.governmentTimeline = append(a.governmentTimeline, newLeaderInfo)
+		a.haveElections = false
+	} else {
+		currentLeaderInfo := a.governmentTimeline[len(a.governmentTimeline)-1]
+		a.governmentTimeline[len(a.governmentTimeline)-1] =
+			leaderInfo{
+				id:         currentLeaderInfo.id,
+				manifesto:  currentLeaderInfo.manifesto,
+				duration:   currentLeaderInfo.duration + uint(1),
+				overthrown: false,
+			}
+	}
+
 }
 
-func baseHealth() proposal.Value {
-	return 1000
+//var past_terms_of_curr_leader := make([]term_struct, 0)
+//for leadership_term in leader_term_timeline_array {
+//	if leadership_term[id] == curr_leader["id"] {
+//		past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
+//	}
+//}
+/* ---- UPDATES FUNCTIONS ---- */
+
+func (a *Agent2) updateSocialCapital(agent BaseAgent) {
+	view := agent.View()
+	// Pseudocode for how stats are calculated from raw data, elsewhere in the program:
+	a.survivalRates = append(a.survivalRates, float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel))
+	a.broadcastRates = append(a.broadcastRates, float64(a.proposalsBroadcast)/float64(a.proposalsTotal))
+	a.avgSurvivalCurrTerm = avg(a.survivalRates)
+	a.avgBroadcastRateCurrTerm = avg(a.broadcastRates)
+	a.avgSurvival = (a.avgSurvival*float64(view.CurrentLevel()-1) + float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel)) / float64(view.CurrentLevel())
+	a.avgBroadcastRate = (a.avgBroadcastRate*float64(view.CurrentLevel()-1) + float64(a.proposalsBroadcast)/float64(a.proposalsTotal)) / float64(view.CurrentLevel())
 }
 
-func minStamina() proposal.Value {
-	return 1000
+func avg(array []float64) float64 {
+	sum := 0.0
+	for _, item := range array {
+		sum += item
+	}
+	return sum / float64(len(array))
+}
+
+func updateAverages(agent BaseAgent) (uint, uint, uint, uint) {
+	sumHp, sumDefend, sumAttack, sumStamina := uint(0), uint(0), uint(0), uint(0)
+	view := agent.View()
+	agentState := view.AgentState()
+	numOfAgents := uint(0)
+	for _, id := range commons.ImmutableMapKeys(agentState) {
+		state, ok := agentState.Get(id)
+		if ok && state.Hp > 0 {
+			sumHp = sumHp + uint(state.Hp)
+			sumDefend = sumDefend + state.BonusDefense
+			sumAttack = sumAttack + state.BonusAttack
+			sumStamina = sumStamina + uint(state.Stamina)
+			numOfAgents += 1
+		}
+	}
+	avgHp := sumHp / numOfAgents
+	avgDefend := sumDefend / numOfAgents
+	avgAttack := sumAttack / numOfAgents
+	avgStamina := sumStamina / numOfAgents
+
+	return avgHp, avgDefend, avgAttack, avgStamina
+}
+
+func minDefend(agent BaseAgent) proposal.Value {
+	avgDefend := 0.0
+	view := agent.View()
+	agentState := view.AgentState()
+	for _, id := range commons.ImmutableMapKeys(agentState) {
+		state, ok := agentState.Get(id)
+		if ok {
+			avgDefend = avgDefend + float64(state.BonusDefense)
+		}
+	}
+	return uint(0.50 * avgDefend)
+}
+
+func minAttack(agent BaseAgent) proposal.Value {
+	state := agent.AgentState()
+	attack := float64(state.BonusAttack())
+	return uint(0.20 * attack)
+}
+
+func baseHealth(agent BaseAgent) proposal.Value {
+	state := agent.AgentState()
+	hp := float64(state.Hp)
+	return uint(hp)
+}
+
+func minStamina(agent BaseAgent) proposal.Value {
+	state := agent.AgentState()
+	stamina := float64(state.Stamina)
+	return uint(0.20 * stamina)
 }
 
 // Returns minimum Health that a healthy agent should have.
-func minHealth() proposal.Value {
-	return 1000
+func minHealth(agent BaseAgent) proposal.Value {
+	state := agent.AgentState()
+	hp := float64(state.Hp)
+	return uint(0.50 * hp)
 }
 
 // Returns Manifesto Effectiveness based on History
-func manifestoEffectPercentage(agent BaseAgent) float64 {
-	return 0.0
-}
-
-// Returns Number of Full Term Agent2 served
-// without being overthrown
-func fullTermPercentage(agent BaseAgent) float64 {
-	return 0.0
+func weightedManifestoEffectiveness(agent BaseAgent, weight float64) float64 {
+	return weight * 0.0
 }
 
 // Returns Number of Terms Agent2 served
 // and was overthrown
-func overthrowPercentage(agent BaseAgent) float64 {
-	return 0.0
+func weightedOverthrowPercentage(agent BaseAgent, weight float64) float64 {
+	return weight * 0.0
 }
 
-// Returns T|F if agent was overthrown or not
+// Returns Adjusted Expertise with new mean and std provided.
+func adjustedExpertise(agent BaseAgent, from float64, to float64) float64 {
+	return from + (to-from)*expertise(agent)
+}
+
 func wasOverthrown(agent BaseAgent) bool {
 	return false
 }
 
-// Returns T|F if previous agent manifesto imposed loot
-func prevLootImpAbility(agent BaseAgent) bool {
-	return false
+func lastFightDecisionPower(agent BaseAgent, bias float64) float64 {
+	if true {
+		return bias
+	} else {
+		return 0.0
+	}
 }
 
-// Returns T|F if previous agent manifesto imposed fight
-func prevFightImpAbility(agent BaseAgent) bool {
-	return false
+func lastLootDecisionPower(agent BaseAgent, bias float64) float64 {
+	if true {
+		return bias
+	} else {
+		return 0.0
+	}
 }
 
-// First time agent is leader
-func firstTime(agent BaseAgent) bool {
-	return true
+func leaderElectedBefore(agent BaseAgent, bias float64) float64 {
+	if true {
+		return bias
+	} else {
+		return 0.0
+	}
+}
+
+// SOT : [0,1] : map :(Overthrow_i_ranked+Term_i_ranked)_ranked
+func SOT(agent BaseAgent) float64 {
+	return 0.0
+}
+
+func prospectLeaderScore(agent BaseAgent, par1 float64, par2 float64, par3 float64) float64 {
+	return par1 + par2 + par3 + SOT(agent)
+}
+
+// weightedFracTermsDeposed : NumOfTimesDeposed / NumOfTimesElected
+func weightedFracTermsDeposed(agent BaseAgent, id commons.ID) float64 {
+	return 0.0
+}
+
+// weightedAvgSurRateUnderLeader : Sum_terms(Sum_levels(survival_rate))/(Sum_terms(Sum_levels(1)))
+func weightedAvgSurRateUnderLeader(agent BaseAgent, id commons.ID) float64 {
+	return 0.0
 }
 
 // Experience of agent [0,1]
-func experience(agent BaseAgent) float64 {
-	overthrowWeight := 0.4
-	fullTermWeight := 0.7
-	manifestoEffectWeight := 0.7
-	return -overthrowWeight*overthrowPercentage(agent) + fullTermWeight*fullTermPercentage(agent) + manifestoEffectWeight*manifestoEffectPercentage(agent)
+func expertise(agent BaseAgent) float64 {
+	return weightedOverthrowPercentage(agent, -0.4) + weightedManifestoEffectiveness(agent, 1.)
+}
+
+func similarityGeneralScore(agent BaseAgent) float64 {
+	return 0.0
+}
+
+func similarityTargetedScore(agent BaseAgent) float64 {
+	return 0.0
+}
+
+func lootAllocationScore(agent BaseAgent, leader bool) float64 {
+	if leader {
+		return similarityGeneralScore(agent)
+	} else {
+		return similarityGeneralScore(agent) + similarityTargetedScore(agent)
+	}
+}
+
+func dynamicDonation(agent BaseAgent) uint {
+	return 0
+}
+
+func getAliveAgents(agent BaseAgent) uint {
+	view := agent.View()
+	agentState := view.AgentState()
+	i := 0
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		_, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			i++
+		}
+	}
+	return uint(i)
+}
+
+func getAgentStateSize(agent BaseAgent) uint {
+	view := agent.View()
+	agentState := view.AgentState()
+	return uint(agentState.Len())
+}
+
+func elasticity(agent BaseAgent, w1 uint, w2 uint) uint {
+	view := agent.View()
+	agentState := agent.AgentState()
+	return w1*(getAliveAgents(agent)/getAgentStateSize(agent)) + view.HpPool()/view.CurrentLevel() + w2*agentState.Hp
 }
 
 func (a *Agent2) updateBaseAgentPerLevel(agent BaseAgent) {
@@ -148,17 +363,6 @@ func (a *Agent2) getBaseHelper(multi bool) []BaseAgent {
 	}
 }
 
-// Description: The function is used to extract the general game info (a.k.a View) of the previous rounds
-// Returns: If multi => array of the previous View structures, else => array with a single element (View struct of the last round)
-func (a *Agent2) getViewHelper(multi bool) []state.View {
-	if multi == true {
-		return a.viewMap
-	} else {
-		singleArray := a.viewMap[len(a.viewMap)-1:]
-		return singleArray
-	}
-}
-
 // Description: The function is used to extract the agents' HiddenAgentState struct of the previous rounds
 // Returns: if multi => array of the previous HiddenAgentState structures, else => array with a single element (HiddenAgentState struct of the last round)
 func (a *Agent2) getAgentStateHelper(multi bool) []immutable.Map[commons.ID, state.HiddenAgentState] {
@@ -168,41 +372,6 @@ func (a *Agent2) getAgentStateHelper(multi bool) []immutable.Map[commons.ID, sta
 		singleArray := a.agentStateMap[len(a.agentStateMap)-1:]
 		return singleArray
 	}
-}
-
-// Description: The function is used to extract the previous leaders' ids
-// Returns: if multi => an array with all the previous leaders' ids, else => array with a single element (id of the last round's leader)
-func (a *Agent2) getLeaderHelper(multi bool) []commons.ID {
-	if multi == true {
-		return a.leaderMap
-	} else {
-		singleArray := a.leaderMap[len(a.leaderMap)-1:]
-		return singleArray
-	}
-}
-
-// Description: The function is used to return the current Agent's health (Hp)
-// Returns: uint
-func (a *Agent2) getCurrentHp() uint {
-	return a.getBaseHelper(false)[0].latestState.Hp
-}
-
-// Description: The function is used to return the current Agent's stamina
-// Returns: uint
-func (a *Agent2) getCurrentStamina() uint {
-	return a.getBaseHelper(false)[0].latestState.Stamina
-}
-
-// Description: The function is used to return the current Agent's defence points
-// Returns: uint
-func (a *Agent2) getCurrentDefense() uint {
-	return a.getBaseHelper(false)[0].latestState.Defense
-}
-
-// Description: The function is used to return the current Agent's attack points
-// Returns: uint
-func (a *Agent2) getCurrentAttack() uint {
-	return a.getBaseHelper(false)[0].latestState.Attack
 }
 
 // Description: The function is used to return the current Agent's bonus defense points
@@ -307,184 +476,95 @@ func (a *Agent2) UpdateInternalState(baseAgent BaseAgent, fightResult *commons.I
 	a.updateBaseAgentPerLevel(baseAgent)
 	a.updateFightResultPerLevel(*fightResult)
 	a.updateVoteResultPerLevel(*voteResult)
+	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
+	a.updateSocialCapital(baseAgent)
+	a.newGovernmentTimeline(baseAgent, a.haveElections)
 }
 
 /* ---- ELECTION ---- */
 
-// CreateManifesto FIXME: Check me!
+// CreateManifesto
 // Description: Used to give Manifesto Information if elected Leader.
 // Return:		The Manifesto with FightImposition, LootImposition, term length and overthrow threshold.
 func (a *Agent2) CreateManifesto(agent BaseAgent) *decision.Manifesto {
-	/*
-		CreateManifesto:
-		- Term_Length =  Int(factor * experience) + Bias(Default term e.g. 1 term)
-		- Overthrow(%) = first_time ? default -> 51% : experience*(mapping factor)* (-10,10)
-		- FightImpositionDecision = experience + (prev_fight_imp_ability * !was_overthrown ? bias : 0 ) > threshold ? True : False
-		- LootImposition = experience + (prev_loot_imp_ability * !was_overthrown ? bias : 0 ) > threshold ? True : False
-	*/
-	f1 := 4 * experience(agent)           // [0,4]
-	f2 := 20.00*experience(agent) - 10.00 // [-10,10]
-	defaultTerm := uint(1)                // 1 Term
-	defaultOverthrow := uint(51)          // 51% Agents to overthrow
-	overthrowThreshold := uint(0)
-	termLength := uint(f1) + defaultTerm // [1,5]
-	fightImposeThreshold := 0.0
-	lootImposeThreshold := 0.0
-	fightImposition := false
-	lootImposition := false
 
-	if firstTime(agent) == true {
-		overthrowThreshold = defaultOverthrow
-	} else {
-		overthrowThreshold = uint(experience(agent) * f2)
-	}
-	if (prevFightImpAbility(agent) && !wasOverthrown(agent)) == true {
-		fightImposeHistoryCheck := 0.5
-		if (experience(agent) + fightImposeHistoryCheck) > fightImposeThreshold {
-			fightImposition = true
-		} else {
-			fightImposition = false
+	fightThreshold := 2.5
+	lootThreshold := 2.5
+	fightDecisionPower := false // default value
+
+	if !wasOverthrown(agent) {
+		if (adjustedExpertise(agent, 0, 5) + lastFightDecisionPower(agent, 2.5)) > fightThreshold {
+			fightDecisionPower = true
 		}
 	} else {
-		fightImposeHistoryCheck := 0.0
-		if (experience(agent) + fightImposeHistoryCheck) > fightImposeThreshold {
-			fightImposition = true
-		} else {
-			fightImposition = false
+		if adjustedExpertise(agent, 0, 5) > fightThreshold {
+			fightDecisionPower = true
 		}
 	}
-	if (prevLootImpAbility(agent) && !wasOverthrown(agent)) == true {
-		lootImposeHistoryCheck := 0.5
-		if (experience(agent) + lootImposeHistoryCheck) > lootImposeThreshold {
-			lootImposition = true
-		} else {
-			lootImposition = false
+
+	lootDecisionPower := false
+
+	if !wasOverthrown(agent) {
+		if (adjustedExpertise(agent, 0, 5) + lastLootDecisionPower(agent, 2.5)) > lootThreshold {
+			lootDecisionPower = true
 		}
 	} else {
-		lootImposeHistoryCheck := 0.0
-		if (experience(agent) + lootImposeHistoryCheck) > lootImposeThreshold {
-			lootImposition = true
-		} else {
-			lootImposition = false
+		if adjustedExpertise(agent, 0, 5) > lootThreshold {
+			lootDecisionPower = true
 		}
 	}
-	Manifesto := decision.NewManifesto(fightImposition, lootImposition, termLength, overthrowThreshold)
-	return Manifesto
+
+	termLength := uint(adjustedExpertise(agent, 0, 4) + 1)
+
+	overthrowPercentage := uint(51)
+	if wasOverthrown(agent) {
+		overthrowPercentage = uint(float64(overthrowPercentage) + adjustedExpertise(agent, -10, 10))
+	}
+
+	manifesto := decision.NewManifesto(fightDecisionPower, lootDecisionPower, termLength, overthrowPercentage)
+	return manifesto
 }
 
-// HandleConfidencePoll TODO: Implement me!
+// HandleConfidencePoll
 // Description: Used for voting on confidence for Leader.
 // Return:		Positive, Negative, or Abstain decision.
 func (a *Agent2) HandleConfidencePoll(baseAgent BaseAgent) decision.Intent {
-	// To decide how to vote in no-confidence vote at the end of each level, use a social capital framework with weighted factors and a binary activation function to decide yes/no
-	// These are:
-	// - avg_survival_curr_term: average % of agents alive at the end of a level during current leadership term (+ve relationship, high weighting)
-	// - avg_survival_past_terms: average % of agents alive at the end of a level from past leadership terms of that agent (+ve)
-	// - avg_survival: average % of agents alive at the end of a level from all past leadership terms (for comparison - namely normalize by this amount)
-	// - avg_broadcast_rate_curr_term: % of the proposals we submitted that were actually accepted/broadcast by the leader, in current term (+ve, high weighting)
-	// - avg_broadcast_rate_past_terms: % of the proposals we submitted that were actually accepted/broadcast by the leader, from past terms of that leader (+ve)
-	// - avg_broadcast_rate: % of the proposals we submitted that were actually accepted/broadcast, from all past leadership terms (again, normalize by this)
-	// - leadership_xp: fraction of levels up to now that they were leader (+ve)
-	// - no_conf_rate: fraction of their terms they were voted out prematurely (-ve))
-	// - avg_leadership_xp: avg fraction of levels up to now that any one agent is leader
-	// - avg_no_conf_rate: avg fraction of an agent's leaderships terms that he is voted out
-	// - (fight imposition?) (-ve)
-	// - (loot?)
-	// These variables are marked with -- below
-	// For these, firstly we need a history data helper function that returns an array of the form:
-	// leader_timeline_array [{id, manifesto, duration, leader_stats}, {id, manifesto, duration, leader_stats}, ...]
-	// The object of type leader_stats will contain the following items, corresponding JUST to that elapsed leadership term:
-	// - avg_term_survival (calculate for each level of their leadership and average)
-	// - avg_term_broadcast_rate (calculate for each round/level? of their leadership and average)
-	// - bool no_conf: whether they were voted out of that term
-	// - (fight/loot impositions?)
-	// This array is best created in the election function that is only called at the end of one leadership term / start of another
-	// It's best to have private attributes that accrue raw data and then reset - some every new term, some every new level
-	// These are used by the confidence function at the end of every level to actually yield the no conf vote, and by the election function at the end of a term to calculate stats and append to leader_timeline_array, and to vote
-	// Namely, the ones we reset after every level:
-	// - num_agents_begin_level (actually, do we only have list of agent IDs?)
-	// - num_agents_end_level
-	// - proposals_total: how many proposals we put forward that level (necessarily equal to rounds?)
-	// - proposals_broadcast: how many of these were broadcast
-	// - loot/trade info?
-	// And variables we re-calculate every level, but reset every election (no need for arrays for the raw data from which we calculate them):
-	// - survival_rates: array of % of agents alive at the end of each level (this array is appended to at the end of every level, and resets every election, so that each elem corresponds to a level in a leadership term)
-	// - broadcast_rates: % of the proposals we submitted during the level that were actually accepted/broadcast (ditto)
-	// -- avg_survival_curr_term: avg of survival_rates (updated at end of every level - used as main measure of confidence in the current leader)
-	// -- avg_broadcast_rate_curr_term: avg of broadcast_rates
-	// And variables we re-calculate every level but never reset:
-	// -- avg_survival: average % of agents alive at the end of a level from all levels
-	// -- avg_broadcast_rate: % of the proposals we submitted that were actually accepted/broadcast, from all levels
-	// Then the ones we reset every election:
-	// - term_begin_level: level at which the leadership term began (can read from viewMap every time election func is called)
-	// - term_end_level: level at which the leadership term ended (again, from viewMap, in election func)
-	// - no_conf (bool): whether or not the term ended bc of no-confidence vote (where access this from?)
-	// And variables we calculate every election (using all previous vars), to add to leader_timeline_array (esp leader_stats):
-	// - term_duration: number of levels that leadership term lasted before elapsed or deposed (term_end_level - term_begin_level)
-	// - avg_term_survival: survival_rates averaged over term_duration (which is actually the length of the survival_rates array - assertion?)
-	// - avg_term_broadcast_rate: broadcast_rates averaged over term_duration (also length of broadcast_rates array)
-	// - bool no_conf (no calculation needed)
-	// These statistics are the 'condensed', useful form of the raw data
-	// This leaves us, from all the vars involved in the confidence vote, with:
-	// -- avg_survival_past_terms: average % of agents alive at the end of a level from past leadership terms of that agent
-	// -- avg_broadcast_rate_past_terms: % of the proposals we submitted that were actually accepted/broadcast by the leader, from past terms of that leader
-	// -- leadership_xp: fraction of levels up to now that they were leader (+ve)
-	// -- no_conf_rate: fraction of their terms they were voted out prematurely (-ve))
-	// -- avg_leadership_xp: avg fraction of levels up to now that any one agent is leader
-	// -- avg_no_conf_rate: avg fraction of an agent's leaderships terms that he is voted out
-	// These will not be calculated as private attributes for every single agent, but rather by looping through leader_timeline_array on an ad-hoc basis
+	w0, w1, w2, w3, w4, w5 := 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
+	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
+	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
+	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
+	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
+	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
+	sum := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm + w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm + w4*leadershipXpNorm + w5*noConfRateNorm
 
-	// Pseudocode for how stats are calculated from raw data, elsewhere in the program:
-	// In a function that runs at the end of a every level:
-	// - a.survival_rates = append(a.survival_rates, num_agents_end_level/num_agents_begin_level)
-	// - a.broadcast_rates = append(a.broadcast_rates, proposals_broadcast/proposals_total)
-	// - a.avg_survival_curr_term = avg(survival_rates)
-	// - a.avg_broadcast_rate_curr_term = avg(broadcast_rates)
-	// - a.avg_survival = (avg_survival*prev_level + num_agents_end_level/num_agents_begin_level)/level // where can get level?
-	// - a.avg_broadcast_rate = (avg_broadcast_rate*prev_level + proposals_broadcast/proposals_total)/level
-	// In election function:
-	// - a.term_end_level = level //level_temp is another priv attribute initialized to 0/1?
-	// - a.term_duration = level - term_begin_level // term_begin_level was last updated at the beginning of the term that is now ending
-	// - a.term_begin_level = level // now that it has been used, can reset to track new leadership
-	// - a.avg_term_survival = a.avg_survival_curr_term //(assert len(a.survival_rates)==term_duration )
-	// - a.avg_term_broadcast_rate = a.avg_broadcast_rate_curr_term //(assert len(a.broadcast_rates)==term_duration )
-	// - a.no_conf = // how get result of confidence poll? Do we need to calculate using if (manifesto_term!=term_duration) ?
-	// Then need to construct leader_timeline_array...
-
-	//var past_terms_of_curr_leader := make([]term_struct, 0)
-	//for leadership_term in leader_term_timeline_array {
-	//	if leadership_term[id] == curr_leader["id"] {
-	//		past_terms_of_curr_leader = append(past_terms_of_curr_leader, leadership_term) // will have redundant id key but whatever
-	//	}
-	//}
-
-	// avg_survival_curr_term_norm := (avg_survival_curr_term-avg_survival)/avg_survival
-	// avg_survival_past_terms_norm := (avg_survival_past_terms-avg_survival)/avg_survival
-	// avg_broadcast_rate_curr_term_norm := (avg_broadcast_rate_curr_term-avg_broadcast_rate)/avg_broadcast_rate
-	// avg_broadcast_rate_past_terms_norm := (avg_broadcast_rate_past_terms-avg_broadcast_rate)/avg_broadcast_rate
-	// leadership_xp_norm := (leadership_xp-avg_leadership_xp)/avg_leadership_xp
-	// no_conf_rate_norm := (no_conf_rate-avg_no_conf_rate)/avg_no_conf_rate
-	// Hm maybe tweak vars so that all count as +ve contrib to confidence
-	// sum = w0*avg_survival_curr_term_norm + w1*avg_survival_past_terms_norm + w2*avg_broadcast_rate_curr_term_norm + w3*avg_broadcast_rate_past_terms_norm + w4*leadership_xp_norm + w5*no_conf_rate_norm
-
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Abstain
-	case 1:
-		return decision.Negative
-	default:
+	if sum >= 0 {
 		return decision.Positive
+	} else {
+		return decision.Negative
 	}
 }
 
-// HandleElectionBallot TODO: Implement me!
+// HandleElectionBallot
 // Description: Used to elect a Leader.
 // Return:  	A single Commons.ID for choose-one voting or an array of commons.ID of top leader choices for ranked-voting.
 func (a *Agent2) HandleElectionBallot(baseAgent BaseAgent, params *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
 	view := baseAgent.View()
 	agentState := view.AgentState()
-	aliveAgentIds := make([]string, agentState.Len())
+	// Updating Leader Parameters
+	a.termEndLevel = view.CurrentLevel()                    //level_temp is another priv attribute initialized to 0/1?
+	a.termDuration = view.CurrentLevel() - a.termBeginLevel // term_begin_level was last updated at the beginning of the term that is now ending
+	a.termBeginLevel = view.CurrentLevel()                  // now that it has been used, can reset to track new leadership
+	a.avgTermSurvival = a.avgSurvivalCurrTerm               //(assert len(a.survival_rates)==term_duration )
+	a.avgTermBroadcastRate = a.avgBroadcastRateCurrTerm     //(assert len(a.broadcast_rates)==term_duration )
+	a.haveElections = true
+	lastLeaderInfo := a.governmentTimeline[len(a.governmentTimeline)-1]
+	if lastLeaderInfo.duration < lastLeaderInfo.manifesto.TermLength() {
+		lastLeaderInfo.overthrown = true
+	}
+	a.governmentTimeline[len(a.governmentTimeline)-1] = lastLeaderInfo
+	aliveAgentIds := make([]commons.ID, agentState.Len())
 	i := 0
 	itr := agentState.Iterator()
 	for !itr.Done() {
@@ -498,58 +578,63 @@ func (a *Agent2) HandleElectionBallot(baseAgent BaseAgent, params *decision.Elec
 	// Randomly fill the ballot
 	var ballot decision.Ballot
 	numAliveAgents := len(aliveAgentIds)
-	numCandidate := 2
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIds[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
+	agentScores := make(map[commons.ID]float64, numAliveAgents)
+	for i := 0; i < numAliveAgents; i++ {
+		par1 := leaderElectedBefore(baseAgent, weightedFracTermsDeposed(baseAgent, aliveAgentIds[i])+weightedAvgSurRateUnderLeader(baseAgent, aliveAgentIds[i]))
+		par2 := lastFightDecisionPower(baseAgent, 5)
+		par3 := lastLootDecisionPower(baseAgent, 5)
+		agentScores[aliveAgentIds[i]] = prospectLeaderScore(baseAgent, par1, par2, par3)
+
+	}
+	sort.SliceStable(aliveAgentIds, func(i, j int) bool {
+		return agentScores[aliveAgentIds[i]] < agentScores[aliveAgentIds[j]]
+	})
+	for i := uint(0); i < params.NumberOfPreferences(); i++ {
+		ballot = append(ballot, aliveAgentIds[i])
 	}
 	return ballot
 }
 
 /* ---- FIGHT ---- */
 
-// HandleFightInformation TODO: Implement me!
+// HandleFightInformation
 // Description: Called every time a fight information message is received (I believe it could be from a leader for providing a proposal or another agent for providing fight info (e.g proposal directly to them?)
 // Return:		nil
 func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	makesProposal := rand.Intn(100)
+	rules := make([]proposal.Rule[decision.FightAction], 0)
 
-	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth(baseAgent)),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth(baseAgent)),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina(baseAgent))),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(baseAgent)),
+			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.GreaterThan, minAttack(baseAgent))),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(baseAgent)),
+			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, minDefend(baseAgent))),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
-		))
-
-		prop := *commons.NewImmutableList(rules)
-		_ = baseAgent.SendFightProposalToLeader(prop)
-	}
+	prop := *commons.NewImmutableList(rules)
+	_ = baseAgent.SendFightProposalToLeader(prop)
 }
 
-// HandleFightRequest TODO: Implement me!
+// HandleFightRequest
 // Description: Called every time a fight request message is received
 // Return		Message Payload
 func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
 	return nil
 }
 
-// FightResolution: TODO: Implement me!
-// Description: Through that function our agent provides a proposal
+// TODO: Implement me!
 func (a *Agent2) FightResolution(agent BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
 	proposedActions immutable.Map[commons.ID, decision.FightAction],
 ) immutable.Map[commons.ID, decision.FightAction] {
@@ -584,7 +669,18 @@ func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAct
 // HandleFightProposalRequest TODO: Implement me!
 // Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
 // Return:		Bool: True/False
-func (a *Agent2) HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
+func (a *Agent2) HandleFightProposalRequest(prop message.Proposal[decision.FightAction], baseAgent BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
+	propRules := prop.Rules()
+	itr := propRules.Iterator()
+	for !itr.Done() {
+		a, ok := itr.Next()
+		if ok {
+			if reflect.TypeOf(a.Condition()) == reflect.TypeOf(proposal.NewComparativeCondition) {
+				a.Condition()
+			}
+		}
+	}
+
 	switch rand.Intn(2) {
 	case 0:
 		return true
@@ -593,16 +689,28 @@ func (a *Agent2) HandleFightProposalRequest(proposal message.Proposal[decision.F
 	}
 }
 
-func (a *Agent2) FightActionNoProposal(_ BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
+func (a *Agent2) FightActionNoProposal(agent BaseAgent) decision.FightAction {
+	// If not enough Stamina, no choice
+	attack := agent.AgentState().Attack
+	defense := agent.AgentState().Defense
+	stamina := agent.AgentState().Stamina
+	bonusAttack := a.getBonusAttack()
+	bonusDefense := a.getBonusDefense()
+	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
 		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
 	}
+
+	currentDecision := a.initialDecision(agent)
+
+	if currentDecision == decision.Cower {
+		currentDecision = a.replaceDecision(agent, 10) // Second argument is the number of previous rounds to consider
+	}
+	/* Removed because damage per round is not relevant
+	if currentDecision == decision.Cower {
+		currentDecision = a.estimateDecision(baseAgent)
+	}
+	*/
+	return currentDecision
 }
 
 // Description : Compare defense and attack potential, output a decision
@@ -725,7 +833,7 @@ func (a *Agent2) estimateDecision(baseAgent BaseAgent, N int) decision.FightActi
 }
 */
 
-// FightAction TODO: Implement me!
+// FightAction
 // Description: Logic of Fighting Action Decision-Making.
 // Return:		Cower, Defend or Attack decision.
 func (a *Agent2) FightAction(baseAgent BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
@@ -756,21 +864,37 @@ func (a *Agent2) FightAction(baseAgent BaseAgent, proposedAction decision.FightA
 /* ---- LOOT ---- */
 
 func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent BaseAgent) {
-	/*
-		makesProposal := rand.Intn(100)
+	rules := make([]proposal.Rule[decision.LootAction], 0)
 
-		if makesProposal > 80 {
-			prop := a.LootAllocation(agent)
-			_ = agent.SendLootProposalToLeader(prop)
-		}
-	*/
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.HealthPotion,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth(agent)),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.StaminaPotion,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina(agent))),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Weapon,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, minAttack(agent))),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Shield,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, minDefend(agent))),
+	))
+
+	prop := *commons.NewImmutableList(rules)
+	_ = agent.SendLootProposalToLeader(prop)
 }
 
+// TODO: Implement me!
 func (a *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
+// TODO: Implement me!
 func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], agent BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
@@ -782,6 +906,7 @@ func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], age
 	}
 }
 
+// TODO: Implement me!
 func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent BaseAgent) bool {
 	switch rand.Intn(2) {
 	case 0:
@@ -796,17 +921,34 @@ func (a *Agent2) LootAllocation(
 	proposal message.Proposal[decision.LootAction],
 	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
+	agentState := view.AgentState()
+	healthIDs := make(map[commons.ID]uint, agentState.Len())
+	staminaIDs := make(map[commons.ID]uint, agentState.Len())
+	weapons := make(map[commons.ID]uint, agentState.Len())
+	shields := make(map[commons.ID]uint, agentState.Len())
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			healthIDs[id] = uint(a.Hp)
+			staminaIDs[id] = uint(a.Stamina)
+			weapons[id] = a.BonusAttack
+			shields[id] = a.BonusDefense
+		}
+	}
+
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	iterator := baseAgent.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, weapons, lootAllocation)
 	iterator = baseAgent.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, shields, lootAllocation)
 	iterator = baseAgent.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, healthIDs, lootAllocation)
 	iterator = baseAgent.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, staminaIDs, lootAllocation)
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
 		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
@@ -814,10 +956,14 @@ func (a *Agent2) LootAllocation(
 	return commons.MapToImmutable(mMapped)
 }
 
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+func allocateEgaliterian(iterator commons.Iterator[state.Item], ids []commons.ID, values map[commons.ID]uint, lootAllocation map[commons.ID][]commons.ItemID) {
+	sort.SliceStable(ids, func(i, j int) bool {
+		return values[ids[i]] < values[ids[j]]
+	})
+	i := 0
 	for !iterator.Done() {
 		next, _ := iterator.Next()
-		toBeAllocated := ids[rand.Intn(len(ids))]
+		toBeAllocated := ids[i]
 		if l, ok := lootAllocation[toBeAllocated]; ok {
 			l = append(l, next.Id())
 			lootAllocation[toBeAllocated] = l
@@ -879,14 +1025,19 @@ func (a *Agent2) LootActionNoProposal(baseAgent BaseAgent) immutable.SortedMap[c
 
 /* ---- HPPOOL ---- */
 
-// DonateToHpPool TODO: Implement me!
+// DonateToHpPool
 // Description: The function returns the amount of Hp that our agent is willing to donate to the HpPool
-func (a *Agent2) DonateToHpPool(baseAgent BaseAgent) uint {
-	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+func (a *Agent2) DonateToHpPool(agent BaseAgent) uint {
+	agentState := agent.AgentState()
+	if agentState.Hp < minHealth(agent) {
+		return 0
+	} else {
+		return 10 + dynamicDonation(agent)
+	}
 }
 
 /* ---- TRADE ----- */
-
+// TODO: Implement me!
 func (a *Agent2) HandleTradeNegotiation(_ BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
