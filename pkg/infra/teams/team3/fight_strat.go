@@ -115,7 +115,7 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 	agentState := baseAgent.AgentState()
 
 	currentLevel := int(view.CurrentLevel())
-
+	var attackDealt int
 	// only sample at start
 	if currentLevel == 0 {
 		initHP = int(agentState.Hp)
@@ -131,7 +131,11 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 
 	if currentLevel > alpha+3 {
 		damageTaken := initHP - int(agentState.Hp)
-		attackDealt := (initMonsterHP - int(view.MonsterHealth())) / initMonsterHP
+		if initMonsterHP == 0 {
+			attackDealt = 0
+		} else {
+			attackDealt = (initMonsterHP - int(view.MonsterHealth())) / initMonsterHP
+		}
 
 		// re-init vars
 		initHP = int(agentState.Hp)
