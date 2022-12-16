@@ -49,7 +49,7 @@ func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 	}
 }
 
-func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] {
 	view := baseAgent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 
