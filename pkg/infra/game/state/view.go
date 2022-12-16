@@ -73,7 +73,7 @@ func (v *View) LeaderManifesto() decision.Manifesto {
 
 func (s *State) ToView() View {
 	b := immutable.NewMapBuilder[commons.ID, HiddenAgentState](nil)
-
+	
 	for uuid, state := range s.AgentState {
 		healthRange := MidHealth
 
