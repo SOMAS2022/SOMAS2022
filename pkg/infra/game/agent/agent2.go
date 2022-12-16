@@ -264,7 +264,7 @@ func leaderElectedBefore(agent BaseAgent, bias float64) float64 {
 func SOT(agent BaseAgent) float64 {
 	return 0.0
 }
-
+// returning prospect leader's score
 func prospectLeaderScore(agent BaseAgent, par1 float64, par2 float64, par3 float64) float64 {
 	return par1 + par2 + par3 + SOT(agent)
 }
