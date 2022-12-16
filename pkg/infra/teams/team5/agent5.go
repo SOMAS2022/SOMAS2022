@@ -18,7 +18,7 @@ import (
 type Agent5 struct {
 	lootInformation commons5.Loot
 	socialNetwork   SocialNetwork
-	t5Manifesto     *T5Manifesto
+	t5Manifesto     T5Manifesto
 
 	bravery     int
 	preHealth   uint
@@ -235,6 +235,37 @@ func (t5 *Agent5) LootAllocation(baseAgent agent.BaseAgent, proposal message.Pro
 	return commons.MapToImmutable(mMapped)
 }
 
+//Peseudo code for implementing Allocate according to agent state and aget personalities
+
+//with the same type of loot:
+//comparator is the agents' state field, which is to be sorted by it's value, and the loot is sorted by it's value as well;
+//cases are set up to treat different groups of agent with different personlities,
+//with all the agents that's qualified for this case, then within this case will do as following:
+//the loot value is to be compared to the comparator value to iterate the allocation
+//for example:
+//case 1 qualifies Good-Lawful||Good-StrategyNeutral||GoodwillNeutral-Lawfull agents
+//in this case, only those agents qualified but with low health or stamina<=certain value excluded,
+//then agents are allocated loot with the logic:
+// agent in the rest with the lowest shield points gets weapon in the rest with the highest attack points
+//then case by case...
+
+// func allocateAccordingly(iterator commons.Iterator[state.Item], comparator commons.ItemType, ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+// 	for iterator != Done(){
+// 		next, _ := iterator.Next()
+// 		toBeAllocated := ids[sort(iterator.value)]
+// 		switch agent.personality{
+// 			case Good-Lawful||Good-StrategyNeutral||GoodwillNeutral-Lawfull:
+// 				for id in range(view.agentState.HP.High){
+// 					sort(comparator[id].value
+// 					for id in range(sorted comparator value){
+// 						if view.state[id].stamina >= 5*toBeAllocated
+// 						lootAllocation[toBeAllocated] := ids
+// 					}
+// 				}
+// 		}
+// 	}
+// }
+
 func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
 		next, _ := iterator.Next()
@@ -300,18 +331,20 @@ func (t5 *Agent5) LootAction(
 	return proposedLoot
 }
 
-func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
 }
 
 func (t5 *Agent5) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
 	return nil
 }
 
-func (t5 *Agent5) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
+func (t5 *Agent5) HandleLootProposal(m message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	id := m.ProposalID()
+
+	switch t5.socialNetwork.AgentProfile[id].Strategy {
+	case Lawful:
 		return decision.Positive
-	case 1:
+	case Chaotic:
 		return decision.Negative
 	default:
 		return decision.Abstain
@@ -373,6 +406,52 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 }
 
 func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+	view := a.View()
+	as := view.AgentState()
+	iter := as.Iterator()
+	leaderID := view.CurrentLeader()
+
+	//initialise social network after all agent has been spawned
+	if view.CurrentLevel() == 1 {
+		InitSocialNetwork(a)
+	}
+	//if deflect, goodwill += 0.2*(0.5-leader's goodwill), strategy += 0.2*(0.5-leader's strategy)
+	//it not deflect, goodwill +0.03
+	for !iter.Done() {
+		id, as, _ := iter.Next()
+
+		//update trusts based on leader's personalities:
+		leaderPersonalityCategorised := t5.socialNetwork.AgentProfile[leaderID].Goodwill + Goodwill(t5.socialNetwork.AgentProfile[leaderID].Strategy)
+		if leaderPersonalityCategorised >= 4 {
+			if as.Defector.IsDefector() {
+				t5.socialNetwork.UpdatePersonality(id, -0.1, -0.1)
+			} else {
+				t5.socialNetwork.UpdatePersonality(id, 0.02, 0.02)
+			}
+		} else if leaderPersonalityCategorised >= 2 {
+			if as.Defector.IsDefector() {
+				t5.socialNetwork.UpdatePersonality(id, -0.05, -0.05)
+			} else {
+				t5.socialNetwork.UpdatePersonality(id, 0.02, 0.02)
+			}
+		} else if leaderPersonalityCategorised == 0 {
+			if as.Defector.IsDefector() {
+				t5.socialNetwork.UpdatePersonality(id, 0.1, 0.1)
+			} else {
+				t5.socialNetwork.UpdatePersonality(id, -0.02, -0.02)
+			}
+		}
+
+		//update trusts based on trust scores:
+		//if deflect, goodwill += 0.2*(0.5-leader's goodwill), strategy += 0.2*(0.5-leader's strategy)
+		//it not deflect, goodwill +0.03
+		//==========code===========
+		// if as.Defector.IsDefector() {
+		// 	t5.socialNetwork.UpdatePersonality(id, 0.2*(0.5-t5.socialNetwork.AgentProfile[leaderID].Trusts.GoodwillScore), 0.2*(0.5-t5.socialNetwork.AgentProfile[leaderID].Trusts.StrategyScore))
+		// } else {
+		// 	t5.socialNetwork.UpdatePersonality(id, 0, 0.03)
+		// }
+	}
 
 	t5.t5Manifesto.updateLeaderCombo(a)
 
@@ -391,6 +470,15 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 func NewAgent5() agent.Strategy {
 	return &Agent5{
+
+		socialNetwork: SocialNetwork{
+			AgentProfile: make(map[commons.ID]AgentProfile),
+			LawfullMin:   0.8,
+			ChaoticMax:   0.2,
+			GoodMin:      0.8,
+			EvilMax:      0.2,
+		},
+
 		bravery:     rand.Intn(5),
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
