@@ -58,7 +58,6 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 
 		// Check for our agent and assign what we want to do
 		if id == baseAgent.ID() {
-
 			action := a.CurrentAction(baseAgent)
 			fightAction = action
 			baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "choice": action, "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
@@ -80,7 +79,6 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 // Send proposal to leader
 func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-
 	baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "decision": a.CurrentAction(baseAgent)}, "HP")
 	baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
 
@@ -113,7 +111,6 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 
 // Calculate our agents action
 func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightAction {
-
 	view := baseAgent.View()
 	agentState := baseAgent.AgentState()
 
@@ -145,7 +142,6 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 		} else if attackDealt > damageTaken {
 			return decision.Defend
 		}
-
 	}
 	// catchall
 	return decision.Attack
@@ -198,7 +194,6 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 	}
 
 	if choice == decision.Cower {
-
 		if agentState.Hp >= uint(AverageArray(GetHealthAllAgents(baseAgent))) {
 			HPThreshold1 = 1.7 * AverageArray(GetHealthAllAgents(baseAgent))
 		}
@@ -215,7 +210,6 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 
 		AttackThreshold1 = 1.1 * AverageArray(GetAttackAllAgents(baseAgent))
 		DefenseThreshold1 = 1.1 * AverageArray(GetDefenceAllAgents(baseAgent))
-
 	}
 	if agentFought {
 		HPThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
@@ -223,7 +217,6 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 		AttackThreshold1 = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
 		DefenseThreshold1 = 0.4 * AverageArray(GetDefenceAllAgents(baseAgent))
 	}
-
 	return HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1
 }
 func (a *AgentThree) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {

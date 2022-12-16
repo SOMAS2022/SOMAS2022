@@ -40,7 +40,6 @@ type AgentThree struct {
 
 // Update internal parameters at the end of each stage
 func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-
 	AS := baseAgent.AgentState()
 
 	a.HP = int(AS.Hp)

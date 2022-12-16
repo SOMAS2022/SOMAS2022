@@ -98,7 +98,6 @@ func (a *AgentThree) UpdateTotalUtility(baseAgent agent.BaseAgent) {
 func (a *AgentThree) AddToTSN(id commons.ID) {
 	exists := false
 	for _, TSNid := range a.TSN {
-
 		// check if agent exists
 		if TSNid == id {
 			exists = true
