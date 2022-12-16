@@ -166,8 +166,10 @@ func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 
 	for _, about := range m.GetStringArr() {
 		sc := s.socialCapital[about]
-		sc[1] += sign * senderPerception * 0.1 * sc[1]
-		sc = internal.BoundArray(sc)
-		s.socialCapital[about] = sc
+		if senderPerception > internal.OverallPerception(sc) {
+			sc[1] += sign * 1 * 0.1
+			sc = internal.BoundArray(sc)
+			s.socialCapital[about] = sc
+		}
 	}
 }

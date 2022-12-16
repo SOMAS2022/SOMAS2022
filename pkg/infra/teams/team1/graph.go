@@ -14,6 +14,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/state"
+	t1_internal "infra/teams/team1/internal"
 	"os"
 	"sort"
 	"strconv"
@@ -127,9 +128,9 @@ func printGraph(agentMap map[commons.ID]agent.Agent, state *state.State) {
 }
 
 func addEdge(g graph.Graph[int, int], sc map[string][4]float64, agentMap map[commons.ID]agent.Agent, id int) {
-	networkThreshold := 0.5
+	scThreshold := 0.5
 	for peer, sc := range sc {
-		if sc[1] >= networkThreshold {
+		if t1_internal.OverallPerception(sc) >= scThreshold {
 			if p, ok := agentMap[peer]; ok { // if alive
 				peerSa := p.Strategy.(*SocialAgent)
 				g.AddEdge(id, peerSa.graphID)

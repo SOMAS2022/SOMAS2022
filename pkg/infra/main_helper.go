@@ -79,7 +79,7 @@ func addCommsChannels() map[commons.ID]chan message.TaggedMessage {
 	}
 
 	for _, key := range keys {
-		res[key] = make(chan message.TaggedMessage, 100)
+		res[key] = make(chan message.TaggedMessage, 300)
 	}
 	immutableMap := createImmutableMapForChannels(res)
 	for id, a := range agentMap {
