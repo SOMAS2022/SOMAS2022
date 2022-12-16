@@ -237,3 +237,7 @@ func AddSlices(a []float64, b []float64) []float64 {
 
 	return a
 }
+
+func OverallPerception(inputArray [4]float64) float64 {
+	return (inputArray[0] + inputArray[1] + inputArray[2] + inputArray[3]) * 0.25
+}
