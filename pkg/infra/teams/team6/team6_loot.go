@@ -42,7 +42,7 @@ func (a *Team6Agent) HandleLootRequest(m message.TaggedRequestMessage[message.Lo
 func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
 	a.currentProposalsReceived++
 
-	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
+	similarity := proposalSimilarity(a.lootProposal, proposal.Rules(), decision.Shield)
 
 	//Update similarity SC value
 	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
@@ -61,7 +61,7 @@ func (a *Team6Agent) HandleLootProposal(proposal message.Proposal[decision.LootA
 }
 
 func (a *Team6Agent) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
-	similarity := proposalSimilarity(a.lootProposal, proposal.Rules())
+	similarity := proposalSimilarity(a.lootProposal, proposal.Rules(), decision.Shield)
 
 	//Update similarity SC value
 	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)

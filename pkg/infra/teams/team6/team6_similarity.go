@@ -14,7 +14,7 @@ type BasicAgentState struct {
 }
 
 // Currently converts rules to a single predicate rather than multiple predicates, and doesn't consider defecting
-func proposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[proposal.Rule[A]], rules2 commons.ImmutableList[proposal.Rule[A]]) float32 {
+func proposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[proposal.Rule[A]], rules2 commons.ImmutableList[proposal.Rule[A]], defaultAction A) float32 {
 	hp := [10]uint{1000, 1000, 750, 750, 500, 500, 250, 250, 100, 100}
 	stamina := [10]uint{2000, 2000, 1500, 1500, 1000, 1000, 500, 500, 200, 200}
 	attack := [10]uint{20, 60, 20, 60, 30, 20, 40, 30, 80, 20}
@@ -24,8 +24,8 @@ func proposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[
 	same := 0
 
 	// Convert rules to predicates
-	rule1 := ToSinglePredicate(rules1)
-	rule2 := ToSinglePredicate(rules2)
+	rule1 := ToSinglePredicate(rules1, defaultAction)
+	rule2 := ToSinglePredicate(rules2, defaultAction)
 
 	// Apply rules to agent states and compare outcomes
 	for i := 0; i < 10; i++ {
@@ -42,7 +42,7 @@ func proposalSimilarity[A decision.ProposalAction](rules1 commons.ImmutableList[
 	return float32(same) / float32(total)
 }
 
-func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[proposal.Rule[A]]) func(BasicAgentState) A {
+func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[proposal.Rule[A]], defaultAction A) func(BasicAgentState) A {
 	iterator := rules.Iterator()
 	predicates := make([]func(agentState BasicAgentState) (A, bool), 0)
 	for !iterator.Done() {
@@ -65,7 +65,9 @@ func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[pr
 			return a
 		}
 	}
-	return nil
+	return func(agentState BasicAgentState) A {
+		return defaultAction
+	}
 }
 
 func makePredicate(cond proposal.Condition) func(agentState BasicAgentState) bool {

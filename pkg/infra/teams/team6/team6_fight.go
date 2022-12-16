@@ -35,7 +35,7 @@ func (a *Team6Agent) FightResolution(agent agent.BaseAgent, prop commons.Immutab
 func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	a.currentProposalsReceived++
 
-	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
+	similarity := proposalSimilarity(a.fightProposal, proposal.Rules(), decision.Cower)
 
 	//Update similarity SC value
 	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
@@ -55,7 +55,7 @@ func (a *Team6Agent) HandleFightProposal(proposal message.Proposal[decision.Figh
 
 // HandleFightProposalRequest only called as leader
 func (a *Team6Agent) HandleFightProposalRequest(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
-	similarity := proposalSimilarity(a.fightProposal, proposal.Rules())
+	similarity := proposalSimilarity(a.fightProposal, proposal.Rules(), decision.Cower)
 
 	//Update similarity SC value
 	init := SafeMapReadOrDefault(a.similarity, proposal.ProposerID(), 50)
