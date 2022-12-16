@@ -2,16 +2,15 @@ package team5
 
 import "infra/game/decision"
 
-
-func CopySlice(agents []*Agent) []*Agent{
+func CopySlice(agents []*Agent) []*Agent {
 	newAgents := make([]*Agent, len(agents))
 	for i, item := range agents {
 		newAgents[i] = &Agent{
 			ID:      item.ID,
-			Hp:     item.Hp,
+			Hp:      item.Hp,
 			Attack:  item.Attack,
 			Defense: item.Defense,
-			Action: item.Action,
+			Action:  item.Action,
 		}
 	}
 	return newAgents
@@ -23,10 +22,10 @@ func BuildNewAgent(agents []*Agent, p float64) []*Agent {
 		attack := item.Attack
 		defense := item.Defense
 		newAgents[i] = &Agent{
-			ID:      item.ID,
-			Hp:     item.Hp,
+			ID: item.ID,
+			Hp: item.Hp,
 		}
-		if uint(float64(item.Attack) * p) >= defense {
+		if uint(float64(item.Attack)*p) >= defense {
 			newAgents[i].Attack = attack
 			newAgents[i].Defense = 0
 			newAgents[i].Action = uint(decision.Attack)
@@ -39,11 +38,11 @@ func BuildNewAgent(agents []*Agent, p float64) []*Agent {
 	return newAgents
 }
 
-func GetPopulation(customs uint) float64{
+func GetPopulation(customs uint) float64 {
 	if customs <= 10 {
 		return 0.9
 	}
-	k := - float64(3)/ float64(5)
+	k := -float64(3) / float64(5)
 	b := 96
-	return k*float64(customs)+float64(b)
+	return k*float64(customs) + float64(b)
 }
