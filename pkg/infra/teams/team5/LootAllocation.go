@@ -1,12 +1,7 @@
 package team5
 
-// import (
-// 	"infra/game/commons"
-// 	"infra/game/decision"
-// 	"infra/game/message"
-
-// 	"github.com/benbjohnson/immutable"
-// )
+type Loot struct {
+}
 
 // type Loot interface {
 // 	HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent BaseAgent)

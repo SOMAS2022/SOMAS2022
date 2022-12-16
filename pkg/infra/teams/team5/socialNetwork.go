@@ -19,6 +19,7 @@ func initTrust() AgentTrusts {
 
 type Strategy uint
 type Goodwill uint
+
 type AgentProfile struct {
 	AgentID  commons.ID
 	Trusts   AgentTrusts
@@ -36,14 +37,15 @@ func initAgentProfile(AgentID commons.ID) AgentProfile {
 }
 
 const (
-	Lawful          Strategy = iota
-	StrategyNeutral Strategy = iota
 	Chaotic         Strategy = iota
+	StrategyNeutral Strategy = iota
+	Lawful          Strategy = iota
 )
+
 const (
-	Good            Goodwill = iota
-	GoodwillNeutral Goodwill = iota
 	Evil            Goodwill = iota
+	GoodwillNeutral Goodwill = iota
+	Good            Goodwill = iota
 )
 
 type SocialNetwork struct {
@@ -57,12 +59,14 @@ type SocialNetwork struct {
 func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
 	view := ba.View()
 	agentState := view.AgentState()
+
 	agentprofileMAP := make(map[commons.ID]AgentProfile)
 	itr := agentState.Iterator()
 	for !itr.Done() {
 		id, _, _ := itr.Next()
 		agentprofileMAP[id] = initAgentProfile(id)
 	}
+
 	return SocialNetwork{
 		AgentProfile: agentprofileMAP,
 		LawfullMin:   0.8,
@@ -71,12 +75,15 @@ func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
 		EvilMax:      0.2,
 	}
 }
-func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
+
+func (sn *SocialNetwork) UpdatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
 	agentProfile := sn.AgentProfile[agentID]
 	agentProfile.Trusts.StrategyScore += extraStrategeScore
 	agentProfile.Trusts.GoodwillScore += extraGoodwillScore
 	sn.AgentProfile[agentID] = agentProfile
+
 	sn.normaliseTrust()
+
 	if sn.AgentProfile[agentID].Trusts.StrategyScore <= sn.ChaoticMax {
 		agentProfile = AgentProfile{Strategy: Chaotic}
 	} else if sn.AgentProfile[agentID].Trusts.StrategyScore >= sn.LawfullMin {
@@ -84,6 +91,7 @@ func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScor
 	} else {
 		agentProfile = AgentProfile{Strategy: StrategyNeutral}
 	}
+
 	if sn.AgentProfile[agentID].Trusts.GoodwillScore <= sn.EvilMax {
 		agentProfile = AgentProfile{Goodwill: Evil}
 	} else if sn.AgentProfile[agentID].Trusts.GoodwillScore >= sn.GoodMin {
@@ -91,15 +99,18 @@ func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScor
 	} else {
 		agentProfile = AgentProfile{Goodwill: GoodwillNeutral}
 	}
+
 	sn.AgentProfile[agentID] = agentProfile
 }
+
 func (sn *SocialNetwork) normaliseTrust() {
 	var minSTG float32 = 0.5
 	var maxSTG float32 = 0.5
 	var minGW float32 = 0.5
 	var maxGW float32 = 0.5
-	var id commons.ID
-	for id = range sn.AgentProfile {
+	//var id commons.ID
+
+	for id := range sn.AgentProfile {
 		if sn.AgentProfile[id].Trusts.GoodwillScore < minGW {
 			minGW = sn.AgentProfile[id].Trusts.GoodwillScore
 		}
@@ -116,20 +127,22 @@ func (sn *SocialNetwork) normaliseTrust() {
 	distanceGW := maxGW - minGW
 	distanceSTG := maxSTG - minSTG
 
-	if (distanceGW <= 1) && (distanceSTG <= 1) {
-		for id = range sn.AgentProfile {
-		}
-	} else {
-		for id = range sn.AgentProfile {
+	if distanceGW > 1 {
+		for id := range sn.AgentProfile {
 			agentProfile := sn.AgentProfile[id]
 			agentProfile.Trusts.GoodwillScore = (sn.AgentProfile[id].Trusts.GoodwillScore - minGW) / distanceGW
+		}
+	}
+	if distanceSTG > 1 {
+		for id := range sn.AgentProfile {
+			agentProfile := sn.AgentProfile[id]
 			agentProfile.Trusts.StrategyScore = (sn.AgentProfile[id].Trusts.StrategyScore - minSTG) / distanceSTG
-			sn.AgentProfile[id] = agentProfile
 		}
 	}
 }
 
 //Initialise social network
+
 // func initialiseSocialNetwork() socialNetwork {
 // 	var initialTrust uint
 // 	initialTrust = 50
