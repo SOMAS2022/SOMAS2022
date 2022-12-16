@@ -18,7 +18,7 @@ import (
 type Agent5 struct {
 	lootInformation commons5.Loot
 	socialNetwork   SocialNetwork
-	t5Manifesto     *T5Manifesto
+	t5Manifesto     T5Manifesto
 
 	bravery     int
 	preHealth   uint
@@ -331,7 +331,7 @@ func (t5 *Agent5) LootAction(
 	return proposedLoot
 }
 
-func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
 
 }
 

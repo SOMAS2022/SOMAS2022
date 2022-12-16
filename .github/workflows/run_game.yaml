@@ -25,7 +25,7 @@ jobs:
         starting_shield: [ 100 ]
         base_stamina: [ 400 ]
         threshold_pct: [ 0.6 ]
-        agent_quantity: [ 25, 100, 25 ]
+        agent_quantity: [ 20, 20, 20 ]
 
     name: Testing performance of agents
     steps:

@@ -1,4 +1,0 @@
-cd pkg/infra; go mod tidy
-go build -o cmd/main.out infra
-cmd/main.out
-time="2022-12-15T21:31:13Z" level=warning msg="'Trace' and 'Debug' messages hidden. Run with '-d' or 'make runDebug' to see these logs."
