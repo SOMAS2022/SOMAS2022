@@ -1,7 +1,6 @@
 package team2
 
 import (
-	"github.com/benbjohnson/immutable"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -14,6 +13,8 @@ import (
 	"math/rand"
 	"reflect"
 	"sort"
+
+	"github.com/benbjohnson/immutable"
 )
 
 // Agent2 type : private attributes of agent
