@@ -13,7 +13,7 @@ import (
 var (
 	wg         sync.WaitGroup
 	once       sync.Once
-	totalAgent uint // 所有存在的agent
+	totalAgent uint // All agents from the start of the game
 )
 
 // FindBestStrategy ...
@@ -26,13 +26,13 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 	// iterator get agent value
 	agents := getAgents(agentState)
 
-	// 所有人
+	//all agents
 	once.Do(func() {
 		totalAgent = uint(len(agents))
 	})
 	nowAgents := uint(len(agents))
 
-	// get allAttack & allDefence
+	// Sum all agents attack and defense
 	allAttack := uint(0)
 	allDefence := uint(0)
 	for _, item := range agents {
@@ -40,7 +40,7 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 		allDefence += item.Defense
 	}
 
-	// 进行初步检查，看看是否总攻击》怪物血，或者总防御大于怪物攻击
+	// Checking the 2 criteria (total attack > monster health and total shield > monster attack)
 	firstResult := handleFirstResult(allAttack, monsterHealth, allDefence, monsterAttack, agents)
 	if firstResult != nil {
 		return firstResult
@@ -51,7 +51,7 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 		return agents[i].Hp > agents[j].Hp
 	})
 
-	// build new agent (weight attack 0.5,0.75,1,1.5,2)
+	// Scaling attack
 	agent1 := BuildNewAgent(agents, 0.5)
 	agent2 := BuildNewAgent(agents, 0.75)
 	agent3 := BuildNewAgent(agents, 1)
@@ -102,59 +102,58 @@ func handleFirstResult(allAttack, monsterHealth, allDefence, monsterAttack uint,
 }
 
 func Attack(allAttack, monsterHealth uint, agents []*Agent) *immutable.Map[commons.ID, decision.FightAction] {
-	// 根据攻击排序
+	// Rank according to attack
 	sort.Slice(agents, func(i, j int) bool {
 		return agents[i].Attack > agents[j].Attack
 	})
 	sumAttack := 0
 	var index int
-	// 找出总攻击>怪物血量的那个人的位置
+	// Find the iteration where total attack > monster resilience
 	for i, item := range agents {
 		sumAttack += int(item.Attack)
-		// 全部攻击
+		// all agents included in Sum will attack
 		agents[i].Action = uint(decision.Attack)
-		// 找到指定位置的人了
 		if sumAttack >= int(monsterHealth) {
 			index = i
 			break
 		}
 	}
-	// 如果不是最后一个人
-	for i := range agents {
+	// If not the last agent
+	for i, item := range agents {
 		if i <= index {
 			continue
 		}
-		// 指定位置之后的人都逃跑
+		// Agents not included in sum will cower
+		item.Action = uint(decision.Cower)
 		agents[i].Action = uint(decision.Cower)
 	}
 	return ConvertToImmutable(agents, agents)
 }
 
 func Defense(allDefence, monsterAttack uint, agents []*Agent) *immutable.Map[commons.ID, decision.FightAction] {
-	// 根据防御排序
+	// Rank according to shield
 	sort.Slice(agents, func(i, j int) bool {
 		return agents[i].Defense > agents[j].Defense
 	})
 	sumDefence := 0
 	var index int
-	// 找出总防御>怪物攻击的那个人的位置
+	// Find the iteration where total shield > monster attack
 	for i, item := range agents {
 		sumDefence += int(item.Defense)
-		// 全部防御
 		agents[i].Action = uint(decision.Defend)
-		// 找到指定位置的人了
 		if sumDefence >= int(monsterAttack) {
 			index = i
 			break
 		}
 	}
-	// 如果不是最后一个人
+	// If not last agent
 	if index < len(agents)-1 {
-		for i := range agents {
+		for i, item := range agents {
 			if i <= index {
 				continue
 			}
-			// 指定位置之后的人都攻击
+			// all agents not in sum will attack
+			item.Action = uint(decision.Attack)
 			agents[i].Action = uint(decision.Attack)
 		}
 		return ConvertToImmutable(agents, agents)
@@ -162,7 +161,7 @@ func Defense(allDefence, monsterAttack uint, agents []*Agent) *immutable.Map[com
 	return nil
 }
 
-// 返回查找结果
+// return map
 func getAgents(agentState immutable.Map[commons.ID, state.HiddenAgentState]) []*Agent {
 	agentIterator := agentState.Iterator()
 	// iterator get agent value
