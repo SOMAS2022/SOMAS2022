@@ -3,17 +3,14 @@ package team5
 import (
 	"infra/game/commons"
 	"infra/game/message"
-	"infra/game/state"
-	"infra/game/stage/trade"
-	"infra/game/stage/trade/internal"
 	"infra/game/decision"
 	"infra/game/agent"
 )
 
 func HandleTradeNegotiation(a agent.BaseAgent, T_TradeInfo message.TradeInfo, round uint) message.TradeMessage {
-	leaderfightpredictionmap := FindBestStrategy(a.view)
-	T_fightDecision := leaderfightpredictionmap[a.id]
-	if len(T_TradeInfo.Negotiations) == 0 && round < 2 && T_fightDecision!= Cower{ //no offers then request
+	leaderfightpredictionmap := FindBestStrategy(a.View())
+	T_fightDecision := leaderfightpredictionmap.Get(a.ID())
+	if len(T_TradeInfo.Negotiations) == 0 && round < 2 && T_fightDecision!= decision.Cower{ //no offers then request
 		return T_request(a, T_fightDecision)
 	}else if round < 2{ //process requests 
 		return firstResponse(a, T_TradeInfo.Negotiations, T_fightDecision)
@@ -27,44 +24,50 @@ func HandleTradeNegotiation(a agent.BaseAgent, T_TradeInfo message.TradeInfo, ro
 func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.TradeRequest{
 	T_id_attack := getTradePartnerAttack(a, T_fightDecision)
 	T_id_defend := getTradePartnerDefend(a, T_fightDecision)
-	if(T_fightDecision == decision.Fight){
-		makeOffer := message.NewTradeOffer(commons.Shield, 0, a.latestState.Weapons, a.latestState.shields)
-		makeDemand := message.NewTradeDemand(commons.Weapon, a.latestState.Weapons[0].value)
-	}else {
-		makeOffer := message.NewTradeOffer(commons.Weapon, 0, a.latestState.Weapons, a.latestState.shields)
-		makeDemand := message.NewTradeDemand(commons.Shield, a.latestState.Shields[0].value)
-	}
-		fiveRequest:= TradeRequest{
-			CounterPartyID: T_id,
+	var fiveRequest message.TradeRequest
+	if(T_fightDecision == decision.Attack){
+		makeOffer,_ := message.NewTradeOffer(commons.Shield, 0, a.AgentState().Weapons, a.AgentState().Shields)
+		makeDemand := message.NewTradeDemand(commons.Weapon, a.AgentState().Weapons.Get(0).value)
+		fiveRequest = message.TradeRequest{
+			CounterPartyID: T_id_attack,
 			Offer:		    makeOffer,
 			Demand:			makeDemand,	
 		}
+		}else {
+		makeOffer,_ := message.NewTradeOffer(commons.Weapon, 0, a.AgentState().Weapons, a.AgentState().Shields)
+		makeDemand := message.NewTradeDemand(commons.Shield, a.AgentState().Shields.Get(0).value)
+		fiveRequest = message.TradeRequest{
+			CounterPartyID: T_id_defend,
+			Offer:		    makeOffer,
+			Demand:			makeDemand,	
+		}
+	}
 		return fiveRequest
 }
 
 func getTradePartnerAttack(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
-	for id, T_HiddenAgentState := range a.view.agentState{
-		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusAttack > a.latestState.Weapons[0].value{
+	for id, T_HiddenAgentState := range a.View().agentState{
+		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusAttack > a.AgentState().Weapons.Get(0).value{
 			return id
 		}
 	}
 	return ""
 }
 func getTradePartnerDefend(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
-	for id, T_HiddenAgentState := range a.view.agentState{
-		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusDefense > a.latestState.Shields[0].value{
+	for id, T_HiddenAgentState := range a.View().agentState{
+		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusDefense > a.AgentState().Shields.Get(0).value{
 			return id
 		}
 	}
 	return ""
 }
 //if fighting ask for stuff, if cowering process a proposal to accept
-func firstResponse(a agent.BaseAgent, T_Negotiations TradeInfo.Negotiations, T_fightDecision decision.FightAction) message.TradeMessage{
+func firstResponse(a agent.BaseAgent, T_Negotiations message.TradeInfo, T_fightDecision decision.FightAction) message.TradeMessage{
 	if T_fightDecision != decision.Cower{ 
 		return T_request(a, T_fightDecision)
 	}
 	//if i'm cowering accept first offer from attack/defend guy
-	for id,T_TradeNegotiation := range T_Negotiations{ // go through request buffer
+	for _,T_TradeNegotiation := range T_Negotiations.Negotiations{ // go through request buffer
 		if T_TradeNegotiation.RoundNum == 1 &&  T_fightDecision != decision.Cower{
 			return message.TradeAccept{
 				TradeID:	T_TradeNegotiation.Id}
@@ -73,10 +76,9 @@ func firstResponse(a agent.BaseAgent, T_Negotiations TradeInfo.Negotiations, T_f
 	return message.TradeAbstain{}
 }
 
-func secondResponse(a agent.BaseAgent, T_Negotiations TradeInfo.Negotiations, T_fightDecision decision.FightAction) message.TradeMessage{
-	T_fightmode := decision.FightAction //need change
+func secondResponse(a agent.BaseAgent, T_Negotiations message.TradeInfo, T_fightDecision decision.FightAction) message.TradeMessage{
 	//if i'm cowering accept first offer from attack/defend guy
-	for id,T_TradeNegotiation := range T_Negotiations{ // go through request buffer
+	for _,T_TradeNegotiation := range T_Negotiations.Negotiations{ // go through request buffer
 		if T_TradeNegotiation.RoundNum == 1 &&  T_fightDecision != decision.Cower{//need change
 			return message.TradeAccept{
 				TradeID:	T_TradeNegotiation.Id}
