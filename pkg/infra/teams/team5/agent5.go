@@ -235,12 +235,12 @@ func (t5 *Agent5) LootAllocation(baseAgent agent.BaseAgent, proposal message.Pro
 	return commons.MapToImmutable(mMapped)
 }
 
-//Peseudo code for inplementing Allocate according to agent state and aget personalities
+//Peseudo code for implementing Allocate according to agent state and aget personalities
 
 //with the same type of loot:
 //comparator is the agents' state field, which is to be sorted by it's value, and the loot is sorted by it's value as well;
 //cases are set up to treat different groups of agent with different personlities,
-//with all the agents that's qualified for this case, then withing this case will do as following:
+//with all the agents that's qualified for this case, then within this case will do as following:
 //the loot value is to be compared to the comparator value to iterate the allocation
 //for example:
 //case 1 qualifies Good-Lawful||Good-StrategyNeutral||GoodwillNeutral-Lawfull agents
@@ -339,7 +339,6 @@ func (t5 *Agent5) HandleLootRequest(m message.TaggedRequestMessage[message.LootR
 }
 
 func (t5 *Agent5) HandleLootProposal(m message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-
 	id := m.ProposalID()
 
 	switch t5.socialNetwork.AgentProfile[id].Strategy {
@@ -407,7 +406,6 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 }
 
 func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-
 	view := a.View()
 	as := view.AgentState()
 	iter := as.Iterator()
