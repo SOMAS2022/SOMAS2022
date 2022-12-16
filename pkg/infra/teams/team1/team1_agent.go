@@ -371,12 +371,12 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 	s.isFirstRound = true
 
 	// social capital mean
-	var geometricMeanSocialCapital = make(map[string]float64)
+	var meanCapital = make(map[string]float64)
 
 	for id, element := range s.socialCapital {
-		geometricMeanSocialCapital[id] = math.Pow(element[0]*element[1]*element[2]*element[3], 1.0/4.0)
+		meanCapital[id] = (element[0] + element[1] + element[2] + element[3]) / 4.0
 	}
-	s.socialCapitalMean = geometricMeanSocialCapital
+	s.socialCapitalMean = meanCapital
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -387,7 +387,7 @@ func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 func (s *SocialAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	view := baseAgent.View()
 	id := view.CurrentLeader()
-	if rand.Float64() < (s.socialCapitalMean[id]+1)/2.0 {
+	if rand.Float64() < math.Pow((s.socialCapitalMean[id]+1)/2.0, 2) {
 		return decision.Negative
 	}
 	return decision.Positive
