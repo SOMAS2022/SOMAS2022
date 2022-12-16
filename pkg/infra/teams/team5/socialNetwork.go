@@ -37,15 +37,15 @@ func initAgentProfile(AgentID commons.ID) AgentProfile {
 }
 
 const (
-	Lawful          Strategy = iota
-	StrategyNeutral Strategy = iota
 	Chaotic         Strategy = iota
+	StrategyNeutral Strategy = iota
+	Lawful          Strategy = iota
 )
 
 const (
-	Good            Goodwill = iota
-	GoodwillNeutral Goodwill = iota
 	Evil            Goodwill = iota
+	GoodwillNeutral Goodwill = iota
+	Good            Goodwill = iota
 )
 
 type SocialNetwork struct {
