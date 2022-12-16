@@ -120,7 +120,7 @@ func Attack(allAttack, monsterHealth uint, agents []*Agent) *immutable.Map[commo
 		}
 	}
 	// 如果不是最后一个人
-	for i, _ := range agents {
+	for i := range agents {
 		if i <= index {
 			continue
 		}
@@ -150,7 +150,7 @@ func Defense(allDefence, monsterAttack uint, agents []*Agent) *immutable.Map[com
 	}
 	// 如果不是最后一个人
 	if index < len(agents)-1 {
-		for i, _ := range agents {
+		for i := range agents {
 			if i <= index {
 				continue
 			}
