@@ -289,19 +289,24 @@ func minHealth(agent agent.BaseAgent) proposal.Value {
 }
 
 // Returns Manifesto Effectiveness based on History
-func weightedManifestoEffectiveness(agent agent.BaseAgent, weight float64) float64 {
-	return weight * 0.0
+func (a *Agent2) weightedManifestoEffectiveness(agent agent.BaseAgent, weight float64) float64 {
+	view := agent.View()
+	manifesto := view.LeaderManifesto()
+	term := float64(manifesto.TermLength())
+	return 0.5 * (weightedOverthrowPercentage(agent, 1) + term/a.avgTermSurvival)
 }
 
 // Returns Number of Terms Agent2 served
 // and was overthrown
 func weightedOverthrowPercentage(agent agent.BaseAgent, weight float64) float64 {
-	return weight * 0.0
+	view := agent.View()
+	manifesto := view.LeaderManifesto()
+	return weight * float64(manifesto.OverthrowThreshold())
 }
 
 // Returns Adjusted Expertise with new mean and std provided.
-func adjustedExpertise(agent agent.BaseAgent, from float64, to float64) float64 {
-	return from + (to-from)*expertise(agent)
+func (a *Agent2) adjustedExpertise(agent agent.BaseAgent, from float64, to float64) float64 {
+	return from + (to-from)*a.expertise(agent)
 }
 
 func (a *Agent2) wasOverthrown(candidateID commons.ID) bool {
@@ -366,13 +371,13 @@ func (a *Agent2) weightedFracTermsDeposed(w1 float64, candidateID commons.ID) fl
 }
 
 // weightedAvgSurRateUnderLeader : Sum_terms(Sum_levels(survival_rate))/(Sum_terms(Sum_levels(1)))
-func (a *Agent2) weightedAvgSurRateUnderLeader(id commons.ID) float64 {
-	return a.avgSurvivalCurrTerm
+func (a *Agent2) weightedAvgSurRateUnderLeader(w1 float64) float64 {
+	return w1 * a.avgSurvivalCurrTerm
 }
 
 // Experience of agent [0,1]
-func expertise(agent agent.BaseAgent) float64 {
-	return weightedOverthrowPercentage(agent, -0.4) + weightedManifestoEffectiveness(agent, 1.)
+func (a *Agent2) expertise(agent agent.BaseAgent) float64 {
+	return a.weightedFracTermsDeposed(-1.0, agent.ID()) + a.weightedManifestoEffectiveness(agent, 1.0)
 }
 
 func similarityGeneralScore(agent agent.BaseAgent) float64 {
@@ -592,11 +597,11 @@ func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
 	fightDecisionPower := false // default value
 
 	if !a.wasOverthrown(agent.ID()) {
-		if (adjustedExpertise(agent, 0, 5) + a.lastFightDecisionPower(agent.ID(), 2.5)) > fightThreshold {
+		if (a.adjustedExpertise(agent, 0, 5) + a.lastFightDecisionPower(agent.ID(), 2.5)) > fightThreshold {
 			fightDecisionPower = true
 		}
 	} else {
-		if adjustedExpertise(agent, 0, 5) > fightThreshold {
+		if a.adjustedExpertise(agent, 0, 5) > fightThreshold {
 			fightDecisionPower = true
 		}
 	}
@@ -604,20 +609,20 @@ func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
 	lootDecisionPower := false
 
 	if !a.wasOverthrown(agent.ID()) {
-		if (adjustedExpertise(agent, 0, 5) + a.lastLootDecisionPower(agent.ID(), 2.5)) > lootThreshold {
+		if (a.adjustedExpertise(agent, 0, 5) + a.lastLootDecisionPower(agent.ID(), 2.5)) > lootThreshold {
 			lootDecisionPower = true
 		}
 	} else {
-		if adjustedExpertise(agent, 0, 5) > lootThreshold {
+		if a.adjustedExpertise(agent, 0, 5) > lootThreshold {
 			lootDecisionPower = true
 		}
 	}
 
-	termLength := uint(adjustedExpertise(agent, 0, 4) + 1)
+	termLength := uint(a.adjustedExpertise(agent, 0, 4) + 1)
 
 	overthrowPercentage := uint(51)
 	if a.wasOverthrown(agent.ID()) {
-		overthrowPercentage = uint(float64(overthrowPercentage) + adjustedExpertise(agent, -10, 10))
+		overthrowPercentage = uint(float64(overthrowPercentage) + a.adjustedExpertise(agent, -10, 10))
 	}
 
 	manifesto := decision.NewManifesto(fightDecisionPower, lootDecisionPower, termLength, overthrowPercentage)
@@ -690,7 +695,7 @@ func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decisio
 	numAliveAgents := len(candidates)
 	agentScores := make(map[commons.ID]float64, numAliveAgents)
 	for i := 0; i < numAliveAgents; i++ {
-		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(candidates[i]))
+		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(1.0))
 		par2 := a.lastFightDecisionPower(candidates[i], 5)
 		par3 := a.lastLootDecisionPower(candidates[i], 5)
 		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
