@@ -405,7 +405,6 @@ func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 }
 
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()
