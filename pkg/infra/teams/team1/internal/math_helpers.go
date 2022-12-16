@@ -179,7 +179,7 @@ func QStateToArray(state QState) [9]float64 {
 		state.Stamina,
 		state.TotalAttack,
 		state.TotalDefense,
-		1.0 / float64(state.Hp),
+		1.0 / state.Hp,
 		state.LevelsToWin,
 		state.MonsterHealth,
 		state.MonsterAttack,

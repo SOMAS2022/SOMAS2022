@@ -110,7 +110,6 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 }
 
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-
 	qState := internal.BaseAgentToQState(baseAgent)
 
 	// If we are training a Q function, maybe do an action other than the best action
@@ -196,8 +195,8 @@ func (s *SocialAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 func SampleDistribution(distribution []float64) int {
 	random := rand.Float64() * distribution[len(distribution)-1]
 	// Add max iteration
-	change := int(len(distribution) / 4)
-	index := int(len(distribution) / 2)
+	change := len(distribution) / 4
+	index := len(distribution) / 2
 	for count := 0; count < 100; count++ {
 		if index == len(distribution)-1 || index == 0 {
 			return index
@@ -281,7 +280,7 @@ func (s *SocialAgent) FindMaxStats(baseAgent agent.BaseAgent) struct {
 		MaxDefense: float64(max_defense),
 		MaxHealth:  float64(max_health),
 		MaxStamina: float64(max_stamina),
-		MaxSocial:  float64(max_social),
+		MaxSocial:  max_social,
 	}
 }
 
@@ -313,13 +312,13 @@ func (s *SocialAgent) LootAllocation(
 		stamina_prob := 0.0
 
 		agent_state, _ := agents.Get(ids[id_index])
-		weapon_prob += float64(agent_state.Hp)/float64(max_stats.MaxHealth)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stats.MaxStamina)
+		weapon_prob += float64(agent_state.Hp)/max_stats.MaxHealth*0.9 + 9*float64(agent_state.Stamina)/max_stats.MaxStamina
 		weapon_prob -= float64(agent_state.Attack) / 50
 		weapon_prob -= float64(agent_state.Defense) / 100
 		if weapon_prob < 0.0 {
 			weapon_prob = 0.0
 		}
-		defense_prob += (float64(max_stats.MaxStamina) / (float64(agent_state.Stamina) + 0.1))
+		defense_prob += max_stats.MaxStamina / (float64(agent_state.Stamina) + 0.1)
 		// logging.Log(logging.Error, nil, "---------")
 		// logging.Log(logging.Error, nil, ids[id_index])
 		defense_prob -= float64(agent_state.Defense) / 50
@@ -328,8 +327,8 @@ func (s *SocialAgent) LootAllocation(
 		if defense_prob < 0.0 {
 			defense_prob = 0.0
 		}
-		hp_prob += float64(max_stats.MaxHealth)/(float64(agent_state.Hp)+0.1) + s.socialCapitalMean[ids[id_index]]
-		stamina_prob += float64(max_stats.MaxStamina)/(float64(agent_state.Stamina)+0.1) + float64(agent_state.Attack)/100
+		hp_prob += max_stats.MaxHealth/(float64(agent_state.Hp)+0.1) + s.socialCapitalMean[ids[id_index]]
+		stamina_prob += max_stats.MaxStamina/(float64(agent_state.Stamina)+0.1) + float64(agent_state.Attack)/100
 
 		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
 		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
@@ -540,7 +539,6 @@ func (s *SocialAgent) CreateFightProposal(baseAgent agent.BaseAgent) []proposal.
 				}
 			}
 		}
-
 	}
 	return rules
 }
