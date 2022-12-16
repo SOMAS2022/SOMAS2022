@@ -183,21 +183,64 @@ func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.Fi
 }
 
 func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
+	// Attack-Defend-Cower Strat
+	// Agentstate := baseAgent.AgentState()
+	// builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+	// TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	// TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+	// var action decision.FightAction
+	// damage := int(state.MonsterAttack) / len(fightResult.CoweringAgents)
+
+	// if a.HP > (damage + 1) {
+	// 	if float64(TotalAttack) >= float64(TotalDefense)*0.8 {
+	// 		action = decision.Attack
+	// 	} else {
+	// 		action = decision.Defend
+	// 	}
+	// } else {
+	// 	action = decision.Cower
+	// }
+
+	// builder.Set(id, action)
+	// return *builder.Map()
+
 	view := baseAgent.View()
+	Agentstate := baseAgent.AgentState()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+
+	//var fightRes = decision.FightResult.CoweringAgents
+	damage := int(view.MonsterAttack()) / rand.Intn(20)
+
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		var fightAction decision.FightAction
-		switch rand.Intn(3) {
-		case 0:
-			fightAction = decision.Attack
-		case 1:
-			fightAction = decision.Defend
-		default:
+
+		if a.HP > (damage + 1) {
+			if float64(TotalAttack) >= float64(TotalDefense)*0.8 {
+				fightAction = decision.Attack
+			} else {
+				fightAction = decision.Defend
+			}
+		} else {
 			fightAction = decision.Cower
 		}
+
+		// 	switch rand.Intn(3) {
+		// 	case 0:
+		// 		fightAction = decision.Attack
+		// 	case 1:
+		// 		fightAction = decision.Defend
+		// 	default:
+		// 		fightAction = decision.Cower
+		// 	}
+		// 	builder.Set(id, fightAction)
+		// }
+
 		builder.Set(id, fightAction)
 	}
 	return *builder.Map()
+
 }
 
 func (a *AgentFour) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
@@ -291,42 +334,42 @@ func (a *AgentFour) LootAction(baseAgent agent.BaseAgent, proposedLoot immutable
 	return proposedLoot
 }
 
-func (a *AgentFour) LootManifesto(baseAgent agent.BaseAgent) {
-	Agentstate := baseAgent.AgentState()
-	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+// func (a *AgentFour) LootManifesto(baseAgent agent.BaseAgent) {
+// 	Agentstate := baseAgent.AgentState()
+// 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+// 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
 
-	ratio_agents_HPLow := get_HP_levels.sliceOfAgentsWithLowHealth / logging.LevelStats.NumberOfAgents
-	ratio_agents_HPNormal := get_HP_levels.sliceOfAgentsWithMidHealth / logging.LevelStats.NumberOfAgents
-	ratio_agents_HPHigh := get_HP_levels.sliceOfAgentsWithHighHealth / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_HPLow := get_HP_levels.sliceOfAgentsWithLowHealth / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_HPNormal := get_HP_levels.sliceOfAgentsWithMidHealth / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_HPHigh := get_HP_levels.sliceOfAgentsWithHighHealth / logging.LevelStats.NumberOfAgents
 
-	ratio_agents_STLow := get_ST_levels.sliceOfAgentsWithLowST / logging.LevelStats.NumberOfAgents
-	ratio_agents_STNormal := get_ST_levels.sliceOfAgentsWithMidST / logging.LevelStats.NumberOfAgents
-	ratio_agents_STHigh := get_ST_levels.sliceOfAgentsWithHighST / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_STLow := get_ST_levels.sliceOfAgentsWithLowST / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_STNormal := get_ST_levels.sliceOfAgentsWithMidST / logging.LevelStats.NumberOfAgents
+// 	ratio_agents_STHigh := get_ST_levels.sliceOfAgentsWithHighST / logging.LevelStats.NumberOfAgents
 
-	thresh_attack := decision.NewImmutableFightResult().AttackSum() / logging.LevelStats.NumberOfAgents
-	thresh_defend := decision.NewImmutableFightResult().ShieldSum() / logging.LevelStats.NumberOfAgents
+// 	thresh_attack := decision.NewImmutableFightResult().AttackSum() / logging.LevelStats.NumberOfAgents
+// 	thresh_defend := decision.NewImmutableFightResult().ShieldSum() / logging.LevelStats.NumberOfAgents
 
-	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
-	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+// 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+// 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
-	switch {
-	case a.HP > threshold_fight_HP && a.ST > threshold_fight_ST:
-		if TotalAttack < thresh_attack {
-			//Can get sword (any level)
-		}
+// 	switch {
+// 	case a.HP > threshold_fight_HP && a.ST > threshold_fight_ST:
+// 		if TotalAttack < thresh_attack {
+// 			//Can get sword (any level)
+// 		}
 
-		if TotalDefense < thresh_defend {
-			//Can get shield (any level)
-		}
+// 		if TotalDefense < thresh_defend {
+// 			//Can get shield (any level)
+// 		}
 
-	case a.HP < threshold_fight_HP:
-		//Can get HP Potion
+// 	case a.HP < threshold_fight_HP:
+// 		//Can get HP Potion
 
-	case a.ST < threshold_fight_ST:
-		//Can get ST Potion
-	}
-}
+// 	case a.ST < threshold_fight_ST:
+// 		//Can get ST Potion
+// 	}
+// }
 
 // *********************************** HPPOOL INTERFACE FUNCTIONS ***********************************
 
@@ -359,46 +402,46 @@ func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.T
 //
 
 // PrefightComms
-func (a *AgentFour) PrefightComms(state state.State, agent agent.BaseAgent) {
-	//actions array stores all agent actions from the beginning to the end of the game.
-	actions := make([]commons.ID, 0)              //[[agent_id, [action_round1, action_round2,.....]]]
-	agents_contributions := make([]commons.ID, 0) //[C1, C2, ……]
-	num_agents_fight := 0
-	num_agents_defend := 0
-	num_agents_cower := 0
-	i := 0
+// func (a *AgentFour) PrefightComms(state state.State, agent agent.BaseAgent) {
+// 	//actions array stores all agent actions from the beginning to the end of the game.
+// 	actions := make([]commons.ID, 0)              //[[agent_id, [action_round1, action_round2,.....]]]
+// 	agents_contributions := make([]commons.ID, 0) //[C1, C2, ……]
+// 	num_agents_fight := 0
+// 	num_agents_defend := 0
+// 	num_agents_cower := 0
+// 	i := 0
 
-	NumberOfAgents := baseAgent.AgentState()
+// 	NumberOfAgents := baseAgent.AgentState()
 
-	for i < NumberOfAgents {
-		//asks what is the action of agent[i]
-		switch {
-		case actions[i] == fight:
-			num_agents_fight += 1
-			actions[agent_id] == decision.Attack
-			if a.HP == state.LowHealth || a.ST == state.LowStamina {
-				agents_contributions[agent_ID] += 2
-			}
+// 	for i < NumberOfAgents {
+// 		//asks what is the action of agent[i]
+// 		switch {
+// 		case actions[i] == fight:
+// 			num_agents_fight += 1
+// 			actions[agent_id] == decision.Attack
+// 			if a.HP == state.LowHealth || a.ST == state.LowStamina {
+// 				agents_contributions[agent_ID] += 2
+// 			}
 
-		case action[i] == defend:
-			num_agents_defend += 1
-			actions[agent_id] == decision.Defend
-			agents_contributions[agent_ID] += 1
-			if a.HP == state.LowHealth || a.ST == state.LowStamina {
-				agents_contributions[agent_ID] += 2
-			}
+// 		case action[i] == defend:
+// 			num_agents_defend += 1
+// 			actions[agent_id] == decision.Defend
+// 			agents_contributions[agent_ID] += 1
+// 			if a.HP == state.LowHealth || a.ST == state.LowStamina {
+// 				agents_contributions[agent_ID] += 2
+// 			}
 
-		case action[i] == cower:
-			num_agents_cower += 1
-			actions[agent_id] = decision.Cower
-			if a.HP == state.HighHealth || a.ST == state.HighStamina {
-				agents_contributions[agent_ID] -= 1
-			}
-		}
-	}
-}
+// 		case action[i] == cower:
+// 			num_agents_cower += 1
+// 			actions[agent_id] = decision.Cower
+// 			if a.HP == state.HighHealth || a.ST == state.HighStamina {
+// 				agents_contributions[agent_ID] -= 1
+// 			}
+// 		}
+// 	}
+// }
 
-func (a *AgentFour) HPLevels(agent agent.BaseAgent) {
+func (a *AgentFour) HPLevels(agent agent.BaseAgent) [][]string {
 	view := agent.View()
 	agentState := view.AgentState()
 	agentStateIterator := agentState.Iterator()
@@ -416,9 +459,17 @@ func (a *AgentFour) HPLevels(agent agent.BaseAgent) {
 			sliceOfAgentsWithHighHealth = append(sliceOfAgentsWithHighHealth, key)
 		}
 	}
+
+	// l := list.New()
+	// l.PushBack(sliceOfAgentsWithLowHealth)
+	// l.PushBack(sliceOfAgentsWithMidHealth)
+	// l.PushBack(sliceOfAgentsWithHighHealth)
+
+	var l = [][]string{sliceOfAgentsWithLowHealth, sliceOfAgentsWithMidHealth, sliceOfAgentsWithHighHealth}
+	return l
 }
 
-func (a *AgentFour) STLevels(agent agent.BaseAgent) {
+func (a *AgentFour) STLevels(agent agent.BaseAgent) [][]string {
 	view := agent.View()
 	agentState := view.AgentState()
 	agentStateIterator := agentState.Iterator()
@@ -436,17 +487,20 @@ func (a *AgentFour) STLevels(agent agent.BaseAgent) {
 			sliceOfAgentsWithHighST = append(sliceOfAgentsWithHighST, key)
 		}
 	}
+	var l = [][]string{sliceOfAgentsWithLowST, sliceOfAgentsWithMidST, sliceOfAgentsWithHighST}
+	return l
 }
 
 // Attack-Defend-Cower Strat
-func (a *AgentFour) AttackDefendCower(state state.State, baseAgent agent.BaseAgent, fightResult *decision.FightResult) {
+func (a *AgentFour) AttackDefendCower(state state.AgentState, baseAgent agent.BaseAgent, fightResult int) *decision.FightAction {
+	view := baseAgent.View()
 	Agentstate := baseAgent.AgentState()
 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
 	var action decision.FightAction
-	damage := int(state.MonsterAttack) / len(fightResult.CoweringAgents)
+	damage := view.MonsterAttack() / uint(fightResult)
 
-	if a.HP > (damage + 1) {
+	if uint(a.HP) > (damage + 1) {
 		if float64(TotalAttack) >= float64(TotalDefense)*0.8 {
 			action = decision.Attack
 		} else {
@@ -455,7 +509,7 @@ func (a *AgentFour) AttackDefendCower(state state.State, baseAgent agent.BaseAge
 	} else {
 		action = decision.Cower
 	}
-	return action
+	return &action
 }
 
 // FightManifesto
@@ -466,31 +520,36 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	view := baseAgent.View()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	var manifesto_decision decision.FightAction
-	rand_prob := rand.Intn(1)
+	rand_prob := 0.5
 
-	var get_HP_levels = a.HPLevels()
-	var get_ST_levels = a.STLevels()
+	//var get_HP_levels = a.HPLevels(baseAgent)
+	var HP_levels_list = a.HPLevels(baseAgent)
+	var ST_levels_list = a.STLevels(baseAgent)
 	thresh_fight := 0.3
 
-	ratio_agents_HPLow := get_HP_levels.sliceOfAgentsWithLowHealth / logging.LevelStats.NumberOfAgents
-	ratio_agents_HPNormal := get_HP_levels.sliceOfAgentsWithMidHealth / logging.LevelStats.NumberOfAgents
-	ratio_agents_HPHigh := get_HP_levels.sliceOfAgentsWithHighHealth / logging.LevelStats.NumberOfAgents
+	var agent_map = view.AgentState()
 
-	ratio_agents_STLow := get_ST_levels.sliceOfAgentsWithLowST / logging.LevelStats.NumberOfAgents
-	ratio_agents_STNormal := get_ST_levels.sliceOfAgentsWithMidST / logging.LevelStats.NumberOfAgents
-	ratio_agents_STHigh := get_ST_levels.sliceOfAgentsWithHighST / logging.LevelStats.NumberOfAgents
+	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
+	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
+	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
 
-	thresh_attack := decision.NewImmutableFightResult().AttackSum() / logging.LevelStats.NumberOfAgents
-	thresh_defend := decision.NewImmutableFightResult().ShieldSum() / logging.LevelStats.NumberOfAgents
+	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
+	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
+	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
 
+	thresh_attack := rand.Intn(20) / agent_map.Len()
+	thresh_defend := rand.Intn(20) / agent_map.Len()
 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
-	var FightMethod = a.AttackDefendCower(&state, &baseAgent, &fightActions)
+	var fightRes = rand.Intn(20)
+
+	//var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, &fightActions)
+	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
 
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
-			if TotalAttack > thresh_attack && TotalDefense > thresh_defend {
+			if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
 				switch {
 				case float64(rand_prob) >= 0.4:
 					manifesto_decision = decision.Defend
@@ -498,17 +557,17 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 					manifesto_decision = decision.Attack
 				}
 			}
-			if TotalAttack > thresh_attack {
+			if TotalAttack > uint(thresh_attack) {
 				manifesto_decision = decision.Attack
 			}
-			if TotalDefense > thresh_defend {
+			if TotalDefense > uint(thresh_defend) {
 				manifesto_decision = decision.Defend
 			}
 		} else {
 			manifesto_decision = decision.Cower
 		}
 
-		if FightMethod.action == decision.Cower && manifesto_decision == decision.Attack {
+		if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
 			if float64(rand_prob) < thresh_fight {
 				threshold_fight_HP = a.HP + 10
 				a.C -= 1
@@ -517,35 +576,37 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 			}
 
 		}
+		builder.Set(id, *FightMethod)
+
 	}
 	return *builder.Map()
 }
 
-func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
-	Agentstate := baseAgent.AgentState()
-	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-	v_tol := 0.6
-	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
-		//vote YES
+// func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
+// 	Agentstate := baseAgent.AgentState()
+// 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+// 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+// 	v_tol := 0.6
+// 	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
+// 		//vote YES
 
-	} else {
-		//vote NO
-	}
-}
+// 	} else {
+// 		//vote NO
+// 	}
+// }
 
-func (a *AgentFour) VoteLootManifesto(agent agent.BaseAgent) {
-	Agentstate := baseAgent.AgentState()
-	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-	v_tol := 0.6
-	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
+// func (a *AgentFour) VoteLootManifesto(agent agent.BaseAgent) {
+// 	Agentstate := baseAgent.AgentState()
+// 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+// 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+// 	v_tol := 0.6
+// 	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
 
-		//vote YES
-	} else {
-		//vote NO
-	}
-}
+// 		//vote YES
+// 	} else {
+// 		//vote NO
+// 	}
+// }
 
 //Alternative FightManifesto method
 // func FightManifesto(agents map[commons.ID]agent.Agent) map[commons.ID]decision.FightAction {
