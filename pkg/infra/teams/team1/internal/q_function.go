@@ -27,15 +27,15 @@ type ActionStrategy struct {
 // Global variables for strategies?
 // For each action + coop/self have a set of 8 weights
 var CoopStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{1, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+	{[8]float64{0, 1, 1, -0.2, 3, 0, 0, 0}}, // Defend
+	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}},    // Cower
+	{[8]float64{1, 1, 1, 3, -0.2, 0, 0, 0}}, // Attack
 }
 
 var SelfishStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+	{[8]float64{0, 1, 1, -0.2, 3, 0, 0, 0}}, // Defend
+	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}},    // Cower
+	{[8]float64{1, 1, 1, 3, -0.2, 0, 0, 0}}, // Attack
 }
 
 // Dot product between weights and array

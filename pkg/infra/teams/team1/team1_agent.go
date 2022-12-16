@@ -1,6 +1,7 @@
 package team1
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -110,6 +111,9 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 }
 
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
+	// logging.Log(logging.Error, nil, fmt.Sprintf("%f", decision_likelihoods[id]))
+	// logging.Log(logging.Error, nil, "hello")
+
 	qState := internal.BaseAgentToQState(baseAgent)
 
 	// If we are training a Q function, maybe do an action other than the best action
@@ -137,6 +141,7 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
+	// logging.Log(logging.Error, nil, "hello")
 	qState := internal.BaseAgentToQState(baseAgent)
 	rewards_coop := internal.CooperationQ(qState)
 	rewards_self := internal.SelfishQ(qState)
@@ -222,7 +227,6 @@ func AllocateWithProbabilityDistribution(distribution []float64, iterator common
 	for !iterator.Done() {
 		item, _ := iterator.Next()
 		toBeAllocated := ids[SampleDistribution(distribution)]
-
 		if l, ok := lootAllocation[toBeAllocated]; ok {
 			l = append(l, item.Id())
 			lootAllocation[toBeAllocated] = l
@@ -314,9 +318,22 @@ func (s *SocialAgent) LootAllocation(
 
 		agent_state, _ := agents.Get(ids[id_index])
 		weapon_prob += float64(agent_state.Hp)/float64(max_stats.MaxHealth)*0.9 + 9*float64(agent_state.Stamina)/float64(max_stats.MaxStamina)
-		defense_prob += float64(max_stats.MaxDefense) / (math.Pow(float64(agent_state.Defense), 4) + 0.1)
-		hp_prob += float64(max_stats.MaxHealth)/(math.Pow(float64(agent_state.Hp), 4)+0.1) + s.socialCapitalMean[ids[id_index]]
-		stamina_prob += float64(max_stats.MaxStamina) / (math.Pow(float64(agent_state.Stamina), 4) + 0.1)
+		weapon_prob -= float64(agent_state.Attack) / 50
+		weapon_prob -= float64(agent_state.Defense) / 100
+		if weapon_prob < 0.0 {
+			weapon_prob = 0.0
+		}
+		defense_prob += (float64(max_stats.MaxStamina) / (float64(agent_state.Stamina) + 0.1))
+		logging.Log(logging.Error, nil, "---------")
+		logging.Log(logging.Error, nil, ids[id_index])
+		defense_prob -= float64(agent_state.Defense) / 50
+		defense_prob -= float64(agent_state.Attack) / 100
+		logging.Log(logging.Error, nil, fmt.Sprintf("%f", defense_prob))
+		if defense_prob < 0.0 {
+			defense_prob = 0.0
+		}
+		hp_prob += float64(max_stats.MaxHealth)/(float64(agent_state.Hp)+0.1) + s.socialCapitalMean[ids[id_index]]
+		stamina_prob += float64(max_stats.MaxStamina) / (float64(agent_state.Stamina) + 0.1)
 
 		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
 		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
@@ -351,6 +368,7 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 // Update social capital at end of each round
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
+	// logging.Log(logging.Error, nil, "hello")
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()
@@ -410,6 +428,7 @@ func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.
 }
 
 func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, electionParams *decision.ElectionParams) decision.Ballot {
+	// logging.Log(logging.Error, nil, "hello")
 	var ballot decision.Ballot
 	candidates := electionParams.CandidateList().Iterator()
 	for !candidates.Done() {
@@ -499,7 +518,8 @@ func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAc
 	rules := prop.Rules()
 	action_checker := proposal.ToSinglePredicate(rules)
 	accuracy := 0.0
-	for id_index := 0; id_index < len(ids); id_index++ {
+	for id_index := 0; id_index < 20; id_index++ {
+		id_index := rand.Intn(len(ids))
 		agent_state, _ := agents.Get(ids[id_index])
 		proposal_action := action_checker(state.AgentState{
 			Hp:      uint(agent_state.Hp),
@@ -515,7 +535,8 @@ func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAc
 			accuracy += 1.0
 		}
 	}
-	accuracy /= float64(len(ids))
+	// accuracy /= float64(len(ids))
+	accuracy /= 20.0
 
 	if accuracy > s.currentProposalAccuracyThreshold {
 		result = decision.Positive

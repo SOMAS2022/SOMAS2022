@@ -16,6 +16,7 @@ import (
 	"infra/game/stage/trade"
 	"infra/game/stages"
 	"infra/logging"
+	"infra/teams/team1"
 	"math"
 	"time"
 
@@ -24,7 +25,7 @@ import (
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
 	"RANDOM": example.NewRandomAgent,
-	// "TEAM1":  team1.NewSocialAgent,
+	"TEAM1":  team1.NewSocialAgent,
 }
 
 func main() {
