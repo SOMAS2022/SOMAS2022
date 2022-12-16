@@ -1,6 +1,5 @@
 package team5
 
-
 type Loot struct {
 }
 

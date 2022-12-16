@@ -331,7 +331,6 @@ func (t5 *Agent5) LootAction(
 	return proposedLoot
 }
 
-
 func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
 }
 

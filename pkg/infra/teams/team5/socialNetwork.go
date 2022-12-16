@@ -37,7 +37,6 @@ func initAgentProfile(AgentID commons.ID) AgentProfile {
 }
 
 const (
-
 	Chaotic         Strategy = iota
 	StrategyNeutral Strategy = iota
 	Lawful          Strategy = iota
@@ -47,7 +46,6 @@ const (
 	Evil            Goodwill = iota
 	GoodwillNeutral Goodwill = iota
 	Good            Goodwill = iota
-
 )
 
 type SocialNetwork struct {
@@ -78,7 +76,7 @@ func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
 	}
 }
 
-func (sn *SocialNetwork) updatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
+func (sn *SocialNetwork) UpdatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
 
 	agentProfile := sn.AgentProfile[agentID]
 	agentProfile.Trusts.StrategyScore += extraStrategeScore

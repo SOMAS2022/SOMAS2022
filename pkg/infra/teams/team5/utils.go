@@ -2,7 +2,6 @@ package team5
 
 import "infra/game/decision"
 
-
 func CopySlice(agents []*Agent) []*Agent {
 
 	newAgents := make([]*Agent, len(agents))
