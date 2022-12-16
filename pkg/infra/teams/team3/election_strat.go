@@ -84,7 +84,7 @@ var initial_monster_attack int = 1
 //     return effective
 // }
 
-func calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
+func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
 	currentHP := state.Hp
 	currentStamina := state.Stamina
 
@@ -119,9 +119,28 @@ func calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina in
 
 }
 
-func calcW2(state state.HiddenAgentState, w2 float64) float64 {
-	foughtAndDefended := false
-	if foughtAndDefended {
+func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
+	var agentFought bool = false
+	// iterate until we get most recent history
+	i := 0
+	itr := a.fightDecisionsHistory.Iterator()
+	for !itr.Done() {
+		res, _ := itr.Next()
+		i += 1
+
+		if i == a.fightDecisionsHistory.Len()-1 {
+			agents := res.AttackingAgents()
+			itr2 := agents.Iterator()
+			// search for our agent in fight list
+			for !itr.Done() {
+				_, attackingAgentID := itr2.Next()
+				if attackingAgentID == baseAgent.ID() {
+					agentFought = true
+				}
+			}
+		}
+	}
+	if agentFought {
 		w2 += 0.2
 	} else {
 		w2 -= 0.2
@@ -170,8 +189,8 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 		id, hiddenState, _ := itr.Next()
 		idN, _ := strconv.Atoi(id)
 
-		w1 = calcW1(hiddenState, w1, pastHP[idN], pastStamina[idN])
-		w2 = calcW2(hiddenState, w2)
+		w1 = a.calcW1(hiddenState, w1, pastHP[idN], pastStamina[idN])
+		w2 = a.calcW2(baseAgent, w2)
 
 		score := w1*needs + w2*productivity
 		temp := []int{idN, int(score)}
@@ -249,7 +268,7 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 // var Agent_benefit bool := "False"
 // var action_done string // Pleae ping from the thread what our agent did in the last level (fought, defeneded, or cowered)
 
-// //Please fill in the blanks for id_Agent_given_to paramter (get from the thread the ID of the agent that received my resource inestead of me)
+// //Please fill in the blanks for id_Agent_given_to parameter (get from the thread the ID of the agent that received my resource inestead of me)
 // //Also make sure fightDecision() is used correctly
 // //Please fill in for CliqueList
 // func  (a *AgentThree) update_Agent_benefit(baseAgent agent.BaseAgent, action_done){
@@ -267,7 +286,7 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 // }
 
 // //Please fill in the blanks for chair.ID (id of current chair) and ListClique(list of our trusted Network)
-// //Please full for Utility funtion (Get current Utility score of the chair)
+// //Please full for Utility function (Get current Utility score of the chair)
 // func  (a *AgentThree) update_Trusted_network(baseAgent agent.BaseAgent, action_done){
 //     if in_list(chair.ID, CliqueList) && Utility(chair.ID)>=8 {
 //         Trusted_network="True"

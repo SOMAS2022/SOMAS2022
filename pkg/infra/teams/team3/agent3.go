@@ -61,7 +61,7 @@ func CreateUtility() map[commons.ID]int {
 }
 
 func (a *AgentThree) ResetContacts() {
-	for i, _ := range a.contactsLastRound {
+	for i := range a.contactsLastRound {
 		a.contactsLastRound[i] = false
 	}
 }
