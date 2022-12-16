@@ -182,8 +182,7 @@ func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.Fi
 	return nil
 }
 
-func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]]) immutable.Map[commons.ID, decision.FightAction] {
-	// Attack-Defend-Cower Strat
+func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] { // Attack-Defend-Cower Strat
 	// Agentstate := baseAgent.AgentState()
 	// builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	// TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
