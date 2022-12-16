@@ -115,7 +115,7 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 			if agentState.Stamina > agentState.BonusAttack() {
 				fightResult.AttackingAgents = append(fightResult.AttackingAgents, agentID)
 				attackSum += agentState.TotalAttack()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusAttack())
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.TotalAttack())
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower
@@ -126,7 +126,7 @@ func HandleFightRound(state state.State, baseHealth uint, fightResult *decision.
 			if agentState.Stamina > agentState.BonusDefense() {
 				fightResult.ShieldingAgents = append(fightResult.ShieldingAgents, agentID)
 				shieldSum += agentState.TotalDefense()
-				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.BonusDefense())
+				agentState.Stamina = commons.SaturatingSub(agentState.Stamina, agentState.TotalDefense())
 			} else {
 				fightResult.CoweringAgents = append(fightResult.CoweringAgents, agentID)
 				fightResult.Choices[agentID] = decision.Cower

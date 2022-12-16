@@ -366,7 +366,47 @@ func (s *SocialAgent) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 	return 0
 }
 
-// Update social capital at end of each round
+func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
+	// Find utility of agents own state
+	selfUtility := internal.UtilityOfState(agent.AgentState())
+
+	// Extract view, agentStates
+	view := agent.View()
+	agentState := view.AgentState()
+
+	// Find list of all agents with higher utility than oneself
+	var betterAgents []string
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		agentID, hiddenState, _ := itr.Next()
+
+		if internal.UtilityOfHiddenState(hiddenState) > selfUtility {
+			betterAgents = append(betterAgents, agentID)
+		}
+	}
+
+	// If no agents have a higher utility than you, do nothing
+	if len(betterAgents) == 0 {
+		return
+	}
+
+	// Calculate average trustworthiness of agents with better state
+	totalTrustworthiness := 0.0
+
+	for _, agentID := range betterAgents {
+		totalTrustworthiness += s.socialCapital[agentID][3]
+	}
+
+	averageTrustworthiness := totalTrustworthiness / float64(len(betterAgents))
+
+	// If agent with better state than oneself has higher trustworthiness
+	if averageTrustworthiness > s.socialCapital[agent.ID()][2] {
+		s.selfishness -= 0.01
+	} else { // If agents with better state than oneself has lower trustworthiness
+		s.selfishness += 0.01
+	}
+}
+
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
 	// logging.Log(logging.Error, nil, "hello")
 	itr := fightResult.Iterator()
@@ -395,6 +435,8 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 		meanCapital[id] = (element[0] + element[1] + element[2] + element[3]) / 4.0
 	}
 	s.socialCapitalMean = meanCapital
+
+	s.UpdateSelfishness(self)
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
