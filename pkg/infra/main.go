@@ -15,7 +15,9 @@ import (
 	"infra/game/stage/trade"
 	"infra/game/stages"
 	"infra/logging"
+	"infra/teams/team1"
 	"infra/teams/team2"
+	"infra/teams/team6"
 	"math"
 	"time"
 
@@ -23,8 +25,10 @@ import (
 )
 
 var InitAgentMap = map[commons.ID]func() agent.Strategy{
-	//"RANDOM": example.NewRandomAgent,
+	"RANDOM": example.NewRandomAgent,
+	"TEAM1":  team1.NewSocialAgent,
 	"TEAM2": team2.NewAgent2,
+	"TEAM6":  team6.NewTeam6Agent,
 }
 
 func main() {
@@ -165,7 +169,7 @@ func startGameLoop() {
 
 		// TODO: Loot Discussion Stage
 
-		lootPool := generateLootPool(len(agentMap), globalState.CurrentLevel)
+		lootPool := generateLootPool(uint(len(agentMap)))
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)

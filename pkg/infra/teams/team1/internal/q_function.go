@@ -21,25 +21,25 @@ type QState struct {
 }
 
 type ActionStrategy struct {
-	LinRegWeights [8]float64
+	LinRegWeights [9]float64
 }
 
 // Global variables for strategies?
 // For each action + coop/self have a set of 8 weights
 var CoopStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{1, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+	{[9]float64{1, 1, -0.2, 3, 0, 0, 0, 0, 0}}, // Defend
+	{[9]float64{0, 0, 0, 0, 0, 10, 0, 0, 0}},   // Cower
+	{[9]float64{1, 1, 3, -0.2, 0, 0, 0, 0, 0}}, // Attack
 }
 
 var SelfishStrategies = [3]ActionStrategy{
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Defend
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Cower
-	{[8]float64{0, 0, 0, 0, 0, 0, 0, 0}}, // Attack
+	{[9]float64{0, 1, 1, -0.2, 3, 0, 0, 0, 0}}, // Defend
+	{[9]float64{0, 0, 0, 0, 0, 0, 30, 0, 0}},   // Cower
+	{[9]float64{1, 1, 1, 3, -0.2, 0, 0, 0, 0}}, // Attack
 }
 
 // Dot product between weights and array
-func computeReward(weights [8]float64, array [8]float64) float64 {
+func computeReward(weights [9]float64, array [9]float64) float64 {
 	res := 0.0
 	for idx, w := range weights {
 		res += w * array[idx]
@@ -48,18 +48,18 @@ func computeReward(weights [8]float64, array [8]float64) float64 {
 }
 
 // Get QState of agent
-func getQState(state state.AgentState) [8]float64 {
+func getQState(state state.AgentState) [9]float64 {
 	// TODO currently using dummy variables - need world state as well
-	return [8]float64{
-		1, float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense),
+	return [9]float64{
+		1, float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense), 1 / float64(state.Hp),
 		1, 2, 3,
 	}
 }
 
 // Get QState of other agent given their hidden state
-func getQStateOther(state state.HiddenAgentState) [8]float64 {
-	return [8]float64{
-		float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense),
+func getQStateOther(state state.HiddenAgentState) [9]float64 {
+	return [9]float64{
+		float64(state.Hp), float64(state.Stamina), float64(state.Attack), float64(state.Defense), 1 / float64(state.Hp),
 		1, 2, float64(state.BonusAttack), float64(state.BonusDefense),
 	}
 }
