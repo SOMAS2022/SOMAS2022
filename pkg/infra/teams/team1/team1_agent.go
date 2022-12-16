@@ -384,15 +384,13 @@ func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
 	return manifesto
 }
 
-func (s *SocialAgent) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Abstain
-	case 1:
+func (s *SocialAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
+	view := baseAgent.View()
+	id := view.CurrentLeader()
+	if rand.Float64() < (s.socialCapitalMean[id]+1)/2.0 {
 		return decision.Negative
-	default:
-		return decision.Positive
 	}
+	return decision.Positive
 }
 
 func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
