@@ -214,7 +214,7 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 
 	borda := a.CalcBordaScore(baseAgent)
 	bordaPerCent := BordaPercentage(baseAgent, borda)
-	for i, _ := range disobedienceMap {
+	for i := range disobedienceMap {
 		if disobedienceMap[i] >= 5 {
 
 			if bordaPerCent < 25 {
