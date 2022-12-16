@@ -16,9 +16,7 @@ func GetHealthAllAgents(baseAgent agent.BaseAgent) []float64 {
 		_, state, _ := itr.Next()
 
 		agentHealthMap = append(agentHealthMap, float64(state.Hp))
-
 	}
-
 	return agentHealthMap
 }
 
@@ -32,11 +30,8 @@ func GetStaminaAllAgents(baseAgent agent.BaseAgent) []float64 {
 		_, state, _ := itr.Next()
 
 		agentStaminaMap = append(agentStaminaMap, float64(state.Stamina))
-
 	}
-
 	return agentStaminaMap
-
 }
 func GetAttackAllAgents(baseAgent agent.BaseAgent) []float64 {
 	view := baseAgent.View()
@@ -48,11 +43,8 @@ func GetAttackAllAgents(baseAgent agent.BaseAgent) []float64 {
 		_, state, _ := itr.Next()
 
 		agentStaminaMap = append(agentStaminaMap, float64(state.Attack))
-
 	}
-
 	return agentStaminaMap
-
 }
 
 func GetDefenceAllAgents(baseAgent agent.BaseAgent) []float64 {
@@ -65,11 +57,8 @@ func GetDefenceAllAgents(baseAgent agent.BaseAgent) []float64 {
 		_, state, _ := itr.Next()
 
 		agentStaminaMap = append(agentStaminaMap, float64(state.Defense))
-
 	}
-
 	return agentStaminaMap
-
 }
 
 // func (a *AgentThree) FightTSN(agentMap *immutable.Map[commons.ID, state.HiddenAgentState]) {
@@ -83,12 +72,10 @@ func GetDefenceAllAgents(baseAgent agent.BaseAgent) []float64 {
 // }
 
 func BordaPercentage(baseAgent agent.BaseAgent, borda [][]int) int {
-
 	for i, v := range borda {
 		if strconv.FormatInt(int64(v[0]), 10) == baseAgent.ID() {
 			return (i / len(borda)) * 100
 		}
-
 	}
 	return 100
 }
@@ -101,7 +88,6 @@ func BoolToInt(b bool) int {
 	}
 }
 func AverageArray(in []float64) float64 {
-
 	var total float64 = 0
 	for _, value := range in {
 		total += value

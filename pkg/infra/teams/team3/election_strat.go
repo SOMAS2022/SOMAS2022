@@ -116,7 +116,6 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 	}
 
 	return w1
-
 }
 
 func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
@@ -154,12 +153,10 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		w2 = 10
 	}
 	return w2
-
 }
 
 // alg 5
 func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
-
 	view := baseAgent.View()
 	agentState := view.AgentState()
 
@@ -177,7 +174,6 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 			pastHP[idN] = GetStartingHP()
 			pastStamina[idN] = GetStartingStamina()
 		}
-
 	}
 	productivity := 5.0
 	needs := 5.0
@@ -208,7 +204,6 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 	return fairness
 }
 func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
-
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	disobedienceMap := make([]int, agentState.Len())
@@ -227,7 +222,6 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 			} else {
 				agentDefected = false
 			}
-
 		}
 	}
 
@@ -235,7 +229,6 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 	bordaPerCent := BordaPercentage(baseAgent, borda)
 	for i := range disobedienceMap {
 		if disobedienceMap[i] >= 5 {
-
 			if bordaPerCent < 25 {
 				// a.utilityScore[baseAgent.ID()] =a.utilityScore[baseAgent.ID()]
 			} else if bordaPerCent > 25 && bordaPerCent < 50 {
@@ -245,11 +238,8 @@ func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 			} else if agentDefected {
 				a.utilityScore[baseAgent.ID()] -= 4
 			}
-
 		}
-
 	}
-
 }
 
 // quick function to check if a is in list b
