@@ -6,7 +6,7 @@ import { useMediaQuery } from "@mui/material";
 export const ColourModeContext = createContext({ toggleColourMode: () => {return;} });
 
 export default function App() {
-    const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+    const prefersDarkMode = useMediaQuery("(prefers-color-scheme: light)");
     const [mode, setMode] = useState<"light" | "dark">(prefersDarkMode ? "dark" : "light");
     const [conn, setConn] = useState<boolean>(false);
     const [latestGitCommit, setLatestGitCommit] = useState<string>("");

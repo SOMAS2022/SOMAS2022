@@ -2,16 +2,16 @@ import {useState, useEffect} from "react";
 import { Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import Leaderboard from "../components/summary/Leaderboard";
-import { team_score } from "../types/global";
+import { TeamScore } from "../../../common/types";
 
 export default function Summary() {
-    const [data, setData] = useState<team_score[] | null>(null);
+    const [data, setData] = useState<TeamScore[] | null>(null);
 
     useEffect(() => {
         async function fetchLeaderboardData() {
             await fetch("http://localhost:9000/fetchLeaderboardData")
                 .then(res => res.json())
-                .then((res: team_score[]) => setData(res))
+                .then((res: TeamScore[]) => setData(res))
                 .catch((err) => {console.log(err);});
         }
         fetchLeaderboardData();

@@ -2,7 +2,6 @@ package agent
 
 import (
 	"fmt"
-
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
@@ -23,10 +22,10 @@ func (a *Agent) HandleDonateToHpPool(agentState state.AgentState) uint {
 	return a.Strategy.DonateToHpPool(*a.BaseAgent)
 }
 
-func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResults *commons.ImmutableList[decision.ImmutableFightResult], voteResults *immutable.Map[decision.Intent, uint]) {
+func (a *Agent) HandleUpdateInternalState(agentState state.AgentState, fightResults *commons.ImmutableList[decision.ImmutableFightResult], voteResults *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
 	a.BaseAgent.latestState = agentState
 
-	a.Strategy.UpdateInternalState(*a.BaseAgent, fightResults, voteResults)
+	a.Strategy.UpdateInternalState(*a.BaseAgent, fightResults, voteResults, logChan)
 }
 
 func (a *Agent) HandleUpdateWeapon(agentState state.AgentState) decision.ItemIdx {
@@ -171,4 +170,23 @@ func (a *Agent) handleLootRoundMessage(
 
 func (a *Agent) addLoot(pool state.LootPool) {
 	a.BaseAgent.loot = pool
+}
+
+func (a *Agent) HandleTrade(
+	agentState state.AgentState,
+	info message.TradeInfo,
+	next <-chan interface{},
+	closure <-chan interface{},
+	responseChannel chan<- message.TradeMessage,
+) {
+	a.BaseAgent.latestState = agentState
+	for {
+		select {
+		case <-closure:
+			return
+		case <-next:
+			tradeMessage := a.Strategy.HandleTradeNegotiation(*a.BaseAgent, info)
+			responseChannel <- tradeMessage
+		}
+	}
 }

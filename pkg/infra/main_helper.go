@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"sync"
 
 	"github.com/google/uuid"
 
@@ -62,6 +61,7 @@ func initGame() {
 		MonsterAttack: gamemath.CalculateMonsterDamage(gameConfig.InitialNumAgents, gameConfig.StartingHealthPoints, gameConfig.Stamina, gameConfig.ThresholdPercentage, gameConfig.NumLevels, 1),
 		AgentState:    agentStateMap,
 		InventoryMap:  inventoryMap,
+		Defection:     gameConfig.Defection,
 	}
 	agentMap = agents
 }
@@ -156,40 +156,28 @@ func damageCalculation(fightRoundResult decision.FightResult) {
 	*viewPtr = globalState.ToView()
 }
 
-func updateInternalStates(immutableFightRounds *commons.ImmutableList[decision.ImmutableFightResult], votesResult *immutable.Map[decision.Intent, uint]) {
-	var wg sync.WaitGroup
-	for id, a := range agentMap {
-		id := id
-		a := a
-		wg.Add(1)
-		go func(wait *sync.WaitGroup) {
-			a.HandleUpdateInternalState(globalState.AgentState[id], immutableFightRounds, votesResult)
-			wait.Done()
-		}(&wg)
-	}
-	wg.Wait()
-}
-
 /*
 	Hp Pool Helpers
 */
 
-func checkHpPool() {
-	if globalState.HpPool >= globalState.MonsterAttack {
+func checkHpPool() bool {
+	if globalState.HpPool >= globalState.MonsterHealth {
 		logging.Log(logging.Info, logging.LogField{
 			"Original HP Pool":  globalState.HpPool,
-			"Monster Damage":    globalState.MonsterAttack,
-			"HP Pool Remaining": globalState.HpPool - globalState.MonsterAttack,
+			"Monster Health":    globalState.MonsterHealth,
+			"HP Pool Remaining": globalState.HpPool - globalState.MonsterHealth,
 		}, fmt.Sprintf("Skipping level %d through HP Pool", globalState.CurrentLevel))
 
-		globalState.HpPool -= globalState.MonsterAttack
+		globalState.HpPool -= globalState.MonsterHealth
 		globalState.MonsterHealth = 0
+		return true
 	}
+	return false
 }
 
 func generateLootPool(numAgents int, currentLevel uint) *state.LootPool {
 	makeItems := func() *commons.ImmutableList[state.Item] {
-		nItems := rand.Intn(numAgents)
+		nItems := rand.Intn(numAgents) / 10
 		items := make([]state.Item, nItems)
 		for i := 0; i < nItems; i++ {
 			items[i] = *state.NewItem(uuid.NewString(), currentLevel*uint(rand.Intn(3)+1))

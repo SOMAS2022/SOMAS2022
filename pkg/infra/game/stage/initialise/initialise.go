@@ -49,6 +49,7 @@ func InitGameConfig() config.GameConfig {
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
 		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 1),
 		VotingPreferences:      config.EnvToUint("VOTING_PREFERENCES", 2),
+		Defection:              config.EnvToBool("DEFECTION", false),
 	}
 
 	return gameConfig
