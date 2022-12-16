@@ -404,7 +404,7 @@ func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 	}
 }
 
-func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()
@@ -433,14 +433,6 @@ func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *com
 	s.socialCapitalMean = meanCapital
 
 	s.UpdateSelfishness(self)
-
-	log <- logging.AgentLog{
-		Name: self.Name(),
-		ID:   self.ID(),
-		Properties: map[string]float32{
-			"selfishness": float32(s.selfishness),
-		},
-	}
 }
 
 func (s *SocialAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
