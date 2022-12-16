@@ -16,13 +16,13 @@ type Agent struct {
 }
 
 type Result struct {
-	Death  int      // 死亡数
-	Damage uint     // 伤害数
+	Death int // 死亡数
+	Damage uint // 伤害数
 	Agents []*Agent // 组合
 }
 
 // 转换返回结果
-func ConvertToImmutable(agents []*Agent, agentsAll []*Agent) *immutable.Map[commons.ID, decision.FightAction] {
+func ConvertToImmutable(agents []*Agent, agentsAll []*Agent) *immutable.Map[commons.ID,decision.FightAction]{
 	b := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	// 已经做出攻击/防御决定的人
 	agentMap := make(map[string]struct{})

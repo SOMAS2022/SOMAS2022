@@ -2,7 +2,9 @@ package team5
 
 import "infra/game/decision"
 
+
 func CopySlice(agents []*Agent) []*Agent {
+
 	newAgents := make([]*Agent, len(agents))
 	for i, item := range agents {
 		newAgents[i] = &Agent{
@@ -22,6 +24,7 @@ func BuildNewAgent(agents []*Agent, p float64) []*Agent {
 		attack := item.Attack
 		defense := item.Defense
 		newAgents[i] = &Agent{
+
 			ID: item.ID,
 			Hp: item.Hp,
 		}

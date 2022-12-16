@@ -72,7 +72,8 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 			}
 		}
 		// 如果不是最后一个人
-		for i := range agents {
+
+		for i, _ := range agents {
 			if i <= index {
 				continue
 			}
@@ -103,7 +104,9 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 		}
 		// 如果不是最后一个人
 		if index < len(agents)-1 {
-			for i := range agents {
+
+			for i, _ := range agents {
+
 				if i <= index {
 					continue
 				}

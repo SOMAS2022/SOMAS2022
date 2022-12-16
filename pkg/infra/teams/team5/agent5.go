@@ -331,8 +331,8 @@ func (t5 *Agent5) LootAction(
 	return proposedLoot
 }
 
-func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
 
+func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
 }
 
 func (t5 *Agent5) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
@@ -473,6 +473,7 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 func NewAgent5() agent.Strategy {
 	return &Agent5{
+
 		socialNetwork: SocialNetwork{
 			AgentProfile: make(map[commons.ID]AgentProfile),
 			LawfullMin:   0.8,
@@ -480,6 +481,7 @@ func NewAgent5() agent.Strategy {
 			GoodMin:      0.8,
 			EvilMax:      0.2,
 		},
+
 		bravery:     rand.Intn(5),
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
