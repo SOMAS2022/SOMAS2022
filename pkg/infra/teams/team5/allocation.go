@@ -30,7 +30,7 @@ func AllocMessageHandler(m *message.TaggedMessage, s *state.View) *message.Tagge
 }
 
 // may not be necessary depending on infra
-func message2ClashLoot(m *message.TaggedMessage) []ClashItem {
+func message2ClashLoot(_ *message.TaggedMessage) []ClashItem {
 	var ClashLoot []ClashItem
 	//from message to ClashLoot
 	ClashLoot = FindClashLoot()
