@@ -6,6 +6,8 @@ import (
 	"infra/game/state"
 	"infra/game/stage/trade"
 	"infra/game/stage/trade/internal"
+	"infra/game/decision"
+	"infra/game/agent"
 )
 
 func HandleTradeNegotiation(a agent.BaseAgent, T_TradeInfo message.TradeInfo, round uint) message.TradeMessage {
@@ -26,11 +28,11 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 	T_id_attack := getTradePartnerAttack(a, T_fightDecision)
 	T_id_defend := getTradePartnerDefend(a, T_fightDecision)
 	if(T_fightDecision == decision.Fight){
-		makeOffer := message.NewTradeOffer(Shield, 0, a.latestState.Weapons, a.latestState.shields)
-		makeDemand := message.NewTradeDemand(Weapon, a.latestState.Weapons[0].value)
+		makeOffer := message.NewTradeOffer(commons.Shield, 0, a.latestState.Weapons, a.latestState.shields)
+		makeDemand := message.NewTradeDemand(commons.Weapon, a.latestState.Weapons[0].value)
 	}else {
-		makeOffer := message.NewTradeOffer(Weapon, 0, a.latestState.Weapons, a.latestState.shields)
-		makeDemand := message.NewTradeDemand(Shield, a.latestState.Shields[0].value)
+		makeOffer := message.NewTradeOffer(commons.Weapon, 0, a.latestState.Weapons, a.latestState.shields)
+		makeDemand := message.NewTradeDemand(commons.Shield, a.latestState.Shields[0].value)
 	}
 		fiveRequest:= TradeRequest{
 			CounterPartyID: T_id,
