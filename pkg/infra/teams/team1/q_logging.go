@@ -146,7 +146,7 @@ func PostprocessLog() {
 	scanner = bufio.NewScanner(logFile)
 
 	// Open a new file to store post processed logs
-	postLogFile, err := os.OpenFile(logPath+"post_log.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	postLogFile, err := os.OpenFile(logPath+"post_log.csv", os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
