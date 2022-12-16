@@ -139,7 +139,6 @@ func (sn *SocialNetwork) normaliseTrust() {
 			agentProfile.Trusts.StrategyScore = (sn.AgentProfile[id].Trusts.StrategyScore - minSTG) / distanceSTG
 		}
 	}
-
 }
 
 //Initialise social network
