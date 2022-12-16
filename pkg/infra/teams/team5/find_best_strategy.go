@@ -40,7 +40,7 @@ func FindBestStrategy(view state.View) *immutable.Map[commons.ID, decision.Fight
 		allDefence += item.Defense
 	}
 
-	// Checking the 2 criterias (total attack > monster health and total shield > monster attack)
+	// Checking the 2 criteria (total attack > monster health and total shield > monster attack)
 	firstResult := handleFirstResult(allAttack, monsterHealth, allDefence, monsterAttack, agents)
 	if firstResult != nil {
 		return firstResult
