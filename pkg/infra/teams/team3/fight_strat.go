@@ -134,7 +134,7 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 	}
 	// change decision, already not edge case - alg 10
 	// every 3 levels, alpha +1, alpha init at 3
-	alpha := int(currentLevel/3) + 3
+	alpha := (currentLevel / 3) + 3
 
 	if currentLevel > alpha+3 {
 		damageTaken := initHP - int(agentState.Hp)
