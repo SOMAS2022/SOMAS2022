@@ -172,13 +172,14 @@ func Normalise(array [3]float64) [3]float64 {
 	return normArray
 }
 
-func QStateToArray(state QState) [8]float64 {
-	return [8]float64{
+func QStateToArray(state QState) [9]float64 {
+	return [9]float64{
 		1,
 		state.Hp,
 		state.Stamina,
 		state.TotalAttack,
 		state.TotalDefense,
+		1.0 / float64(state.Hp),
 		state.LevelsToWin,
 		state.MonsterHealth,
 		state.MonsterAttack,

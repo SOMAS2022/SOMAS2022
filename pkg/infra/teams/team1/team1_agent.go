@@ -1,7 +1,6 @@
 package team1
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -111,8 +110,6 @@ func (s *SocialAgent) LootAction(baseAgent agent.BaseAgent, proposedLoot immutab
 }
 
 func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	// logging.Log(logging.Error, nil, fmt.Sprintf("%f", decision_likelihoods[id]))
-	// logging.Log(logging.Error, nil, "hello")
 
 	qState := internal.BaseAgentToQState(baseAgent)
 
@@ -141,7 +138,6 @@ func (s *SocialAgent) FightActionNoProposal(baseAgent agent.BaseAgent) decision.
 }
 
 func (s *SocialAgent) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	// logging.Log(logging.Error, nil, "hello")
 	qState := internal.BaseAgentToQState(baseAgent)
 	rewards_coop := internal.CooperationQ(qState)
 	rewards_self := internal.SelfishQ(qState)
@@ -324,16 +320,16 @@ func (s *SocialAgent) LootAllocation(
 			weapon_prob = 0.0
 		}
 		defense_prob += (float64(max_stats.MaxStamina) / (float64(agent_state.Stamina) + 0.1))
-		logging.Log(logging.Error, nil, "---------")
-		logging.Log(logging.Error, nil, ids[id_index])
+		// logging.Log(logging.Error, nil, "---------")
+		// logging.Log(logging.Error, nil, ids[id_index])
 		defense_prob -= float64(agent_state.Defense) / 50
 		defense_prob -= float64(agent_state.Attack) / 100
-		logging.Log(logging.Error, nil, fmt.Sprintf("%f", defense_prob))
+		// logging.Log(logging.Error, nil, fmt.Sprintf("%f", defense_prob))
 		if defense_prob < 0.0 {
 			defense_prob = 0.0
 		}
 		hp_prob += float64(max_stats.MaxHealth)/(float64(agent_state.Hp)+0.1) + s.socialCapitalMean[ids[id_index]]
-		stamina_prob += float64(max_stats.MaxStamina) / (float64(agent_state.Stamina) + 0.1)
+		stamina_prob += float64(max_stats.MaxStamina)/(float64(agent_state.Stamina)+0.1) + float64(agent_state.Attack)/100
 
 		weapon_cumulative_prop = append(weapon_cumulative_prop, weapon_prob+last_weapon_prop)
 		defense_cumulative_prob = append(defense_cumulative_prob, defense_prob+last_defense_prop)
@@ -408,7 +404,6 @@ func (s *SocialAgent) UpdateSelfishness(agent agent.BaseAgent) {
 }
 
 func (s *SocialAgent) UpdateInternalState(self agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], _ chan<- logging.AgentLog) {
-	// logging.Log(logging.Error, nil, "hello")
 	itr := fightResult.Iterator()
 	for !itr.Done() { // For each fight round
 		fightDecisions, _ := itr.Next()
@@ -454,7 +449,6 @@ func (s *SocialAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.I
 }
 
 func (s *SocialAgent) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	switch m.Message().(type) {
 	case *message.StartFight:
 		prop := *commons.NewImmutableList(s.CreateFightProposal(baseAgent))
@@ -470,7 +464,6 @@ func (s *SocialAgent) HandleFightRequest(_ message.TaggedRequestMessage[message.
 }
 
 func (s *SocialAgent) HandleElectionBallot(b agent.BaseAgent, electionParams *decision.ElectionParams) decision.Ballot {
-	// logging.Log(logging.Error, nil, "hello")
 	var ballot decision.Ballot
 	candidates := electionParams.CandidateList().Iterator()
 	for !candidates.Done() {
