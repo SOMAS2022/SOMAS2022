@@ -83,7 +83,7 @@ type Agent2 struct {
 
 }
 
-// NewAgent2 : Constructor of Agent2 FIXME:!!!INITIALISE AGENT WITH (MEANINGFUL) VALUES!!!
+// NewAgent2 : Constructor of Agent2
 func NewAgent2() agent.Strategy {
 	// testing : random between [0.25,0.75]
 	personalTendency := rand.Float64()*0.25 + 0.5
@@ -344,6 +344,7 @@ func (a *Agent2) leaderElectedBefore(candidateID commons.ID, bias float64) float
 func (a *Agent2) SOT(candidateID commons.ID, manifesto decision.Manifesto, w1 float64) float64 {
 	return w1*(1-float64(manifesto.OverthrowThreshold())/20) + float64(manifesto.TermLength())
 }
+
 // returning prospect leader's score
 func prospectLeaderScore(par1 float64, par2 float64, par3 float64, sot float64) float64 {
 	return par1 + par2 + par3 + sot
@@ -365,8 +366,8 @@ func (a *Agent2) weightedFracTermsDeposed(w1 float64, candidateID commons.ID) fl
 }
 
 // weightedAvgSurRateUnderLeader : Sum_terms(Sum_levels(survival_rate))/(Sum_terms(Sum_levels(1)))
-func weightedAvgSurRateUnderLeader(id commons.ID) float64 {
-	return 0.0
+func (a *Agent2) weightedAvgSurRateUnderLeader(id commons.ID) float64 {
+	return a.avgSurvivalCurrTerm
 }
 
 // Experience of agent [0,1]
@@ -568,7 +569,7 @@ func (a *Agent2) HandleUpdateShield(agent agent.BaseAgent) decision.ItemIdx {
 	}
 }
 
-// UpdateInternalState TODO: Implement me!
+// UpdateInternalState
 // Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
 func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
 	a.updateBaseAgentPerLevel(baseAgent)
@@ -627,14 +628,19 @@ func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
 // Description: Used for voting on confidence for Leader.
 // Return:		Positive, Negative, or Abstain decision.
 func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	w0, w1, w2, w3, w4, w5 := 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+	w0, w1, w2, w3, w4, w5 := 2.0, 1.0, 2.0, 1.0, 1.0, -1.0
 	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
 	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
 	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
 	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
 	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
+
 	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
-	sum := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm + w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm + w4*leadershipXpNorm + w5*noConfRateNorm
+	trustWorthyness := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm
+	networks := w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm
+	institutions := w4*leadershipXpNorm + w5*noConfRateNorm
+
+	sum := trustWorthyness + networks + institutions
 
 	if sum >= 0 {
 		return decision.Positive
@@ -649,6 +655,8 @@ func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent
 func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
 	// Extract ID of alive agents
 	view := baseAgent.View()
+	//agentState := view.AgentState()
+	cans := params.CandidateList()
 	// Updating Leader Parameters
 	a.termEndLevel = view.CurrentLevel()                    //level_temp is another priv attribute initialized to 0/1?
 	a.termDuration = view.CurrentLevel() - a.termBeginLevel // term_begin_level was last updated at the beginning of the term that is now ending
@@ -664,26 +672,36 @@ func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decisio
 		a.governmentTimeline[len(a.governmentTimeline)-1] = lastLeaderInfo
 	}
 
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	agentScores := make(map[commons.ID]float64, params.CandidateList().Len())
-	candidateList := make([]commons.ID, params.CandidateList().Len())
-	itr := params.CandidateList().Iterator()
+	candidates := make([]commons.ID, cans.Len())
+	mainfestos := make([]decision.Manifesto, cans.Len())
+	i := 0
+	itr := cans.Iterator()
 	for !itr.Done() {
-		candidate, manifesto, ok := itr.Next()
+		can, manifesto, ok := itr.Next()
 		if ok {
-			par1 := a.leaderElectedBefore(candidate, a.weightedFracTermsDeposed(-1, candidate)+weightedAvgSurRateUnderLeader(candidate))
-			par2 := a.lastFightDecisionPower(candidate, 5)
-			par3 := a.lastLootDecisionPower(candidate, 5)
-			sot := a.SOT(candidate, manifesto, 0.1)
-			agentScores[candidate] = prospectLeaderScore(par1, par2, par3, sot)
+			candidates[i] = can
+			mainfestos[i] = manifesto
+			i++
 		}
 	}
-	sort.SliceStable(candidateList, func(i, j int) bool {
-		return agentScores[candidateList[i]] < agentScores[candidateList[j]]
+
+	// Randomly fill the ballot
+	var ballot decision.Ballot
+	numAliveAgents := len(candidates)
+	agentScores := make(map[commons.ID]float64, numAliveAgents)
+	for i := 0; i < numAliveAgents; i++ {
+		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(candidates[i]))
+		par2 := a.lastFightDecisionPower(candidates[i], 5)
+		par3 := a.lastLootDecisionPower(candidates[i], 5)
+		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
+		agentScores[candidates[i]] = prospectLeaderScore(par1, par2, par3, sot)
+
+	}
+	sort.SliceStable(candidates, func(i, j int) bool {
+		return agentScores[candidates[i]] < agentScores[candidates[j]]
 	})
 	for i := uint(0); i < params.NumberOfPreferences(); i++ {
-		ballot = append(ballot, candidateList[i])
+		ballot = append(ballot, candidates[i])
 	}
 	return ballot
 }
@@ -727,7 +745,6 @@ func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.Fight
 	return nil
 }
 
-// TODO: Implement me!
 func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
 	proposedActions immutable.Map[commons.ID, decision.FightAction],
 ) immutable.Map[commons.ID, decision.FightAction] {
@@ -748,7 +765,7 @@ func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableLi
 	return *builder.Map()
 }
 
-// HandleFightProposal: TODO: Implement me!
+// HandleFightProposal
 // Description: Throught that function our agent votes on a broadcastes proposal
 func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
@@ -759,7 +776,7 @@ func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAct
 	}
 }
 
-// HandleFightProposalRequest TODO: Implement me!
+// HandleFightProposalRequest
 // Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
 // Return:		Bool: True/False
 func (a *Agent2) HandleFightProposalRequest(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
@@ -937,12 +954,10 @@ func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.Loo
 	_ = agent.SendLootProposalToLeader(prop)
 }
 
-// TODO: Implement me!
 func (a *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
 	return nil
 }
 
-// TODO: Implement me!
 func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], agent agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
@@ -954,7 +969,6 @@ func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], age
 	}
 }
 
-// TODO: Implement me!
 func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent agent.BaseAgent) bool {
 	switch rand.Intn(2) {
 	case 0:
@@ -1085,7 +1099,6 @@ func (a *Agent2) DonateToHpPool(agent agent.BaseAgent) uint {
 }
 
 /* ---- TRADE ----- */
-// TODO: Implement me!
 func (a *Agent2) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
