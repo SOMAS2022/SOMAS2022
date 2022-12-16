@@ -36,7 +36,7 @@ func (a *AgentThree) UpdateUtilityResource(baseAgent agent.BaseAgent, msg messag
 			a.uR[id] -= 3
 		}
 
-		// Rewarding the Agents (succesful trade):
+		// Rewarding the Agents (successful trade):
 	case message.TradeAccept:
 		a.uR[id] += 3
 	}
@@ -89,7 +89,7 @@ func (a *AgentThree) UpdateUtilityChair(baseAgent agent.BaseAgent, prop immutabl
 
 func (a *AgentThree) UpdateTotalUtility(baseAgent agent.BaseAgent) {
 	// Weighted Average
-	for i, _ := range a.utilityScore {
+	for i := range a.utilityScore {
 		a.utilityScore[i] = int((0.45*float64(a.uC[i]) + 0.45*float64(a.uR[i]) + 0.10*float64(a.uP[i])) / 3)
 	}
 }

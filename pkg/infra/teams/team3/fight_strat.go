@@ -80,8 +80,6 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 // Send proposal to leader
 func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	// do we still want this?
-	makesProposal := rand.Intn(100)
 
 	baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "decision": a.CurrentAction(baseAgent)}, "HP")
 	baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
@@ -90,29 +88,27 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	choice, _ := fightactionMap.Get(id)
 	HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
 	// Well, not everytime. Just sometimes
-	if makesProposal > 80 {
-		rules := make([]proposal.Rule[decision.FightAction], 0)
+	rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(AttackThreshold1)),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(AttackThreshold1))),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(AttackThreshold1)),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(AttackThreshold1))),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, uint(DefenseThreshold1)),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, uint(DefenseThreshold1)),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-			proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(HPThreshold1)),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(HPThreshold1)),
+	))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(StaminaThreshold1)),
-		))
+	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(StaminaThreshold1)),
+	))
 
-		prop := *commons.NewImmutableList(rules)
-		_ = baseAgent.SendFightProposalToLeader(prop)
-	}
+	prop := *commons.NewImmutableList(rules)
+	_ = baseAgent.SendFightProposalToLeader(prop)
 }
 
 // Calculate our agents action
