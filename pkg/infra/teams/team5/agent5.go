@@ -373,7 +373,6 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 }
 
 func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
-
 	t5.t5Manifesto.updateLeaderCombo(a)
 
 	t5.bravery += rand.Intn(10)
