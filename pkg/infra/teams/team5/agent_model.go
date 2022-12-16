@@ -16,21 +16,21 @@ type Agent struct {
 }
 
 type Result struct {
-	Death  int      // 死亡数
-	Damage uint     // 伤害数
-	Agents []*Agent // 组合
+	Death  int      // Number of Agent deaths
+	Damage uint     // Total damage to Agents
+	Agents []*Agent // Fighting agents and fight decision
 }
 
-// 转换返回结果
+// converting result to map
 func ConvertToImmutable(agents []*Agent, agentsAll []*Agent) *immutable.Map[commons.ID, decision.FightAction] {
 	b := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-	// 已经做出攻击/防御决定的人
+	// Agents with fight decision
 	agentMap := make(map[string]struct{})
 	for _, item := range agents {
 		agentMap[item.ID] = struct{}{}
 		b.Set(item.ID, decision.FightAction(item.Action))
 	}
-	// 遍历所有人，找出没做决定的人并逃跑
+	// Agents without fight decision will cower
 	for _, item := range agentsAll {
 		if _, ok := agentMap[item.ID]; !ok {
 			b.Set(item.ID, decision.Cower)

@@ -44,11 +44,10 @@ func handleStrategyService(monsterHealthy, monsterAttack uint, agents []*Agent) 
 }
 
 func getResult(nowAgents uint, level uint, resultAll []*Result, agents []*Agent) *immutable.Map[commons.ID, decision.FightAction] {
-
-	// 死亡人数和总人数不等时，找出最少死亡的
-	// 找出最少伤害的
+	//  Comparing surviving agent's percentage  to threshold.
 	suviveRate := float64(nowAgents) / float64(totalAgent)
 	population := GetPopulation(level)
+	// deciding priority
 	if suviveRate >= population {
 		if res := getMinDamage(resultAll, agents); res != nil {
 			return res
@@ -58,7 +57,8 @@ func getResult(nowAgents uint, level uint, resultAll []*Result, agents []*Agent)
 			return res
 		}
 	}
-	for i := range agents {
+	for i, item := range agents {
+		item.Action = uint(decision.Attack)
 		agents[i].Action = uint(decision.Attack)
 	}
 	return ConvertToImmutable(agents, agents)
@@ -71,7 +71,7 @@ func getMinDamage(resultAll []*Result, agents []*Agent) *immutable.Map[commons.I
 			minDamageRes = item
 		}
 	}
-	// 有符合条件的
+	// find minimum damage agent fight combination
 	if len(minDamageRes.Agents) > 0 {
 		return ConvertToImmutable(minDamageRes.Agents, agents)
 	}
@@ -85,7 +85,7 @@ func getMinDeath(resultAll []*Result, agents []*Agent) *immutable.Map[commons.ID
 			minDeathRes = item
 		}
 	}
-	// 有符合条件的
+	// find minimum death agent fight combination
 	if len(minDeathRes.Agents) > 0 {
 		return ConvertToImmutable(minDeathRes.Agents, agents)
 	}
