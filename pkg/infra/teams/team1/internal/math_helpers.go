@@ -103,9 +103,9 @@ func AddArrays(A [4]float64, B [4]float64) [4]float64 {
 
 func DecayNumber(inputNumber float64) float64 {
 	if inputNumber < 0 {
-		return 0.70 * inputNumber
+		return 0.9 * inputNumber
 	} else {
-		return 0.90 * inputNumber
+		return 0.95 * inputNumber
 	}
 }
 
@@ -172,13 +172,14 @@ func Normalise(array [3]float64) [3]float64 {
 	return normArray
 }
 
-func QStateToArray(state QState) [8]float64 {
-	return [8]float64{
+func QStateToArray(state QState) [9]float64 {
+	return [9]float64{
 		1,
 		state.Hp,
 		state.Stamina,
 		state.TotalAttack,
 		state.TotalDefense,
+		1.0 / state.Hp,
 		state.LevelsToWin,
 		state.MonsterHealth,
 		state.MonsterAttack,
@@ -195,8 +196,8 @@ func BaseAgentToQState(agent agent.BaseAgent) QState {
 	return QState{
 		float64(agentState.Hp),
 		float64(agentState.Stamina),
-		float64(agentState.Attack),
-		float64(agentState.Defense),
+		float64(agentState.TotalAttack()),
+		float64(agentState.TotalDefense()),
 		float64(view.CurrentLevel()),
 		float64(view.MonsterHealth()),
 		float64(view.MonsterAttack()),
@@ -207,8 +208,8 @@ func HiddenAgentToQState(agent state.HiddenAgentState, view state.View) QState {
 	return QState{
 		float64(agent.Hp),
 		float64(agent.Stamina),
-		float64(agent.Attack),
-		float64(agent.Defense),
+		float64(agent.Attack + agent.BonusAttack),
+		float64(agent.Defense + agent.BonusDefense),
 		float64(view.CurrentLevel()),
 		float64(view.MonsterHealth()),
 		float64(view.MonsterAttack()),
@@ -235,4 +236,8 @@ func AddSlices(a []float64, b []float64) []float64 {
 	}
 
 	return a
+}
+
+func OverallPerception(inputArray [4]float64) float64 {
+	return (inputArray[0] + inputArray[1] + inputArray[2] + inputArray[3]) * 0.25
 }
