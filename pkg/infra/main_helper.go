@@ -189,14 +189,16 @@ func generateLootPool(numAgents uint) *state.LootPool {
 		return commons.NewImmutableList(items)
 	}
 
+	recalculatedMonsterHealth := gamemath.CalculateMonsterHealth(gameConfig.InitialNumAgents, gameConfig.Stamina, gameConfig.NumLevels, globalState.CurrentLevel)
+
 	return state.NewLootPool(
 		// Weapons
-		makeItems(nWeapons, gamemath.GetWeaponDamage(globalState.MonsterHealth, numAgents)),
+		makeItems(nWeapons, gamemath.GetWeaponDamage(recalculatedMonsterHealth, numAgents)),
 		// Shields
 		makeItems(nShields, gamemath.GetShieldProtection(globalState.MonsterAttack, numAgents)),
 		// Health Potions
 		makeItems(nHealthPotions, gamemath.GetHealthPotionValue(globalState.MonsterAttack, numAgents)),
 		// Stamina Potions
-		makeItems(nStaminaPotions, gamemath.GetStaminaPotionValue(globalState.MonsterHealth, numAgents)),
+		makeItems(nStaminaPotions, gamemath.GetStaminaPotionValue(recalculatedMonsterHealth, numAgents)),
 	)
 }
