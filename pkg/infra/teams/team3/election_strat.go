@@ -9,6 +9,12 @@ import (
 	"strconv"
 )
 
+var (
+	w1, w2      float64
+	pastHP      []int
+	pastStamina []int
+)
+
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	view := baseAgent.View()
@@ -78,9 +84,7 @@ var initial_monster_attack int = 1
 //     return effective
 // }
 
-func calcW1(state state.HiddenAgentState, w1 float64) float64 {
-	initHP := GetStartingHP()
-	initStamina := GetStartingStamina()
+func calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
 	currentHP := state.Hp
 	currentStamina := state.Stamina
 
@@ -96,7 +100,7 @@ func calcW1(state state.HiddenAgentState, w1 float64) float64 {
 		w1 += 0.2
 	} else {
 		if HP == 0 {
-			w1 = w1
+			//w1 = w1
 		} else {
 			w1 -= 0.2
 		}
@@ -135,28 +139,46 @@ func calcW2(state state.HiddenAgentState, w2 float64) float64 {
 }
 
 // alg 5
-func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent, w1 float64, w2 float64) [][]int {
+func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
+
 	view := baseAgent.View()
 	agentState := view.AgentState()
 
+	currentLevel := int(view.CurrentLevel())
+
+	// init  history
+	if currentLevel == 0 {
+		w1 = 0.0
+		w2 = 0.0
+
+		itr := agentState.Iterator()
+		for !itr.Done() {
+			id, _, _ := itr.Next()
+			idN, _ := strconv.Atoi(id)
+			pastHP[idN] = GetStartingHP()
+			pastStamina[idN] = GetStartingStamina()
+		}
+
+	}
 	productivity := 5.0
 	needs := 5.0
 	fairness := [][]int{}
 
 	itr := agentState.Iterator()
 
-	w1, w2 = 0.0, 0.0
 	for !itr.Done() {
 		id, hiddenState, _ := itr.Next()
 		idN, _ := strconv.Atoi(id)
 
-		w1 = calcW1(hiddenState, w1)
+		w1 = calcW1(hiddenState, w1, pastHP[idN], pastStamina[idN])
 		w2 = calcW2(hiddenState, w2)
 
 		score := w1*needs + w2*productivity
 		temp := []int{idN, int(score)}
 		fairness = append(fairness, temp)
 
+		pastHP[idN] = int(hiddenState.Hp)
+		pastStamina[idN] = int(hiddenState.Stamina)
 	}
 
 	// sort 2d array by decreasing score
@@ -166,16 +188,60 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent, w1 float64, w2 fl
 
 	return fairness
 }
+func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 
-// quick function to check if a is in list b
-func in_list(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	disobedienceMap := make([]int, agentState.Len())
+	var agentDefected bool
+	itr := agentState.Iterator()
+	i := 0
+
+	for !itr.Done() {
+		id, hiddenState, _ := itr.Next()
+
+		disobedienceMap[i] += BoolToInt(hiddenState.Defector.IsDefector())
+		// did we disobey
+		if id == baseAgent.ID() {
+			if hiddenState.Defector.IsDefector() {
+				agentDefected = true
+			} else {
+				agentDefected = false
+			}
+
 		}
 	}
-	return false
+
+	borda := a.CalcBordaScore(baseAgent)
+	bordaPerCent := BordaPercentage(baseAgent, borda)
+	for i, _ := range disobedienceMap {
+		if disobedienceMap[i] >= 5 {
+
+			if bordaPerCent < 25 {
+				// a.utilityScore[baseAgent.ID()] =a.utilityScore[baseAgent.ID()]
+			} else if bordaPerCent > 25 && bordaPerCent < 50 {
+				a.utilityScore[baseAgent.ID()] -= 1
+			} else if bordaPerCent > 50 {
+				a.utilityScore[baseAgent.ID()] -= 2
+			} else if agentDefected {
+				a.utilityScore[baseAgent.ID()] -= 4
+			}
+
+		}
+
+	}
+
 }
+
+// quick function to check if a is in list b
+// func in_list(a string, list []string) bool {
+// 	for _, b := range list {
+// 		if b == a {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 //Now the functions for the voting
 
