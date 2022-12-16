@@ -38,7 +38,68 @@ func GetStaminaAllAgents(baseAgent agent.BaseAgent) []float64 {
 	return agentStaminaMap
 
 }
+func GetAttackAllAgents(baseAgent agent.BaseAgent) []float64 {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	var agentStaminaMap []float64
 
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		_, state, _ := itr.Next()
+
+		agentStaminaMap = append(agentStaminaMap, float64(state.Attack))
+
+	}
+
+	return agentStaminaMap
+
+}
+
+func GetDefenceAllAgents(baseAgent agent.BaseAgent) []float64 {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	var agentStaminaMap []float64
+
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		_, state, _ := itr.Next()
+
+		agentStaminaMap = append(agentStaminaMap, float64(state.Defense))
+
+	}
+
+	return agentStaminaMap
+
+}
+
+// func (a *AgentThree) FightTSN(agentMap *immutable.Map[commons.ID, state.HiddenAgentState]) {
+
+// 	// for i, id := range a.TSN {
+
+// 	// 	agentMap.Get
+
+// 	// }
+
+// }
+
+func BordaPercentage(baseAgent agent.BaseAgent, borda [][]int) int {
+
+	for i, v := range borda {
+		if strconv.FormatInt(int64(v[0]), 10) == baseAgent.ID() {
+			return (i / len(borda)) * 100
+		}
+
+	}
+	return 100
+}
+
+func BoolToInt(b bool) int {
+	if b {
+		return 1
+	} else {
+		return 0
+	}
+}
 func AverageArray(in []float64) float64 {
 
 	var total float64 = 0
