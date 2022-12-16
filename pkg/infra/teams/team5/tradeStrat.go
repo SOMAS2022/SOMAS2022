@@ -26,11 +26,11 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 	T_id_attack := getTradePartnerAttack(a, T_fightDecision)
 	T_id_defend := getTradePartnerDefend(a, T_fightDecision)
 	if(T_fightDecision == decision.Fight){
-		makeOffer := message.NewTradeOffer(Weapon, a.latestState.Weapons[0], weapon immutable.List[state.Item], shield immutable.List[state.Item])
-		makeDemand := message.NewTradeDemand(Weapon, minValue uint)
+		makeOffer := message.NewTradeOffer(Shield, 0, a.latestState.Weapons, a.latestState.shields)
+		makeDemand := message.NewTradeDemand(Weapon, a.latestState.Weapons[0].value)
 	}else {
-		makeOffer := message.NewTradeOffer(Shield, idx uint, weapon immutable.List[state.Item], shield immutable.List[state.Item])
-		makeDemand := message.NewTradeDemand(Shield, minValue uint)
+		makeOffer := message.NewTradeOffer(Weapon, 0, a.latestState.Weapons, a.latestState.shields)
+		makeDemand := message.NewTradeDemand(Shield, a.latestState.Shields[0].value)
 	}
 		fiveRequest:= TradeRequest{
 			CounterPartyID: T_id,
@@ -42,7 +42,7 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 
 func getTradePartnerAttack(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
 	for id, T_HiddenAgentState := range a.view.agentState{
-		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusAttack > a.latestState.Weapons[0]{
+		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusAttack > a.latestState.Weapons[0].value{
 			return id
 		}
 	}
@@ -50,7 +50,7 @@ func getTradePartnerAttack(a agent.BaseAgent, T_fightDecision decision.FightActi
 }
 func getTradePartnerDefend(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
 	for id, T_HiddenAgentState := range a.view.agentState{
-		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusDefense > a.latestState.Shields[0]{
+		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusDefense > a.latestState.Shields[0].value{
 			return id
 		}
 	}
