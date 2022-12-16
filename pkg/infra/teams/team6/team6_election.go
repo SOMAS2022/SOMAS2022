@@ -64,30 +64,7 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 	// Extract ID of alive agents
 	a.CreateManifesto(b)
 
-	potentialCandidates := make(map[commons.ID]float32)
-
-	itr := params.CandidateList().Iterator()
-	for !itr.Done() {
-		id, manifesto, _ := itr.Next()
-		if manifesto.TermLength() > 10 || manifesto.OverthrowThreshold() > 75 {
-			continue
-		}
-
-		fightDecisionPower, lootDecisionPower := manifesto.FightDecisionPower(), manifesto.LootDecisionPower()
-		fightDecisionValue, lootDecisionValue := 0, 0
-
-		if fightDecisionPower {
-			fightDecisionValue = 100
-		}
-		if lootDecisionPower {
-			lootDecisionValue = 100
-		}
-
-		potentialCandidates[id] = 1 / float32((4+math.Abs(float64(fightDecisionValue)-float64(a.fightDecisionPowerOpinion)))+
-			1/(4+math.Abs(float64(lootDecisionValue)-float64(a.lootDecisionPowerOpinion)))+
-			1/(4+math.Abs(float64(manifesto.TermLength())-float64(a.termLengthOpinion)))+
-			1/math.Abs(float64(manifesto.OverthrowThreshold())-float64(a.overthrowTHOpinion)))
-	}
+	potentialCandidates := generatePotentialCandidates(a, params)
 
 	for id, score := range potentialCandidates {
 		if SafeMapReadOrDefault(a.leadership, id, 50) < 40 {
@@ -119,6 +96,33 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 	}
 
 	return ballot
+}
+
+func generatePotentialCandidates(a *Team6Agent, params *decision.ElectionParams) map[commons.ID]float32 {
+	potentialCandidates := make(map[commons.ID]float32)
+	itr := params.CandidateList().Iterator()
+	for !itr.Done() {
+		id, manifesto, _ := itr.Next()
+		if manifesto.TermLength() > 10 || manifesto.OverthrowThreshold() > 75 {
+			continue
+		}
+
+		fightDecisionPower, lootDecisionPower := manifesto.FightDecisionPower(), manifesto.LootDecisionPower()
+		fightDecisionValue, lootDecisionValue := 0, 0
+
+		if fightDecisionPower {
+			fightDecisionValue = 100
+		}
+		if lootDecisionPower {
+			lootDecisionValue = 100
+		}
+
+		potentialCandidates[id] = 1 / float32((4+math.Abs(float64(fightDecisionValue)-float64(a.fightDecisionPowerOpinion)))+
+			1/(4+math.Abs(float64(lootDecisionValue)-float64(a.lootDecisionPowerOpinion)))+
+			1/(4+math.Abs(float64(manifesto.TermLength())-float64(a.termLengthOpinion)))+
+			1/math.Abs(float64(manifesto.OverthrowThreshold())-float64(a.overthrowTHOpinion)))
+	}
+	return potentialCandidates
 }
 
 func (a *Team6Agent) newPowerOpinion(initial uint, leadership uint, power bool) uint {

@@ -5,6 +5,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message/proposal"
+	"infra/game/state"
 	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
@@ -138,7 +139,32 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 	}
 
 	view := ba.View()
+	leader := view.CurrentLeader()
 
+	updateSCValues(a, view)
+
+	agentStates := view.AgentState()
+	a.agentsRemaining = append(a.agentsRemaining, uint(agentStates.Len()))
+	a.lastFightRound++ // No. of levels since last fight
+	a.currentLevel++
+
+	// Update leadership based on number of proposals received
+	a.totalProposalsReceived += a.currentProposalsReceived
+	averageProposalsReceived := a.totalProposalsReceived / a.currentLevel
+
+	diff := (int(a.currentProposalsReceived) - int(averageProposalsReceived)) / 4
+	diff = clamp(diff, -5, 5)
+	leadership := SafeMapReadOrDefault(a.leadership, leader, 50)
+	if diff > 0 {
+		a.leadership[leader] = SCSaturatingAdd(leadership, uint(diff), 100)
+	} else {
+		a.leadership[leader] = commons.SaturatingSub(leadership, uint(-diff))
+	}
+
+	a.currentProposalsReceived = 0
+}
+
+func updateSCValues(a *Team6Agent, view state.View) {
 	leader := view.CurrentLeader()
 	if leader != a.leaderID {
 		// New leader was elected - update leadership for old leader
@@ -183,23 +209,4 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 			a.bravery[id] = 100
 		}
 	}
-
-	a.agentsRemaining = append(a.agentsRemaining, uint(agentStates.Len()))
-	a.lastFightRound++ // No. of levels since last fight
-	a.currentLevel++
-
-	// Update leadership based on number of proposals received
-	a.totalProposalsReceived += a.currentProposalsReceived
-	averageProposalsReceived := a.totalProposalsReceived / a.currentLevel
-
-	diff := (int(a.currentProposalsReceived) - int(averageProposalsReceived)) / 4
-	diff = clamp(diff, -5, 5)
-	leadership := SafeMapReadOrDefault(a.leadership, leader, 50)
-	if diff > 0 {
-		a.leadership[leader] = SCSaturatingAdd(leadership, uint(diff), 100)
-	} else {
-		a.leadership[leader] = commons.SaturatingSub(leadership, uint(-diff))
-	}
-
-	a.currentProposalsReceived = 0
 }
