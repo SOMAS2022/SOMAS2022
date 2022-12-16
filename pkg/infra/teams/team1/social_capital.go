@@ -8,6 +8,12 @@ import (
 	"sort"
 )
 
+// This type will make it easier to extract from map, sort, and retrieve agent ID
+type SocialCapInfo struct {
+	ID  string
+	arr [4]float64
+}
+
 // Called by own InitAgent function when running team experiment, before game starts
 func (s *SocialAgent) initSocialCapital(allAgents []string) {
 	// Create empty map
@@ -94,11 +100,6 @@ func (s *SocialAgent) updateSocialCapital(self agent.BaseAgent, fightDecisions d
  * Currently messages may be sent to recipients praising or denouncing the recipient
  */
 func (s *SocialAgent) sendGossip(agent agent.BaseAgent) {
-	// This type will make it easier to extract from map, sort, and retrieve agent ID
-	type SocialCapInfo struct {
-		ID  string
-		arr [4]float64
-	}
 	selfID := agent.ID()
 
 	sortedSCTrustHonor := make([]SocialCapInfo, 0, len(s.socialCapital))
@@ -153,7 +154,7 @@ func (s *SocialAgent) sendGossip(agent agent.BaseAgent) {
  */
 func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 	// Will reverse if sender's perception is negative
-	senderPerception := OverallPerception(s.socialCapital[sender])
+	senderPerception := internal.OverallPerception(s.socialCapital[sender])
 	mtype := m.GetNum()
 	var sign float64
 	switch mtype {
@@ -169,8 +170,4 @@ func (s *SocialAgent) receiveGossip(m message.ArrayInfo, sender string) {
 		sc = internal.BoundArray(sc)
 		s.socialCapital[about] = sc
 	}
-}
-
-func OverallPerception(inputArray [4]float64) float64 {
-	return (inputArray[0] + inputArray[1] + inputArray[2] + inputArray[3]) * 0.25
 }
