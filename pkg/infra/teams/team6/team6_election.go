@@ -87,6 +87,11 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 		ballot = append(ballot, b.ID())
 	}
 
+	if a.CIGTLeader != "" {
+		ballot = make([]commons.ID, 0)
+		ballot = append(ballot, a.CIGTLeader)
+	}
+
 	return ballot
 }
 
