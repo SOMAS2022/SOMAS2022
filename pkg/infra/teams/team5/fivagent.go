@@ -26,7 +26,7 @@ type FivAgent struct {
 // --------------- Election ---------------
 
 func (fiv *FivAgent) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 1, 20)
+	manifesto := decision.NewManifesto(false, false, 4, 10)
 	return manifesto
 }
 
@@ -52,7 +52,7 @@ func (fiv *FivAgent) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision
 func (fiv *FivAgent) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	myview := baseAgent.View()
 	currentLeader := myview.CurrentLeader()
-	if fiv.ttable.EstimateLeadTrust(currentLeader) < 0 {
+	if fiv.ttable.EstimateLeadTrust(currentLeader) < 5 {
 		return decision.Negative
 	}
 	return decision.Positive
@@ -296,6 +296,16 @@ func (fiv *FivAgent) LootAction(
 }
 
 func (fiv *FivAgent) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+	mystate := agent.AgentState()
+	wants := make([]proposal.Rule[decision.LootAction], 0)
+
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.HealthPotion, proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 750)))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.StaminaPotion, proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, 1500)))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.Weapon, proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, mystate.TotalAttack())))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.Shield, proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, mystate.TotalDefense())))
+
+	prop := *commons.NewImmutableList(wants)
+	_ = agent.SendLootProposalToLeader(prop)
 }
 
 func (fiv *FivAgent) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
@@ -349,9 +359,12 @@ func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
 		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(deathLastRound))
 	}
 	// lead trust gain due to no health loss (being protected)
-	hpLossLastRound := fiv.preHealth - baseAgent.AgentState().Hp
+	hpLossLastRound := float32(fiv.preHealth) - float32(baseAgent.AgentState().Hp)
+	if hpLossLastRound > 0 {
+		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(-hpLossLastRound))
+	}
 	if hpLossLastRound <= 0 {
-		fiv.ttable.PositiveLeaderEvent(currentLeader, 1)
+		fiv.ttable.PositiveLeaderEvent(currentLeader, float32(-hpLossLastRound))
 	}
 
 	for _, id := range commons.ImmutableMapKeys(globalStates) {
