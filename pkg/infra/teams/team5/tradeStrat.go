@@ -27,7 +27,7 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 	var fiveRequest message.TradeRequest
 	if(T_fightDecision == decision.Attack){
 		makeOffer,_ := message.NewTradeOffer(commons.Shield, 0, a.AgentState().Weapons, a.AgentState().Shields)
-		makeDemand := message.NewTradeDemand(commons.Weapon, a.AgentState().Weapons.Get(0).value)
+		makeDemand := message.NewTradeDemand(commons.Weapon, a.AgentState().Weapons.Iterator().value)
 		fiveRequest = message.TradeRequest{
 			CounterPartyID: T_id_attack,
 			Offer:		    makeOffer,
@@ -35,7 +35,7 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 		}
 		}else {
 		makeOffer,_ := message.NewTradeOffer(commons.Weapon, 0, a.AgentState().Weapons, a.AgentState().Shields)
-		makeDemand := message.NewTradeDemand(commons.Shield, a.AgentState().Shields.Get(0).value)
+		makeDemand := message.NewTradeDemand(commons.Shield, a.AgentState().BonusDefense())
 		fiveRequest = message.TradeRequest{
 			CounterPartyID: T_id_defend,
 			Offer:		    makeOffer,
@@ -46,7 +46,7 @@ func T_request(a agent.BaseAgent, T_fightDecision decision.FightAction) message.
 }
 
 func getTradePartnerAttack(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
-	for id, T_HiddenAgentState := range a.View().agentState{
+	for id, T_HiddenAgentState := range *a.View().AgentState(){
 		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusAttack > a.AgentState().Weapons.Get(0).value{
 			return id
 		}
@@ -54,7 +54,7 @@ func getTradePartnerAttack(a agent.BaseAgent, T_fightDecision decision.FightActi
 	return ""
 }
 func getTradePartnerDefend(a agent.BaseAgent, T_fightDecision decision.FightAction) commons.ID{
-	for id, T_HiddenAgentState := range a.View().agentState{
+	for id, T_HiddenAgentState := range a.View().AgentState(){
 		if T_fightDecision == decision.Cower && T_HiddenAgentState.BonusDefense > a.AgentState().Shields.Get(0).value{
 			return id
 		}
