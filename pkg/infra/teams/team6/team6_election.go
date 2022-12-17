@@ -34,26 +34,19 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 
 func (a *Team6Agent) HandleConfidencePoll(b agent.BaseAgent) decision.Intent {
 	view := b.View()
-	fightDecisionPower, lootDecisionPower := view.LeaderManifesto().FightDecisionPower(), view.LeaderManifesto().LootDecisionPower()
-	fightDecisionValue, lootDecisionValue := 0, 0
+	id := view.CurrentLeader()
 
-	if fightDecisionPower {
-		fightDecisionValue = 100
-	}
-	if lootDecisionPower {
-		lootDecisionValue = 100
-	}
-
-	score := 1 / float32((4+math.Abs(float64(fightDecisionValue)-float64(a.fightDecisionPowerOpinion)))+
-		1/(4+math.Abs(float64(lootDecisionValue)-float64(a.lootDecisionPowerOpinion)))+
-		1/(4+math.Abs(float64(view.LeaderManifesto().TermLength())-float64(a.termLengthOpinion)))+
-		1/math.Abs(float64(view.LeaderManifesto().OverthrowThreshold())-float64(a.overthrowTHOpinion)))
+	score := (0.5*float32(SafeMapReadOrDefault(a.leadership, id, 50)) +
+		0.2*float32(SafeMapReadOrDefault(a.similarity, id, 50)) +
+		0.15*float32(SafeMapReadOrDefault(a.trust, id, 50)) +
+		0.1*float32(SafeMapReadOrDefault(a.bravery, id, 100)) +
+		0.05*float32(SafeMapReadOrDefault(a.generosity, id, 50)))
 
 	length := len(a.agentsRemaining)
 	score *= 1 / (1 + 0.25*float32(a.agentsRemaining[length-1]-a.agentsRemaining[length-2]))
-	if score < 45 {
+	if score < 49.5 {
 		return decision.Negative
-	} else if score > 55 {
+	} else if score > 50.5 {
 		return decision.Positive
 	} else {
 		return decision.Abstain
@@ -61,7 +54,6 @@ func (a *Team6Agent) HandleConfidencePoll(b agent.BaseAgent) decision.Intent {
 }
 
 func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
 	a.CreateManifesto(b)
 
 	potentialCandidates := generatePotentialCandidates(a, params)
@@ -75,7 +67,7 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 		potentialCandidates[id] = score * (0.5*float32(SafeMapReadOrDefault(a.leadership, id, 50)) +
 			0.2*float32(SafeMapReadOrDefault(a.similarity, id, 50)) +
 			0.15*float32(SafeMapReadOrDefault(a.trust, id, 50)) +
-			0.1*float32(SafeMapReadOrDefault(a.bravery, id, 50)) +
+			0.1*float32(SafeMapReadOrDefault(a.bravery, id, 100)) +
 			0.05*float32(SafeMapReadOrDefault(a.generosity, id, 50)))
 	}
 	ballot := make([]commons.ID, 0)
