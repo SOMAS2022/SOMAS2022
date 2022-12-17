@@ -140,20 +140,3 @@ func (sn *SocialNetwork) normaliseTrust() {
 		}
 	}
 }
-
-//Initialise social network
-
-// func initialiseSocialNetwork() socialNetwork {
-// 	var initialTrust uint
-// 	initialTrust = 50
-// 	sn.AgentProfile[...commmons.ID].StrategyScore = initialTrust
-// 	sn.AgentProfile.[...commmons.ID].AgentProfile.GoodwillScore = initialTrust
-// 	sn := socialNetwork{
-// 		AgentProfile: make(map[commons.ID]agentProfile),
-// 		LawfullMin:       75,
-// 		ChaoticMax:       25,
-// 		GoodMin:          75,
-// 		EvilMax:          25,
-// 	}
-// 	return sn
-// }
