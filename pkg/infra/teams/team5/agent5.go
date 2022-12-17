@@ -57,7 +57,7 @@ func (t5 *Agent5) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.El
 func (t5 *Agent5) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	myview := baseAgent.View()
 	currentLeader := myview.CurrentLeader()
-	if t5.ttable.EstimateLeadTrust(currentLeader) < 0 {
+	if t5.ttable.EstimateLeadTrust(currentLeader) < 5 {
 		return decision.Negative
 	}
 	return decision.Positive
@@ -331,7 +331,17 @@ func (t5 *Agent5) LootAction(
 	return proposedLoot
 }
 
-func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], ba agent.BaseAgent) {
+func (t5 *Agent5) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+	mystate := agent.AgentState()
+	wants := make([]proposal.Rule[decision.LootAction], 0)
+
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.HealthPotion, proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 750)))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.StaminaPotion, proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, 1500)))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.Weapon, proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, mystate.TotalAttack())))
+	wants = append(wants, *proposal.NewRule[decision.LootAction](decision.Shield, proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, mystate.TotalDefense())))
+
+	prop := *commons.NewImmutableList(wants)
+	_ = agent.SendLootProposalToLeader(prop)
 }
 
 func (t5 *Agent5) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
@@ -387,9 +397,12 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 		t5.ttable.NegativeLeaderEvent(currentLeader, float32(deathLastRound))
 	}
 	// lead trust gain due to no health loss (being protected)
-	hpLossLastRound := t5.preHealth - baseAgent.AgentState().Hp
+	hpLossLastRound := float32(t5.preHealth) - float32(baseAgent.AgentState().Hp)
+	if hpLossLastRound > 0 {
+		t5.ttable.NegativeLeaderEvent(currentLeader, -hpLossLastRound)
+	}
 	if hpLossLastRound <= 0 {
-		t5.ttable.PositiveLeaderEvent(currentLeader, 1)
+		t5.ttable.PositiveLeaderEvent(currentLeader, -hpLossLastRound)
 	}
 
 	for _, id := range commons.ImmutableMapKeys(globalStates) {
@@ -464,6 +477,7 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 		Properties: map[string]float32{
 			"bravery":       float32(t5.bravery),
 			t5.qtable.Log(): 0,
+			"trustToLeader": t5.ttable.EstimateLeadTrust(view.CurrentLeader()),
 		},
 	}
 }
