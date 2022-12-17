@@ -875,7 +875,6 @@ func (a *Agent2) replaceDecision(baseAgent agent.BaseAgent, N int) decision.Figh
 	lastFighting := countDecisionInMaps(decision.Attack, decisionHistory[len(decisionHistory)-1:])
 
 	if lastFighting < meanNLastRounds {
-
 		attack := baseAgent.AgentState().Attack
 		defense := baseAgent.AgentState().Defense
 		health := baseAgent.AgentState().Hp
@@ -982,7 +981,6 @@ func (a *Agent2) LootAllocation(
 	proposal message.Proposal[decision.LootAction],
 	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
 	agentState := view.AgentState()
