@@ -361,10 +361,10 @@ func (fiv *FivAgent) UpdateTrust(baseAgent agent.BaseAgent) {
 	// lead trust gain due to no health loss (being protected)
 	hpLossLastRound := float32(fiv.preHealth) - float32(baseAgent.AgentState().Hp)
 	if hpLossLastRound > 0 {
-		fiv.ttable.NegativeLeaderEvent(currentLeader, float32(-hpLossLastRound))
+		fiv.ttable.NegativeLeaderEvent(currentLeader, -hpLossLastRound)
 	}
 	if hpLossLastRound <= 0 {
-		fiv.ttable.PositiveLeaderEvent(currentLeader, float32(-hpLossLastRound))
+		fiv.ttable.PositiveLeaderEvent(currentLeader, -hpLossLastRound)
 	}
 
 	for _, id := range commons.ImmutableMapKeys(globalStates) {
