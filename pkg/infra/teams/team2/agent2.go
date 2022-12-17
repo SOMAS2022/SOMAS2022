@@ -162,7 +162,6 @@ func (a *Agent2) newGovernmentTimeline(agent agent.BaseAgent, haveElections bool
 				overthrown: false,
 			}
 	}
-
 }
 
 /* ---- UPDATES FUNCTIONS ---- */
@@ -294,7 +293,7 @@ func (a *Agent2) weightedManifestoEffectiveness(agent agent.BaseAgent, weight fl
 	view := agent.View()
 	manifesto := view.LeaderManifesto()
 	term := float64(manifesto.TermLength())
-	return 0.5 * (weightedOverthrowPercentage(agent, 1) + term/a.avgTermSurvival)
+	return 0.5 * (weightedOverthrowPercentage(agent, weight) + term/a.avgTermSurvival)
 }
 
 // Returns Number of Terms Agent2 served
@@ -549,7 +548,6 @@ func (a *Agent2) HandleUpdateWeapon(agent agent.BaseAgent) decision.ItemIdx {
 
 // HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
 func (a *Agent2) HandleUpdateShield(agent agent.BaseAgent) decision.ItemIdx {
-
 	shieldInventory := agent.AgentState().Shields
 	if shieldInventory.Len() != 0 {
 		desiredShieldIndex := decision.ItemIdx(shieldInventory.Len() - 1)
@@ -592,7 +590,6 @@ func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *com
 // Description: Used to give Manifesto Information if elected Leader.
 // Return:		The Manifesto with FightImposition, LootImposition, term length and overthrow threshold.
 func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
-
 	fightThreshold := 2.5
 	lootThreshold := 2.5
 	fightDecisionPower := false // default value
@@ -701,7 +698,6 @@ func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decisio
 		par3 := a.lastLootDecisionPower(candidates[i], 5)
 		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
 		agentScores[candidates[i]] = prospectLeaderScore(par1, par2, par3, sot)
-
 	}
 	sort.SliceStable(candidates, func(i, j int) bool {
 		return agentScores[candidates[i]] < agentScores[candidates[j]]
@@ -772,7 +768,7 @@ func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableLi
 }
 
 // HandleFightProposal
-// Description: Throught that function our agent votes on a broadcastes proposal
+// Description: Through that function our agent votes on a broadcasts proposal
 func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
@@ -832,9 +828,7 @@ func (a *Agent2) FightActionNoProposal(agent agent.BaseAgent) decision.FightActi
 // Description : Compare defense and attack potential, output a decision
 // Return:		Cower, Defend or Attack decision.
 func (a *Agent2) initialDecision(baseAgent agent.BaseAgent) decision.FightAction {
-
 	// method to retrieve state ?
-
 	attack := baseAgent.AgentState().Attack
 	defense := baseAgent.AgentState().Defense
 	health := baseAgent.AgentState().Hp
@@ -858,7 +852,6 @@ func (a *Agent2) initialDecision(baseAgent agent.BaseAgent) decision.FightAction
 }
 
 func countDecisionInMaps(value decision.FightAction, decisionMaps []immutable.Map[commons.ID, decision.FightAction]) int {
-
 	N := 0
 	for _, m := range decisionMaps {
 		itr := m.Iterator()
