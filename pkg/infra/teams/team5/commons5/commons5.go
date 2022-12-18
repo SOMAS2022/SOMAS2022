@@ -18,27 +18,6 @@ type Loot struct {
 	staminaPotions *commons.ImmutableList[Item]
 }
 
-type MyAgentState struct {
-	Initilised    bool
-	MyAttackPoint uint
-	MyShieldPoint uint
-	MyStamina     uint
-	MyHP          uint
-}
-
-func (mas MyAgentState) InitMyAgentState() MyAgentState {
-	if !mas.Initilised {
-		return mas
-	}
-	mas.Initilised = true
-	mas.MyAttackPoint = 20
-	mas.MyShieldPoint = 20
-	mas.MyStamina = 2000
-	mas.MyHP = 1000
-	return mas
-}
-
-// internal agents' states map
 type Agents struct {
 }
 

@@ -1,20 +1,16 @@
 package team5
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
-	"infra/logging"
-	"math"
-	"strings"
 )
 
 type AgentTrusts struct {
-	StrategyScore float64
-	GoodwillScore float64
+	StrategyScore float32
+	GoodwillScore float32
 }
 
-func InitTrust() AgentTrusts {
+func initTrust() AgentTrusts {
 	return AgentTrusts{
 		StrategyScore: 0.5,
 		GoodwillScore: 0.5,
@@ -25,18 +21,16 @@ type Strategy uint
 type Goodwill uint
 
 type AgentProfile struct {
+	AgentID  commons.ID
 	Trusts   AgentTrusts
 	Strategy Strategy
 	Goodwill Goodwill
 }
 
-func (ap *AgentProfile) JSON() string {
-	return fmt.Sprintf("{\"StrategyScore\": %f, \"GoodwillScore\": %f, \"Strategy\": %v, \"Goodwill\": %v}", ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore, ap.Strategy, ap.Goodwill)
-}
-
-func InitAgentProfile() AgentProfile {
+func initAgentProfile(AgentID commons.ID) AgentProfile {
 	return AgentProfile{
-		Trusts:   InitTrust(),
+		AgentID:  AgentID,
+		Trusts:   initTrust(),
 		Strategy: StrategyNeutral,
 		Goodwill: GoodwillNeutral,
 	}
@@ -55,34 +49,14 @@ const (
 )
 
 type SocialNetwork struct {
-	Initilised   bool
 	AgentProfile map[commons.ID]AgentProfile
-	LawfullMin   float64
-	ChaoticMax   float64
-	GoodMin      float64
-	EvilMax      float64
+	LawfullMin   float32
+	ChaoticMax   float32
+	GoodMin      float32
+	EvilMax      float32
 }
 
-func (sn *SocialNetwork) Log(id commons.ID, level uint) {
-	logs := logging.LogField{}
-	logs["ID"] = id
-	logs["LEVEL"] = level
-	network := []string{}
-	for id, ap := range sn.AgentProfile {
-		network = append(
-			network,
-			fmt.Sprintf("\"%s\": {\"StrategyScore\": %f, \"GoodwillScore\": %f, \"Strategy\": %v, \"Goodwill\": %v}",
-				id, ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore, ap.Strategy, ap.Goodwill),
-		)
-	}
-	logs["SocialNetwork"] = "{" + strings.Join(network, ",") + "}"
-	logging.Log(logging.Trace, logs, "TEAM5.SocialNetwork")
-}
-
-func (sn *SocialNetwork) InitSocialNetwork(ba agent.BaseAgent) {
-	if sn.Initilised {
-		return
-	}
+func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
 	view := ba.View()
 	agentState := view.AgentState()
 
@@ -90,76 +64,79 @@ func (sn *SocialNetwork) InitSocialNetwork(ba agent.BaseAgent) {
 	itr := agentState.Iterator()
 	for !itr.Done() {
 		id, _, _ := itr.Next()
-		agentprofileMAP[id] = InitAgentProfile()
+		agentprofileMAP[id] = initAgentProfile(id)
 	}
 
-	sn.Initilised = true
-	sn.AgentProfile = agentprofileMAP
-	sn.LawfullMin = 0.8
-	sn.ChaoticMax = 0.2
-	sn.GoodMin = 0.8
-	sn.EvilMax = 0.2
+	return SocialNetwork{
+		AgentProfile: agentprofileMAP,
+		LawfullMin:   0.8,
+		ChaoticMax:   0.2,
+		GoodMin:      0.8,
+		EvilMax:      0.2,
+	}
 }
 
-func (sn *SocialNetwork) UpdatePersonality(agentID commons.ID, extraStrategeScore float64, extraGoodwillScore float64) {
-	ap := sn.AgentProfile[agentID]
+func (sn *SocialNetwork) UpdatePersonality(agentID commons.ID, extraStrategeScore float32, extraGoodwillScore float32) {
+	agentProfile := sn.AgentProfile[agentID]
+	agentProfile.Trusts.StrategyScore += extraStrategeScore
+	agentProfile.Trusts.GoodwillScore += extraGoodwillScore
+	sn.AgentProfile[agentID] = agentProfile
 
-	ap.Trusts.StrategyScore += extraStrategeScore
-	ap.Trusts.GoodwillScore += extraGoodwillScore
 	sn.normaliseTrust()
 
-	s := ap.Trusts.StrategyScore
-	switch {
-	case s <= sn.ChaoticMax:
-		ap.Strategy = Chaotic
-	case s >= sn.LawfullMin:
-		ap.Strategy = Lawful
-	default:
-		ap.Strategy = StrategyNeutral
+	if sn.AgentProfile[agentID].Trusts.StrategyScore <= sn.ChaoticMax {
+		agentProfile = AgentProfile{Strategy: Chaotic}
+	} else if sn.AgentProfile[agentID].Trusts.StrategyScore >= sn.LawfullMin {
+		agentProfile = AgentProfile{Strategy: Lawful}
+	} else {
+		agentProfile = AgentProfile{Strategy: StrategyNeutral}
 	}
 
-	g := ap.Trusts.GoodwillScore
-	switch {
-	case g <= sn.EvilMax:
-		ap.Goodwill = Evil
-	case g >= sn.GoodMin:
-		ap.Goodwill = Good
-	default:
-		ap.Goodwill = GoodwillNeutral
+	if sn.AgentProfile[agentID].Trusts.GoodwillScore <= sn.EvilMax {
+		agentProfile = AgentProfile{Goodwill: Evil}
+	} else if sn.AgentProfile[agentID].Trusts.GoodwillScore >= sn.GoodMin {
+		agentProfile = AgentProfile{Goodwill: Good}
+	} else {
+		agentProfile = AgentProfile{Goodwill: GoodwillNeutral}
 	}
 
-	sn.AgentProfile[agentID] = ap
+	sn.AgentProfile[agentID] = agentProfile
 }
 
 func (sn *SocialNetwork) normaliseTrust() {
-	minSTG := 0.5
-	maxSTG := 0.5
-	minGW := 0.5
-	maxGW := 0.5
+	var minSTG float32 = 0.5
+	var maxSTG float32 = 0.5
+	var minGW float32 = 0.5
+	var maxGW float32 = 0.5
+	//var id commons.ID
 
 	for id := range sn.AgentProfile {
-		g := sn.AgentProfile[id].Trusts.GoodwillScore
-		minGW = math.Min(g, minGW)
-		maxGW = math.Max(g, maxGW)
-
-		s := sn.AgentProfile[id].Trusts.StrategyScore
-		minSTG = math.Min(s, minSTG)
-		maxSTG = math.Max(s, maxSTG)
+		if sn.AgentProfile[id].Trusts.GoodwillScore < minGW {
+			minGW = sn.AgentProfile[id].Trusts.GoodwillScore
+		}
+		if sn.AgentProfile[id].Trusts.GoodwillScore > maxGW {
+			maxGW = sn.AgentProfile[id].Trusts.GoodwillScore
+		}
+		if sn.AgentProfile[id].Trusts.GoodwillScore < minSTG {
+			minSTG = sn.AgentProfile[id].Trusts.StrategyScore
+		}
+		if sn.AgentProfile[id].Trusts.GoodwillScore > maxSTG {
+			maxSTG = sn.AgentProfile[id].Trusts.StrategyScore
+		}
 	}
-
 	distanceGW := maxGW - minGW
 	distanceSTG := maxSTG - minSTG
 
 	if distanceGW > 1 {
-		for id, ap := range sn.AgentProfile {
-			ap.Trusts.GoodwillScore = (ap.Trusts.GoodwillScore - minGW) / distanceGW
-			sn.AgentProfile[id] = ap
+		for id := range sn.AgentProfile {
+			agentProfile := sn.AgentProfile[id]
+			agentProfile.Trusts.GoodwillScore = (sn.AgentProfile[id].Trusts.GoodwillScore - minGW) / distanceGW
 		}
 	}
 	if distanceSTG > 1 {
-		for id, ap := range sn.AgentProfile {
-			ap.Trusts.StrategyScore = (ap.Trusts.StrategyScore - minSTG) / distanceSTG
-			sn.AgentProfile[id] = ap
+		for id := range sn.AgentProfile {
+			agentProfile := sn.AgentProfile[id]
+			agentProfile.Trusts.StrategyScore = (sn.AgentProfile[id].Trusts.StrategyScore - minSTG) / distanceSTG
 		}
 	}
 }
