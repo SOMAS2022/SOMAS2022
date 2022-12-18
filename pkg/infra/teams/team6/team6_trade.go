@@ -30,17 +30,14 @@ func respondToTrades(agent agent.BaseAgent, trades message.TradeInfo) message.Tr
 
 		reject := false
 
-		if negotiation.Agent1 == agent.ID() {
-			//Offer sent by us, check if Agent 2 has responded
-			if offer.Item.Id() == "" {
-				continue
+		if negotiation.Agent1 == agent.ID() && offer.Item.Id() == "" {
+			continue
+		} else if negotiation.Agent1 == agent.ID() {
+			ourDemand, _ := negotiation.GetDemand(agent.ID())
+			if offer.ItemType == ourDemand.ItemType && offer.Item.Value() >= ourDemand.MinValue {
+				return message.TradeAccept{TradeID: id}
 			} else {
-				ourDemand, _ := negotiation.GetDemand(agent.ID())
-				if offer.ItemType == ourDemand.ItemType && offer.Item.Value() >= ourDemand.MinValue {
-					return message.TradeAccept{TradeID: id}
-				} else {
-					reject = true
-				}
+				reject = true
 			}
 		} else {
 			//Offer sent by another agent
@@ -50,34 +47,23 @@ func respondToTrades(agent agent.BaseAgent, trades message.TradeInfo) message.Tr
 			} else {
 				// Can fulfill request if we wish
 				if offer.ItemType == demand.ItemType {
-					if offer.Item.Value() <= demand.MinValue {
+					idx := worstItemToTrade(agent, demand)
+					if offer.Item.Value() <= demand.MinValue || idx == -1 {
 						reject = true
 					} else {
-						idx := worstItemToTrade(agent, demand)
-						if idx == -1 {
-							reject = true
-						} else {
-							ourOffer, _ := message.NewTradeOffer(demand.ItemType, uint(idx), agentState.Weapons, agentState.Shields)
-							ourDemand := message.NewTradeDemand(offer.ItemType, offer.Item.Value())
-							return message.TradeBargain{TradeID: id, Offer: ourOffer, Demand: ourDemand}
-						}
+						ourOffer, _ := message.NewTradeOffer(demand.ItemType, uint(idx), agentState.Weapons, agentState.Shields)
+						ourDemand := message.NewTradeDemand(offer.ItemType, offer.Item.Value())
+						return message.TradeBargain{TradeID: id, Offer: ourOffer, Demand: ourDemand}
 					}
 				} else {
 					// Offering different item type to demand
 					weapons := agentState.Weapons
 					shields := agentState.Shields
 
-					var offerGain uint
-					var demandLoss uint
-
-					if offer.ItemType == commons.Weapon {
-						offerGain = offer.Item.Value() - agentState.BonusAttack()
-					} else {
-						offerGain = offer.Item.Value() - agentState.BonusDefense()
-					}
+					offerGain := offerGain(agent, offer)
+					demandLoss := diffBestSecondItems(agent, demand.ItemType)
 
 					itemToGiveIdx := worstItemToTrade(agent, demand)
-					demandLoss = diffBestSecondItems(agent, demand.ItemType)
 
 					if offerGain > demandLoss {
 						// We will participate
@@ -96,6 +82,15 @@ func respondToTrades(agent agent.BaseAgent, trades message.TradeInfo) message.Tr
 		}
 	}
 	return message.TradeAbstain{}
+}
+
+func offerGain(agent agent.BaseAgent, offer message.TradeOffer) uint {
+	agentState := agent.AgentState()
+	if offer.ItemType == commons.Weapon {
+		return offer.Item.Value() - agentState.BonusAttack()
+	} else {
+		return offer.Item.Value() - agentState.BonusDefense()
+	}
 }
 
 func diffBestSecondItems(agent agent.BaseAgent, itemType commons.ItemType) uint {
