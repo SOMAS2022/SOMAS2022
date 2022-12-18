@@ -658,17 +658,6 @@ func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent
 	}
 }
 
-// func (r *Agent2) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
-// 	switch rand.Intn(3) {
-// 	case 0:
-// 		return decision.Abstain
-// 	case 1:
-// 		return decision.Negative
-// 	default:
-// 		return decision.Positive
-// 	}
-// }
-
 // HandleElectionBallot
 // Description: Used to elect a Leader.
 // Return:  	A single Commons.ID for choose-one voting or an array of commons.ID of top leader choices for ranked-voting.
