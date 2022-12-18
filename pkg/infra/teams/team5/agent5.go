@@ -470,7 +470,7 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 		t5.socialNetwork.InitSocialNetwork(a)
 	}
 	//if defect, goodwill += 0.2*(0.5-leader's goodwill), strategy += 0.2*(0.5-leader's strategy)
-	//it not deflect, goodwill +0.03
+	//it not defect, goodwill +0.03
 	for !iter.Done() {
 		id, as, _ := iter.Next()
 
