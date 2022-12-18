@@ -165,7 +165,6 @@ func (a *Agent2) newGovernmentTimeline(agent agent.BaseAgent, haveElections bool
 }
 
 /* ---- UPDATES FUNCTIONS ---- */
-
 func (a *Agent2) updateSocialCapital(fightResult commons.ImmutableList[decision.ImmutableFightResult], agent agent.BaseAgent) {
 	view := agent.View()
 	agents := view.AgentState()
