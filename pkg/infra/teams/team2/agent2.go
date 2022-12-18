@@ -187,7 +187,8 @@ func (a *Agent2) updateSocialCapital(fightResult commons.ImmutableList[decision.
 	a.broadcastRates = append(a.broadcastRates, float64(a.proposalsBroadcast)/float64(a.proposalsTotal))
 	a.avgSurvivalCurrTerm = avg(a.survivalRates)
 	a.avgBroadcastRateCurrTerm = avg(a.broadcastRates)
-	a.avgSurvival = (a.avgSurvival*float64(view.CurrentLevel()-1) + float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel)) / float64(view.CurrentLevel())
+	// a.avgSurvival = (a.avgSurvival*float64(view.CurrentLevel()-1) + float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel)) / float64(view.CurrentLevel())
+	a.avgSurvival = 1
 	a.avgBroadcastRate = (a.avgBroadcastRate*float64(view.CurrentLevel()-1) + float64(a.proposalsBroadcast)/float64(a.proposalsTotal)) / float64(view.CurrentLevel())
 }
 
