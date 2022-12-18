@@ -9,6 +9,7 @@ import (
 	"infra/game/state"
 	"infra/logging"
 	"infra/teams/team5/commons5"
+	"math"
 	"math/rand"
 	"strings"
 
@@ -19,6 +20,7 @@ type Agent5 struct {
 	lootInformation commons5.Loot
 	socialNetwork   SocialNetwork
 	t5Manifesto     T5Manifesto
+	myAgentState    commons5.MyAgentState
 	preHealth       uint
 	prePopNum       uint
 	exploreRate     float32
@@ -159,8 +161,11 @@ func (t5 *Agent5) HandleFightProposalRequest(
 }
 
 func (t5 *Agent5) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
-	if intent == 0 {
+
+	fight_max := math.Max(float64(t5.myAgentState.MyAttackPoint), float64(t5.myAgentState.MyShieldPoint))
+	HPST_min := math.Max(float64(t5.myAgentState.MyStamina), float64(t5.myAgentState.MyHP))
+
+	if fight_max > HPST_min {
 		return decision.Positive
 	} else {
 		return decision.Negative
@@ -418,9 +423,21 @@ func (t5 *Agent5) UpdateTrust(baseAgent agent.BaseAgent) {
 
 func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], _ *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	view := a.View()
+	mas := a.AgentState()
 	as := view.AgentState()
 	iter := as.Iterator()
 	leaderID := view.CurrentLeader()
+
+	if !t5.myAgentState.Initilised {
+		t5.myAgentState.InitMyAgentState()
+	} else {
+		t5.myAgentState = commons5.MyAgentState{
+			MyAttackPoint: mas.Attack,
+			MyShieldPoint: mas.Defense,
+			MyHP:          mas.Hp,
+			MyStamina:     mas.Stamina,
+		}
+	}
 
 	//initialise social network after all agent has been spawned
 	if !t5.socialNetwork.Initilised {

@@ -31,7 +31,7 @@ type AgentProfile struct {
 }
 
 func (ap *AgentProfile) JSON() string {
-	return fmt.Sprintf("{\"StrategyScore\": %f, \"GoodwillScore\": %f}", ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore)
+	return fmt.Sprintf("{\"StrategyScore\": %f, \"GoodwillScore\": %f, \"Strategy\": %v, \"Goodwill\": %v}", ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore, ap.Strategy, ap.Goodwill)
 }
 
 func InitAgentProfile() AgentProfile {
@@ -71,8 +71,8 @@ func (sn *SocialNetwork) Log(id commons.ID, level uint) {
 	for id, ap := range sn.AgentProfile {
 		network = append(
 			network,
-			fmt.Sprintf("\"%s\": {\"StrategyScore\": %f, \"GoodwillScore\": %f}",
-				id, ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore),
+			fmt.Sprintf("\"%s\": {\"StrategyScore\": %f, \"GoodwillScore\": %f, \"Strategy\": %v, \"Goodwill\": %v}",
+				id, ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore, ap.Strategy, ap.Goodwill),
 		)
 	}
 	logs["SocialNetwork"] = "{" + strings.Join(network, ",") + "}"

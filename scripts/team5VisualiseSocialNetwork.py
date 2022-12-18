@@ -6,6 +6,8 @@ import json
 import math
 import re
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import numpy as np
 
 
 def SocialNetwork(frame):
@@ -15,7 +17,10 @@ def SocialNetwork(frame):
     for _, item in network.items():
         s = item.get("StrategyScore")
         g = item.get("GoodwillScore")
-        result.append((g, s))
+        sp = item.get("Strategy")
+        gp = item.get("Goodwill")
+        colour = (3*sp+gp)
+        result.append((g, s, sp, gp, colour))
 
     return result
 
@@ -46,7 +51,16 @@ def main(log_file):
             network = SocialNetwork(level)
             res = list(zip(*network))
             plt.plot(res[0], res[1], "o")
+            plt.axvline(0.2, color='r', linestyle='--')
+            plt.axvline(0.8, color='g', linestyle='--')
+            plt.axhline(0.2, color='r', linestyle='--')
+            plt.axhline(0.8, color='g', linestyle='--')
+            plt.xlim(0, 1)
+            plt.ylim(0, 1)
 
+
+                    
+                                                
     plt.ylabel("Strategy Score")
     plt.xlabel("Goodwill Score")
     plt.title(f"Agent Categorisation on level {LEVEL}")
