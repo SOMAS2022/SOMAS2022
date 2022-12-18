@@ -19,13 +19,11 @@ type Agent5 struct {
 	lootInformation commons5.Loot
 	socialNetwork   SocialNetwork
 	t5Manifesto     T5Manifesto
-
-	bravery     int
-	preHealth   uint
-	prePopNum   uint
-	exploreRate float32
-	qtable      *Qtable
-	ttable      *TrustTable
+	preHealth       uint
+	prePopNum       uint
+	exploreRate     float32
+	qtable          *Qtable
+	ttable          *TrustTable
 }
 
 // --------------- Election ---------------
@@ -468,14 +466,12 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 	t5.t5Manifesto.updateLeaderCombo(a)
 
-	t5.bravery += rand.Intn(10)
 	t5.UpdateQ(a)
 	t5.UpdateTrust(a)
 	log <- logging.AgentLog{
 		Name: a.Name(),
 		ID:   a.ID(),
 		Properties: map[string]float32{
-			"bravery":       float32(t5.bravery),
 			t5.qtable.Log(): 0,
 			"trustToLeader": t5.ttable.EstimateLeadTrust(view.CurrentLeader()),
 		},
@@ -484,7 +480,6 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 func NewAgent5() agent.Strategy {
 	return &Agent5{
-
 		socialNetwork: SocialNetwork{
 			AgentProfile: make(map[commons.ID]AgentProfile),
 			LawfullMin:   0.8,
@@ -492,8 +487,6 @@ func NewAgent5() agent.Strategy {
 			GoodMin:      0.8,
 			EvilMax:      0.2,
 		},
-
-		bravery:     rand.Intn(5),
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
 		ttable:      NewTrustTable()}
