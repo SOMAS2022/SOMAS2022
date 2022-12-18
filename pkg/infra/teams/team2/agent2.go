@@ -633,18 +633,13 @@ func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
 func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	w0, w1, w2, w3, w4, w5 := 2.0, 1.0, 2.0, 1.0, 1.0, -1.0
 
-	c_avgSurvival := a.avgSurvival
-	c_avgBroadcastRate := a.avgBroadcastRate
-	c_avgLeadershipXp := a.avgLeadershipXp
-	c_avgNoConfRate := a.avgNoConfRate
+	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
+	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
+	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
+	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
+	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
 
-	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - c_avgSurvival) / c_avgSurvival
-	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - c_avgSurvival) / c_avgSurvival
-	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - c_avgBroadcastRate) / c_avgBroadcastRate
-	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - c_avgBroadcastRate) / c_avgBroadcastRate
-	leadershipXpNorm := (a.leadershipXp - c_avgLeadershipXp) / c_avgLeadershipXp
-
-	noConfRateNorm := (a.noConfRate - c_avgNoConfRate) / c_avgNoConfRate
+	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
 	trustWorthyness := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm
 	networks := w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm
 	institutions := w4*leadershipXpNorm + w5*noConfRateNorm
