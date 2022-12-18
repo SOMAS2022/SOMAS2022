@@ -514,7 +514,6 @@ func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
 	v_tol := 0.6
 	if float64(a.HP) >= v_tol*float64(threshold_fight_HP) && float64(a.HP) <= (1+v_tol)*float64(threshold_fight_HP) && float64(a.ST) >= v_tol*float64(threshold_fight_ST) && float64(a.ST) <= (1+v_tol)*float64(threshold_fight_ST) && float64(TotalAttack) >= v_tol*float64(thresh_attack) && float64(TotalAttack) <= (1+v_tol)*float64(thresh_attack) && float64(TotalDefense) >= v_tol*float64(thresh_defend) && float64(TotalDefense) <= (1+v_tol)*float64(thresh_defend) {
 		a.hasVotedThisRound = true //vote YES
-
 	} else {
 		a.hasVotedThisRound = false //vote NO
 	}
