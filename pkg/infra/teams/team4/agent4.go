@@ -16,13 +16,14 @@ import (
 
 // Struct for AgentFour
 type AgentFour struct {
-	HP           int
-	ST           int
-	AT           int
-	SH           int
-	C            int
-	bravery      int
-	utilityScore map[commons.ID]int
+	HP                int
+	ST                int
+	AT                int
+	SH                int
+	C                 int
+	bravery           int
+	hasVotedThisRound bool
+	utilityScore      map[commons.ID]int
 }
 
 // bravery and utility score defined
@@ -256,15 +257,76 @@ func (a *AgentFour) HandleFightProposalRequest(_ message.Proposal[decision.Fight
 }
 
 func (a *AgentFour) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
-		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
+	Agentstate := baseAgent.AgentState()
+	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+	view := baseAgent.View()
+	var manifesto_decision decision.FightAction
+	rand_prob := 0.5
+
+	//var get_HP_levels = a.HPLevels(baseAgent)
+	var HP_levels_list = a.HPLevels(baseAgent)
+	var ST_levels_list = a.STLevels(baseAgent)
+	thresh_fight := 0.3
+
+	var agent_map = view.AgentState()
+
+	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
+	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
+	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
+
+	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
+	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
+	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
+
+	thresh_attack := rand.Intn(20) / agent_map.Len()
+	thresh_defend := rand.Intn(20) / agent_map.Len()
+	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+
+	var fightRes = rand.Intn(20)
+
+	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
+
+	if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
+		if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
+			switch {
+			case float64(rand_prob) >= 0.4:
+				manifesto_decision = decision.Defend
+			case float64(rand_prob) <= 0.6:
+				manifesto_decision = decision.Attack
+			}
+		}
+		if TotalAttack > uint(thresh_attack) {
+			manifesto_decision = decision.Attack
+		}
+		if TotalDefense > uint(thresh_defend) {
+			manifesto_decision = decision.Defend
+		}
+	} else {
+		manifesto_decision = decision.Cower
 	}
+
+	if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
+		if float64(rand_prob) < thresh_fight {
+			threshold_fight_HP = a.HP + 10
+			a.C -= 1
+		} else {
+			a.C += 1
+		}
+	}
+
+	return manifesto_decision
+	// Code for random case:
+	// fight := rand.Intn(3)
+	// switch fight {
+	// case 0:
+	// 	return decision.Cower
+	// case 1:
+	// 	return decision.Attack
+	// default:
+	// 	return decision.Defend
+	// }
 }
 
 func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
@@ -571,31 +633,89 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	return *builder.Map()
 }
 
-// func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
-// 	Agentstate := baseAgent.AgentState()
-// 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-// 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-// 	v_tol := 0.6
-// 	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
-// 		//vote YES
+func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
+	Agentstate := baseAgent.AgentState()
+	view := baseAgent.View()
+	var HP_levels_list = a.HPLevels(baseAgent)
+	var ST_levels_list = a.STLevels(baseAgent)
+	var agent_map = view.AgentState()
 
-// 	} else {
-// 		//vote NO
+	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
+	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
+	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
+	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
+	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
+	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
+
+	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+
+	thresh_attack := rand.Intn(20) / agent_map.Len()
+	thresh_defend := rand.Intn(20) / agent_map.Len()
+
+	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+	v_tol := 0.6
+	if float64(a.HP) >= v_tol*float64(threshold_fight_HP) && float64(a.HP) <= (1+v_tol)*float64(threshold_fight_HP) && float64(a.ST) >= v_tol*float64(threshold_fight_ST) && float64(a.ST) <= (1+v_tol)*float64(threshold_fight_ST) && float64(TotalAttack) >= v_tol*float64(thresh_attack) && float64(TotalAttack) <= (1+v_tol)*float64(thresh_attack) && float64(TotalDefense) >= v_tol*float64(thresh_defend) && float64(TotalDefense) <= (1+v_tol)*float64(thresh_defend) {
+		//vote YES
+
+	} else {
+		//vote NO
+	}
+}
+
+func (a *AgentFour) VoteLootManifesto(baseAgent agent.BaseAgent) {
+	Agentstate := baseAgent.AgentState()
+	view := baseAgent.View()
+	var HP_levels_list = a.HPLevels(baseAgent)
+	var ST_levels_list = a.STLevels(baseAgent)
+	var agent_map = view.AgentState()
+
+	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
+	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
+	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
+	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
+	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
+	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
+
+	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+
+	thresh_attack := rand.Intn(20) / agent_map.Len()
+	thresh_defend := rand.Intn(20) / agent_map.Len()
+
+	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+	v_tol := 0.6
+
+	if float64(a.HP) >= v_tol*float64(threshold_fight_HP) && float64(a.HP) <= (1+v_tol)*float64(threshold_fight_HP) && float64(a.ST) >= v_tol*float64(threshold_fight_ST) && float64(a.ST) <= (1+v_tol)*float64(threshold_fight_ST) && float64(TotalAttack) >= v_tol*float64(thresh_attack) && float64(TotalAttack) <= (1+v_tol)*float64(thresh_attack) && float64(TotalDefense) >= v_tol*float64(thresh_defend) && float64(TotalDefense) <= (1+v_tol)*float64(thresh_defend) {
+		a.hasVotedThisRound = true //vote YES
+	} else {
+		a.hasVotedThisRound = false //vote NO
+	}
+}
+
+func (a *AgentFour) DisobeyFightManifesto(baseAgent agent.BaseAgent) {
+	Agentstate := baseAgent.AgentState()
+	var fightRes = rand.Intn(20)
+	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
+	var manifesto_decision = a.FightActionNoProposal(baseAgent)
+	//Receive fight manifesto_decision from the server
+	definite_decision := manifesto_decision //Default
+	if *FightMethod != manifesto_decision {
+		if manifesto_decision == decision.Attack || decision.Defend {
+			if float64(a.HP) < 0.1 || float64(a.ST) < 0.1 {
+				definite_decision = *FightMethod
+				a.C = a.C - 2
+			}
+		}
+	}
+}
+
+//For each fight round
+// itr := fightResult.Iterator()
+// 	for !itr.Done() { // For each fight round
 // 	}
-// }
-
-// func (a *AgentFour) VoteLootManifesto(agent agent.BaseAgent) {
-// 	Agentstate := baseAgent.AgentState()
-// 	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-// 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-// 	v_tol := 0.6
-// 	if a.HP >= v_tol*threshold_fight_HP && a.HP <= (1+v_tol)*threshold_fight_HP && a.ST >= v_tol*threshold_fight_ST && a.ST <= (1+v_tol)*threshold_fight_ST && TotalAttack >= v_tol*threshold_attack && TotalAttack <= (1+v_tol)*threshold_attack && TotalDefense >= v_tol*threshold_defend && TotalDefense <= (1+v_tol)*threshold_defend {
-
-// 		//vote YES
-// 	} else {
-// 		//vote NO
-// 	}
-// }
 
 //Alternative FightManifesto method
 // func FightManifesto(agents map[commons.ID]agent.Agent) map[commons.ID]decision.FightAction {
