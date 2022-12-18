@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/logging"
 	"math"
+	"strings"
 )
 
 type AgentTrusts struct {
@@ -30,7 +31,7 @@ type AgentProfile struct {
 }
 
 func (ap *AgentProfile) JSON() string {
-	return fmt.Sprintf("AgentProfile: {StrategyScore: %f, GoodwillScore: %f}", ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore)
+	return fmt.Sprintf("{\"StrategyScore\": %f, \"GoodwillScore\": %f}", ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore)
 }
 
 func InitAgentProfile() AgentProfile {
@@ -63,10 +64,18 @@ type SocialNetwork struct {
 }
 
 func (sn *SocialNetwork) Log(id commons.ID, level uint) {
-	logs := logging.LogField{"ID": id, "level": level}
+	logs := logging.LogField{}
+	logs["ID"] = id
+	logs["LEVEL"] = level
+	network := []string{}
 	for id, ap := range sn.AgentProfile {
-		logs[id] = ap.JSON()
+		network = append(
+			network,
+			fmt.Sprintf("\"%s\": {\"StrategyScore\": %f, \"GoodwillScore\": %f}",
+				id, ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore),
+		)
 	}
+	logs["SocialNetwork"] = "{" + strings.Join(network, ",") + "}"
 	logging.Log(logging.Trace, logs, "TEAM5.SocialNetwork")
 }
 
