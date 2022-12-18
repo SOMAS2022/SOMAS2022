@@ -235,7 +235,6 @@ func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.Immu
 		builder.Set(id, fightAction)
 	}
 	return *builder.Map()
-
 }
 
 func (a *AgentFour) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
@@ -385,12 +384,9 @@ func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 // *********************************** TRADE INTERFACE FUNCTIONS ***********************************
 
 func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
-
 	return message.TradeRequest{}
 	// respond to requests
-
 	// make requests
-
 }
 
 // *********************************** OTHER FUNCTIONS ***********************************
@@ -546,9 +542,9 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 		if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
 			if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
 				switch {
-				case float64(rand_prob) >= 0.4:
+				case rand_prob >= 0.4:
 					manifesto_decision = decision.Defend
-				case float64(rand_prob) <= 0.6:
+				case rand_prob <= 0.6:
 					manifesto_decision = decision.Attack
 				}
 			}
@@ -563,7 +559,7 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 		}
 
 		if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
-			if float64(rand_prob) < thresh_fight {
+			if rand_prob < thresh_fight {
 				threshold_fight_HP = a.HP + 10
 				a.C -= 1
 			} else {
