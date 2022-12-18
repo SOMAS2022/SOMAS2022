@@ -147,8 +147,8 @@ func (t5 *Agent5) HandleFightProposalRequest(
 	_ agent.BaseAgent,
 	proposals *immutable.Map[commons.ID, decision.FightAction],
 ) bool {
-	var allCount float32 = 0.0
-	var cowCount float32 = 0.0
+	allCount := 0
+	cowCount := 0
 	itr := proposals.Iterator()
 	for !itr.Done() {
 		_, fight, _ := itr.Next()
@@ -157,24 +157,24 @@ func (t5 *Agent5) HandleFightProposalRequest(
 			cowCount += 1
 		}
 	}
-	percentCow := cowCount / allCount
+	percentCow := float64(cowCount) / float64(allCount)
 	return percentCow <= 0.4
 }
 
 func (t5 *Agent5) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	iter := proposal.Rules().Iterator()
 	//var hamming_distance float32 = 0
-	var hamming_distance_placeholder float32 = 0
-	var biwise_xor_sum_placeholder float32 = 0
-	var entry_counter float32 = 0
+	hamming_distance_placeholder := 0.0
+	biwise_xor_sum_placeholder := 0.0
+	entry_counter := 0.0
 	id := proposal.ProposerID()
 	if !iter.Done() {
 		//using xor bitwise operator to find the hamming distance of their proposal and ours
 		//hamming_distance += t5.myFightResolution.Get(decision.FightAction)^iter.Next()
 		entry_counter += 1
-		biwise_xor_sum_placeholder += rand.Float32()
+		biwise_xor_sum_placeholder += rand.Float64()
 	}
-	hamming_distance_placeholder = biwise_xor_sum_placeholder / float32(entry_counter)
+	hamming_distance_placeholder = biwise_xor_sum_placeholder / entry_counter
 
 	if hamming_distance_placeholder <= 0.5 {
 		t5.socialNetwork.UpdatePersonality(id, 0.1, 0)
@@ -220,7 +220,7 @@ func (t5 *Agent5) FightResolution(baseAgent agent.BaseAgent, prop commons.Immuta
 		var fightAction decision.FightAction
 		agentAttack_placeholder := rand.Float64()
 		agentShield_placeholder := rand.Float64()
-		agentHP_placeholder := rand.Float64()      // *250 to convert hidden state to estination
+		agentHP_placeholder := rand.Float64()      // *250 to convert hidden state to estimation
 		agentStamina_placeholder := rand.Float64() //*500 to convert hiddent state to estimation
 		fight_max := math.Max(agentAttack_placeholder, agentShield_placeholder)
 		HPST_min := math.Max(agentHP_placeholder, agentStamina_placeholder)
