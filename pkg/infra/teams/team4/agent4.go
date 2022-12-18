@@ -565,10 +565,8 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 			} else {
 				a.C += 1
 			}
-
 		}
 		builder.Set(id, *FightMethod)
-
 	}
 	return *builder.Map()
 }
