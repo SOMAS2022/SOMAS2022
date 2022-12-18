@@ -44,9 +44,9 @@ func (a *Team6Agent) HandleConfidencePoll(b agent.BaseAgent) decision.Intent {
 
 	length := len(a.agentsRemaining)
 	score *= 1 / (1 + 0.25*float32(a.agentsRemaining[length-1]-a.agentsRemaining[length-2]))
-	if score < 49.5 {
+	if score < 45 {
 		return decision.Negative
-	} else if score > 50.5 {
+	} else if score > 55 {
 		return decision.Positive
 	} else {
 		return decision.Abstain
