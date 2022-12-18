@@ -65,9 +65,9 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision
 //Agent 3 Voting Strategy
 
 // Effectivness code
-var effective bool
+// var effective bool
 
-var initial_monster_attack int = 1
+// var initial_monster_attack int = 1
 
 // var //get monster attack
 
@@ -206,44 +206,45 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 
 	return fairness
 }
-func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	disobedienceMap := make([]int, agentState.Len())
-	var agentDefected bool
-	itr := agentState.Iterator()
-	i := 0
 
-	for !itr.Done() {
-		id, hiddenState, _ := itr.Next()
+// func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
+// 	view := baseAgent.View()
+// 	agentState := view.AgentState()
+// 	disobedienceMap := make([]int, agentState.Len())
+// 	var agentDefected bool
+// 	itr := agentState.Iterator()
+// 	i := 0
 
-		disobedienceMap[i] += BoolToInt(hiddenState.Defector.IsDefector())
-		// did we disobey
-		if id == baseAgent.ID() {
-			if hiddenState.Defector.IsDefector() {
-				agentDefected = true
-			} else {
-				agentDefected = false
-			}
-		}
-	}
+// 	for !itr.Done() {
+// 		id, hiddenState, _ := itr.Next()
 
-	borda := a.CalcBordaScore(baseAgent)
-	bordaPerCent := BordaPercentage(baseAgent, borda)
-	for i := range disobedienceMap {
-		if disobedienceMap[i] >= 5 {
-			if bordaPerCent < 25 {
-				// a.utilityScore[baseAgent.ID()] =a.utilityScore[baseAgent.ID()]
-			} else if bordaPerCent > 25 && bordaPerCent < 50 {
-				a.utilityScore[baseAgent.ID()] -= 1
-			} else if bordaPerCent > 50 {
-				a.utilityScore[baseAgent.ID()] -= 2
-			} else if agentDefected {
-				a.utilityScore[baseAgent.ID()] -= 4
-			}
-		}
-	}
-}
+// 		disobedienceMap[i] += BoolToInt(hiddenState.Defector.IsDefector())
+// 		// did we disobey
+// 		if id == baseAgent.ID() {
+// 			if hiddenState.Defector.IsDefector() {
+// 				agentDefected = true
+// 			} else {
+// 				agentDefected = false
+// 			}
+// 		}
+// 	}
+
+// 	borda := a.CalcBordaScore(baseAgent)
+// 	bordaPerCent := BordaPercentage(baseAgent, borda)
+// 	for i := range disobedienceMap {
+// 		if disobedienceMap[i] >= 5 {
+// 			if bordaPerCent < 25 {
+// 				// a.utilityScore[baseAgent.ID()] =a.utilityScore[baseAgent.ID()]
+// 			} else if bordaPerCent > 25 && bordaPerCent < 50 {
+// 				a.utilityScore[baseAgent.ID()] -= 1
+// 			} else if bordaPerCent > 50 {
+// 				a.utilityScore[baseAgent.ID()] -= 2
+// 			} else if agentDefected {
+// 				a.utilityScore[baseAgent.ID()] -= 4
+// 			}
+// 		}
+// 	}
+// }
 
 // quick function to check if a is in list b
 // func in_list(a string, list []string) bool {

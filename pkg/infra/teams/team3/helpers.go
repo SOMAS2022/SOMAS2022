@@ -112,7 +112,6 @@ func CreateUtility() map[commons.ID]int {
 }
 
 func (a *AgentThree) InitUtility(baseAgent agent.BaseAgent) map[commons.ID]int {
-
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
