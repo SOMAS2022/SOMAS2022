@@ -20,10 +20,6 @@ runWithJSON: build
 
 runDebug: build
 		${BINARY_NAME} -d
-
-runDebugWithJSON: build
-		${BINARY_NAME} -d -j
-
 clean:
 		go clean
 		rm -r logs/*
