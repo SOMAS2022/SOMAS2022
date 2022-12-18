@@ -38,56 +38,13 @@ func NewAgentFour() agent.Strategy {
 
 // we always pick our best shield
 func (a *AgentFour) HandleUpdateShield(baseAgent agent.BaseAgent) decision.ItemIdx {
-	// view := baseAgent.View()
-	// agentState := view.AgentState()
-
-	// //shields := agentState.Shields
-	// shields := agentState.Shields.
-
-	// if shields.Len() > 0 { // if we have shields
-
-	// 	largestItemValue := 0
-	// 	itemIndex := 0
-
-	// 	for i := 0; i < shields.Len(); i++ {
-	// 		if shields.Get(i).Value() > largestItemValue {
-	// 			largestItemValue = shields.Get(i).Value()
-	// 			itemIndex = i
-	// 		}
-	// 	}
-
-	// 	return decision.ItemIdx(itemIndex)
-
-	// }
-
-	// what to do if we have no shields?
+	// first shield has highest points, since inventory is sorted
 	return decision.ItemIdx(0)
 }
 
 // we always pick the best weapon
 func (a *AgentFour) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {
-	// view := baseAgent.View()
-	// agentState := view.AgentState()
-
-	// weapons := agentState.Weapons
-
-	// if weapons.Len() > 0 { // if we have weapons
-
-	// 	largestItemValue := 0
-	// 	itemIndex := 0
-
-	// 	for i := 0; i < weapons.Len(); i++ {
-	// 		if weapons.Get(i).Value() > largestItemValue {
-	// 			largestItemValue = weapons.Get(i).Value()
-	// 			itemIndex = i
-	// 		}
-	// 	}
-
-	// 	return decision.ItemIdx(itemIndex)
-
-	// }
-
-	// what to do if we have no weapons?
+	// first weapon has highest points, since inventory is sorted
 	return decision.ItemIdx(0)
 }
 
@@ -180,26 +137,6 @@ func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.Fi
 }
 
 func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] { // Attack-Defend-Cower Strategy
-	// Agentstate := baseAgent.AgentState()
-	// builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-	// TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	// TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-	// var action decision.FightAction
-	// damage := int(state.MonsterAttack) / len(fightResult.CoweringAgents)
-
-	// if a.HP > (damage + 1) {
-	// 	if float64(TotalAttack) >= float64(TotalDefense)*0.8 {
-	// 		action = decision.Attack
-	// 	} else {
-	// 		action = decision.Defend
-	// 	}
-	// } else {
-	// 	action = decision.Cower
-	// }
-
-	// builder.Set(id, action)
-	// return *builder.Map()
-
 	view := baseAgent.View()
 	Agentstate := baseAgent.AgentState()
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
@@ -221,18 +158,6 @@ func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.Immu
 		} else {
 			fightAction = decision.Cower
 		}
-
-		// 	switch rand.Intn(3) {
-		// 	case 0:
-		// 		fightAction = decision.Attack
-		// 	case 1:
-		// 		fightAction = decision.Defend
-		// 	default:
-		// 		fightAction = decision.Cower
-		// 	}
-		// 	builder.Set(id, fightAction)
-		// }
-
 		builder.Set(id, fightAction)
 	}
 	return *builder.Map()
@@ -257,74 +182,15 @@ func (a *AgentFour) HandleFightProposalRequest(_ message.Proposal[decision.Fight
 }
 
 func (a *AgentFour) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	Agentstate := baseAgent.AgentState()
-	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-	view := baseAgent.View()
-	var manifesto_decision decision.FightAction
-	rand_prob := 0.5
-
-	//var get_HP_levels = a.HPLevels(baseAgent)
-	var HP_levels_list = a.HPLevels(baseAgent)
-	var ST_levels_list = a.STLevels(baseAgent)
-	thresh_fight := 0.3
-
-	var agent_map = view.AgentState()
-
-	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
-	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
-	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
-
-	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
-	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
-	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
-
-	thresh_attack := rand.Intn(20) / agent_map.Len()
-	thresh_defend := rand.Intn(20) / agent_map.Len()
-	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
-	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
-
-	var fightRes = rand.Intn(20) + 1
-
-	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
-
-	if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
-		if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
-			switch {
-			case float64(rand_prob) >= 0.4:
-				manifesto_decision = decision.Defend
-			case float64(rand_prob) <= 0.6:
-				manifesto_decision = decision.Attack
-			}
-		} else if TotalAttack > uint(thresh_attack) {
-			manifesto_decision = decision.Attack
-		} else if TotalDefense > uint(thresh_defend) {
-			manifesto_decision = decision.Defend
-		}
-	} else {
-		manifesto_decision = decision.Cower
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		return decision.Cower
+	case 1:
+		return decision.Attack
+	default:
+		return decision.Defend
 	}
-
-	if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
-		if float64(rand_prob) < thresh_fight {
-			threshold_fight_HP = a.HP + 10
-			a.C -= 1
-		} else {
-			a.C += 1
-		}
-	}
-
-	return manifesto_decision
-
-	// fight := rand.Intn(3)
-	// switch fight {
-	// case 0:
-	// 	return decision.Cower
-	// case 1:
-	// 	return decision.Attack
-	// default:
-	// 	return decision.Defend
-	// }
 }
 
 func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
@@ -445,8 +311,6 @@ func (a *AgentFour) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 func (a *AgentFour) HandleTradeNegotiation(theAgent agent.BaseAgent, m message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
-	// respond to requests
-	// make requests
 }
 
 // *********************************** OTHER FUNCTIONS ***********************************
@@ -510,12 +374,6 @@ func (a *AgentFour) HPLevels(agent agent.BaseAgent) [][]string {
 			sliceOfAgentsWithHighHealth = append(sliceOfAgentsWithHighHealth, key)
 		}
 	}
-
-	// l := list.New()
-	// l.PushBack(sliceOfAgentsWithLowHealth)
-	// l.PushBack(sliceOfAgentsWithMidHealth)
-	// l.PushBack(sliceOfAgentsWithHighHealth)
-
 	var l = [][]string{sliceOfAgentsWithLowHealth, sliceOfAgentsWithMidHealth, sliceOfAgentsWithHighHealth}
 	return l
 }
@@ -655,10 +513,10 @@ func (a *AgentFour) VoteFightManifesto(baseAgent agent.BaseAgent) {
 	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
 	v_tol := 0.6
 	if float64(a.HP) >= v_tol*float64(threshold_fight_HP) && float64(a.HP) <= (1+v_tol)*float64(threshold_fight_HP) && float64(a.ST) >= v_tol*float64(threshold_fight_ST) && float64(a.ST) <= (1+v_tol)*float64(threshold_fight_ST) && float64(TotalAttack) >= v_tol*float64(thresh_attack) && float64(TotalAttack) <= (1+v_tol)*float64(thresh_attack) && float64(TotalDefense) >= v_tol*float64(thresh_defend) && float64(TotalDefense) <= (1+v_tol)*float64(thresh_defend) {
-		//vote YES
+		a.hasVotedThisRound = true //vote YES
 
 	} else {
-		//vote NO
+		a.hasVotedThisRound = false //vote NO
 	}
 }
 
@@ -726,28 +584,6 @@ func (a *AgentFour) VoteLootManifesto(baseAgent agent.BaseAgent) {
 // 	return decisionMap
 // }
 
-// Replenish Health
-// func (a *AgentFour) RepenlishHealth(baseAgent agent.BaseAgent) uint {
-// 	aux_var := (Y/(0.5*N_surv) - a.SH)
-// 	for (a.HP < aux_var && we have a HP potion) {
-// 		//#use health potion -> health_potion = health_potion - 1
-// 	}
-// }
-
-// Replenish Stamina
-// func (a *AgentFour) RepenlishStamina(baseAgent agent.BaseAgent) uint {
-// 	aux_var := (Y/(0.5*N_surv) - a.SH)
-// 	for ((a.ST < TotalAttack || a.ST < TotalDefense) && (we have a ST potion)) {
-// 		#use stamina potion
-// 	}
-// }
-
-// // FUNCTIONS COPIED //
-
-// func (a *AgentFour) CurrentAction() decision.FightAction {
-// 	//
-// }
-
 func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
 		next, _ := iterator.Next()
@@ -764,5 +600,4 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 }
 
 func (a *AgentFour) UpdateUtility(baseAgent agent.BaseAgent) {
-	//???????
 }
