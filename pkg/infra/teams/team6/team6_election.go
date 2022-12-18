@@ -12,11 +12,13 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 
 	fightDecisionPower, lootDecisionPower := false, false
 
+	leadership := float32(SafeMapReadOrDefault(a.leadership, view.CurrentLeader(), 50))
+
 	a.fightDecisionPowerOpinion = a.newPowerOpinion(a.fightDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().FightDecisionPower())
 	a.lootDecisionPowerOpinion = a.newPowerOpinion(a.lootDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().LootDecisionPower())
-	a.termLengthOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().TermLength()) - a.termLengthOpinion) / 100.
+	a.termLengthOpinion += (leadership - 50.) * (float32(view.LeaderManifesto().TermLength()) - a.termLengthOpinion) / 100.
 	a.termLengthOpinion = clamp(a.termLengthOpinion, 1, 10)
-	a.overthrowTHOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().OverthrowThreshold()) - a.overthrowTHOpinion) / 100.
+	a.overthrowTHOpinion += (leadership - 50.) * (float32(view.LeaderManifesto().OverthrowThreshold()) - a.overthrowTHOpinion) / 100.
 	a.overthrowTHOpinion = clamp(a.overthrowTHOpinion, 5, 75)
 
 	if a.fightDecisionPowerOpinion > 50 {
