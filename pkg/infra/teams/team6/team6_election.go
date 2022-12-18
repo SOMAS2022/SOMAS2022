@@ -12,11 +12,13 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 
 	fightDecisionPower, lootDecisionPower := false, false
 
+	leadership := float32(SafeMapReadOrDefault(a.leadership, view.CurrentLeader(), 50))
+
 	a.fightDecisionPowerOpinion = a.newPowerOpinion(a.fightDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().FightDecisionPower())
 	a.lootDecisionPowerOpinion = a.newPowerOpinion(a.lootDecisionPowerOpinion, a.leadership[view.CurrentLeader()], view.LeaderManifesto().LootDecisionPower())
-	a.termLengthOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().TermLength()) - a.termLengthOpinion) / 100.
+	a.termLengthOpinion += (leadership - 50.) * (float32(view.LeaderManifesto().TermLength()) - a.termLengthOpinion) / 100.
 	a.termLengthOpinion = clamp(a.termLengthOpinion, 1, 10)
-	a.overthrowTHOpinion += (float32(a.leadership[view.CurrentLeader()]) - 50.) * (float32(view.LeaderManifesto().OverthrowThreshold()) - a.overthrowTHOpinion) / 100.
+	a.overthrowTHOpinion += (leadership - 50.) * (float32(view.LeaderManifesto().OverthrowThreshold()) - a.overthrowTHOpinion) / 100.
 	a.overthrowTHOpinion = clamp(a.overthrowTHOpinion, 5, 75)
 
 	if a.fightDecisionPowerOpinion > 50 {
@@ -34,20 +36,13 @@ func (a *Team6Agent) CreateManifesto(ba agent.BaseAgent) *decision.Manifesto {
 
 func (a *Team6Agent) HandleConfidencePoll(b agent.BaseAgent) decision.Intent {
 	view := b.View()
-	fightDecisionPower, lootDecisionPower := view.LeaderManifesto().FightDecisionPower(), view.LeaderManifesto().LootDecisionPower()
-	fightDecisionValue, lootDecisionValue := 0, 0
+	id := view.CurrentLeader()
 
-	if fightDecisionPower {
-		fightDecisionValue = 100
-	}
-	if lootDecisionPower {
-		lootDecisionValue = 100
-	}
-
-	score := 1 / float32((4+math.Abs(float64(fightDecisionValue)-float64(a.fightDecisionPowerOpinion)))+
-		1/(4+math.Abs(float64(lootDecisionValue)-float64(a.lootDecisionPowerOpinion)))+
-		1/(4+math.Abs(float64(view.LeaderManifesto().TermLength())-float64(a.termLengthOpinion)))+
-		1/math.Abs(float64(view.LeaderManifesto().OverthrowThreshold())-float64(a.overthrowTHOpinion)))
+	score := (0.5*float32(SafeMapReadOrDefault(a.leadership, id, 50)) +
+		0.2*float32(SafeMapReadOrDefault(a.similarity, id, 50)) +
+		0.15*float32(SafeMapReadOrDefault(a.trust, id, 50)) +
+		0.1*float32(SafeMapReadOrDefault(a.bravery, id, 100)) +
+		0.05*float32(SafeMapReadOrDefault(a.generosity, id, 50)))
 
 	length := len(a.agentsRemaining)
 	score *= 1 / (1 + 0.25*float32(a.agentsRemaining[length-1]-a.agentsRemaining[length-2]))
@@ -61,7 +56,6 @@ func (a *Team6Agent) HandleConfidencePoll(b agent.BaseAgent) decision.Intent {
 }
 
 func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
 	a.CreateManifesto(b)
 
 	potentialCandidates := generatePotentialCandidates(a, params)
@@ -75,7 +69,7 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 		potentialCandidates[id] = score * (0.5*float32(SafeMapReadOrDefault(a.leadership, id, 50)) +
 			0.2*float32(SafeMapReadOrDefault(a.similarity, id, 50)) +
 			0.15*float32(SafeMapReadOrDefault(a.trust, id, 50)) +
-			0.1*float32(SafeMapReadOrDefault(a.bravery, id, 50)) +
+			0.1*float32(SafeMapReadOrDefault(a.bravery, id, 100)) +
 			0.05*float32(SafeMapReadOrDefault(a.generosity, id, 50)))
 	}
 	ballot := make([]commons.ID, 0)
@@ -93,6 +87,11 @@ func (a *Team6Agent) HandleElectionBallot(b agent.BaseAgent, params *decision.El
 
 	if len(ballot) == 0 {
 		ballot = append(ballot, b.ID())
+	}
+
+	if a.CIGTLeader != "" {
+		ballot = make([]commons.ID, 0)
+		ballot = append(ballot, a.CIGTLeader)
 	}
 
 	return ballot

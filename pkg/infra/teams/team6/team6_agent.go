@@ -7,6 +7,7 @@ import (
 	"infra/game/message/proposal"
 	"infra/game/state"
 	"infra/logging"
+	"math"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -23,8 +24,16 @@ type Team6Agent struct {
 	similarity map[commons.ID]uint
 	trust      map[commons.ID]uint
 	leadership map[commons.ID]uint
+	CI_GT      map[commons.ID]float32
 
 	timesCowered map[commons.ID]uint
+
+	alpha      float32
+	beta       float32
+	gamma      float32
+	lambda     float32
+	selfCIGT   float32
+	CIGTLeader string
 
 	HPThreshold float32
 	ATThreshold float32
@@ -56,12 +65,12 @@ type Team6Agent struct {
 
 func NewTeam6Agent() agent.Strategy {
 	return &Team6Agent{
-		bravery:    make(map[commons.ID]uint),
-		generosity: make(map[commons.ID]uint),
-		similarity: make(map[commons.ID]uint),
-		trust:      make(map[commons.ID]uint),
-		leadership: make(map[commons.ID]uint),
-
+		bravery:      make(map[commons.ID]uint),
+		generosity:   make(map[commons.ID]uint),
+		similarity:   make(map[commons.ID]uint),
+		trust:        make(map[commons.ID]uint),
+		leadership:   make(map[commons.ID]uint),
+		CI_GT:        make(map[commons.ID]float32),
 		timesCowered: make(map[commons.ID]uint),
 
 		HPThreshold: 0.1,
@@ -142,6 +151,7 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 	leader := view.CurrentLeader()
 
 	updateSCValues(a, view)
+	a.updateCIGTvalues(ba, view)
 
 	agentStates := view.AgentState()
 	a.agentsRemaining = append(a.agentsRemaining, uint(agentStates.Len()))
@@ -207,6 +217,34 @@ func updateSCValues(a *Team6Agent, view state.View) {
 			a.bravery[id] = 100 - uint(float32(a.timesCowered[id])*100/float32(a.totalFightRounds))
 		} else {
 			a.bravery[id] = 100
+		}
+	}
+}
+
+func (a *Team6Agent) updateCIGTvalues(agent agent.BaseAgent, view state.View) {
+	a.alpha = 1
+	a.beta = 1
+	a.gamma = 1
+	a.lambda = 1
+	idself := agent.ID()
+	agentStates := view.AgentState()
+	itr := agentStates.Iterator()
+	for !itr.Done() {
+		id, as, _ := itr.Next()
+
+		stateSum := float32(uint(as.Hp) + uint(as.Stamina) + as.Attack + as.BonusAttack + as.Defense + as.BonusDefense)
+		a.CI_GT[id] = stateSum +
+			a.alpha*float32(a.generosity[id]) + a.beta*float32(a.bravery[id]) + a.gamma*float32(a.leadership[id]) +
+			float32(math.Pow(float64(a.lambda), float64(a.trust[id])))
+	}
+	a.selfCIGT = a.CI_GT[idself]
+
+	a.CIGTLeader = ""
+	itr = agentStates.Iterator()
+	for !itr.Done() {
+		id, _, _ := itr.Next()
+		if a.selfCIGT < a.CI_GT[id]*1.3 {
+			a.CIGTLeader = id
 		}
 	}
 }
