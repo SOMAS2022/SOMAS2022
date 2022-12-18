@@ -595,7 +595,7 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
-	var fightRes = rand.Intn(20)
+	var fightRes = rand.Intn(20) + 1
 
 	//var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, &fightActions)
 	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
@@ -695,22 +695,22 @@ func (a *AgentFour) VoteLootManifesto(baseAgent agent.BaseAgent) {
 	}
 }
 
-func (a *AgentFour) DisobeyFightManifesto(baseAgent agent.BaseAgent) {
-	Agentstate := baseAgent.AgentState()
-	var fightRes = rand.Intn(20)
-	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
-	var manifesto_decision = a.FightActionNoProposal(baseAgent)
-	//Receive fight manifesto_decision from the server
-	definite_decision := manifesto_decision //Default
-	if *FightMethod != manifesto_decision {
-		if manifesto_decision == decision.Attack || decision.Defend {
-			if float64(a.HP) < 0.1 || float64(a.ST) < 0.1 {
-				definite_decision = *FightMethod
-				a.C = a.C - 2
-			}
-		}
-	}
-}
+// func (a *AgentFour) DisobeyFightManifesto(baseAgent agent.BaseAgent) {
+// 	Agentstate := baseAgent.AgentState()
+// 	var fightRes = rand.Intn(20)
+// 	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
+// 	var manifesto_decision = a.FightActionNoProposal(baseAgent)
+// 	//Receive fight manifesto_decision from the server
+// 	definite_decision := manifesto_decision //Default
+// 	if *FightMethod != manifesto_decision {
+// 		if manifesto_decision == decision.Attack || decision.Defend {
+// 			if float64(a.HP) < 0.1 || float64(a.ST) < 0.1 {
+// 				definite_decision = *FightMethod
+// 				a.C = a.C - 2
+// 			}
+// 		}
+// 	}
+// }
 
 //For each fight round
 // itr := fightResult.Iterator()
