@@ -247,5 +247,4 @@ func (a *Team6Agent) updateCIGTvalues(agent agent.BaseAgent, view state.View) {
 			a.CIGTLeader = id
 		}
 	}
-
 }

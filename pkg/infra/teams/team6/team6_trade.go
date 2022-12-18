@@ -41,7 +41,6 @@ func respondToTrades(agent agent.BaseAgent, trades message.TradeInfo) message.Tr
 				} else {
 					reject = true
 				}
-
 			}
 		} else {
 			//Offer sent by another agent
@@ -95,7 +94,6 @@ func respondToTrades(agent agent.BaseAgent, trades message.TradeInfo) message.Tr
 		if reject && len(trades.Negotiations) == 1 {
 			return message.TradeReject{TradeID: id}
 		}
-
 	}
 	return message.TradeAbstain{}
 }
@@ -134,7 +132,7 @@ func worstItemToTrade(agent agent.BaseAgent, demand message.TradeDemand) int {
 	it := items.Iterator()
 	for !it.Done() {
 		idx, itm := it.Next()
-		if itm.Value() < uint(lowestVal) && itm.Value() >= demand.MinValue {
+		if itm.Value() < lowestVal && itm.Value() >= demand.MinValue {
 			lowestVal = itm.Value()
 			lowestValIdx = idx
 		}
