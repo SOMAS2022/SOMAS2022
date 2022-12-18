@@ -22,11 +22,7 @@ type AgentFour struct {
 	SH           int
 	C            int
 	bravery      int
-	uR           map[commons.ID]int
-	uP           map[commons.ID]int
-	uC           map[commons.ID]int
 	utilityScore map[commons.ID]int
-	TSN          []commons.ID
 }
 
 // bravery and utility score defined
@@ -182,7 +178,7 @@ func (a *AgentFour) HandleFightRequest(_ message.TaggedRequestMessage[message.Fi
 	return nil
 }
 
-func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] { // Attack-Defend-Cower Strat
+func (a *AgentFour) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] { // Attack-Defend-Cower Strategy
 	// Agentstate := baseAgent.AgentState()
 	// builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	// TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
@@ -490,7 +486,7 @@ func (a *AgentFour) STLevels(agent agent.BaseAgent) [][]string {
 	return l
 }
 
-// Attack-Defend-Cower Strat
+// Attack-Defend-Cower Strategy
 func (a *AgentFour) AttackDefendCower(state state.AgentState, baseAgent agent.BaseAgent, fightResult int) *decision.FightAction {
 	view := baseAgent.View()
 	Agentstate := baseAgent.AgentState()
@@ -536,8 +532,8 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
 	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
 
-	thresh_attack := rand.Intn(20) / agent_map.Len()
-	thresh_defend := rand.Intn(20) / agent_map.Len()
+	thresh_attack := rand.Intn(50) / agent_map.Len()
+	thresh_defend := rand.Intn(50) / agent_map.Len()
 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
