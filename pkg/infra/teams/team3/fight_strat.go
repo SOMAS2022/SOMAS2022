@@ -8,7 +8,6 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/message/proposal"
-	"infra/logging"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -20,10 +19,17 @@ var (
 
 // HP pool donation
 func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	AS := baseAgent.AgentState()
 	donation := rand.Intn(2)
 	// If our health is > 50% and we feel generous then donate some (max 20%) HP
-	if donation == 1 && a.HP > PERCENTAGE {
-		return uint(rand.Intn((a.HP * 20) / 100))
+	if donation == 1 {
+		if int(AS.Hp) > int(0.8*float64(GetStartingHP())) {
+			return uint(rand.Intn((int(AS.Hp) * 30) / 100))
+		} else if int(AS.Hp) > int(0.5*float64(GetStartingHP())) {
+			return uint(rand.Intn((int(AS.Hp) * 10) / 100))
+		} else {
+			return 0
+		}
 	} else {
 		return 0
 	}
@@ -49,43 +55,18 @@ func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 	}
 }
 
-func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] {
-	view := baseAgent.View()
-	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
-
-	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
-		var fightAction decision.FightAction
-
-		// Check for our agent and assign what we want to do
-		if id == baseAgent.ID() {
-			action := a.CurrentAction(baseAgent)
-			fightAction = action
-			baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "choice": action, "util": a.utilityScore[view.CurrentLeader()]}, "Intent")
-		} else {
-			switch rand.Intn(3) {
-			case 0:
-				fightAction = decision.Attack
-			case 1:
-				fightAction = decision.Defend
-			default:
-				fightAction = decision.Cower
-			}
-		}
-		builder.Set(id, fightAction)
-	}
-	return *builder.Map()
-}
-
 // Send proposal to leader
 func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	baseAgent.Log(logging.Trace, logging.LogField{"hp": a.HP, "decision": a.CurrentAction(baseAgent)}, "HP")
-	baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
+	// AS := baseAgent.AgentState()
+
+	// baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "decision": a.CurrentAction(baseAgent)}, "HP")
+	// baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
 
 	id := baseAgent.ID()
 	choice, _ := fightactionMap.Get(id)
 	HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
-	// Well, not everytime. Just sometimes
+
 	rules := make([]proposal.Rule[decision.FightAction], 0)
 
 	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,

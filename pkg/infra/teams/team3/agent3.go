@@ -9,22 +9,7 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-const PERCENTAGE = 500
-
-type Utility struct {
-	ID    commons.ID
-	score int
-}
-
-type UtilityMap []Utility
-
-func (u UtilityMap) Len() int           { return len(u) }
-func (u UtilityMap) Swap(i, j int)      { u[i], u[j] = u[j], u[i] }
-func (u UtilityMap) Less(i, j int) bool { return u[i].score < u[j].score }
-
 type AgentThree struct {
-	HP                    int
-	ST                    int
 	AT                    int
 	SH                    int
 	uR                    map[commons.ID]int
@@ -41,9 +26,15 @@ type AgentThree struct {
 // Update internal parameters at the end of each stage
 func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	AS := baseAgent.AgentState()
+	view := baseAgent.View()
+	// Initialise utils
+	if view.CurrentLevel() == 1 {
+		a.utilityScore = a.InitUtility(baseAgent)
+		a.uR = a.InitUtility(baseAgent)
+		a.uP = a.InitUtility(baseAgent)
+		a.uC = a.InitUtility(baseAgent)
+	}
 
-	a.HP = int(AS.Hp)
-	a.ST = int(AS.Stamina)
 	a.AT = int(AS.Attack + AS.BonusAttack())
 	a.SH = int(AS.Defense + AS.BonusDefense())
 
@@ -52,16 +43,13 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *com
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)
-}
 
-func CreateUtility() map[commons.ID]int {
-	u := make(map[commons.ID]int, 7)
-	return u
-}
-
-func (a *AgentThree) ResetContacts() {
-	for i := range a.contactsLastRound {
-		a.contactsLastRound[i] = false
+	// Potions
+	if int(AS.Hp) < int(0.5*float64(GetStartingHP())) {
+		// Drink HP Potion
+	}
+	if int(AS.Stamina) < int(0.5*float64(GetStartingStamina())) {
+		// Drink Stamina Potion
 	}
 }
 

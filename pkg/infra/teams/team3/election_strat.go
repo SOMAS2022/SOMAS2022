@@ -4,6 +4,7 @@ import (
 	"infra/game/agent"
 	"infra/game/decision"
 	"infra/game/state"
+	"infra/logging"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -18,7 +19,9 @@ var (
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	view := baseAgent.View()
+	AS := baseAgent.AgentState()
 	// Vote for leader to stay if he's our friend :)
+	baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "util": a.utilityScore[view.CurrentLeader()]}, "Util")
 	if a.utilityScore[view.CurrentLeader()] > 5 {
 		return decision.Positive
 	} else {

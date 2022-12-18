@@ -9,18 +9,6 @@ import (
 	"github.com/benbjohnson/immutable"
 )
 
-// Utility scores in range [0, 15]
-func limitScore(score int) int {
-	// Implement Boundaries
-	if score > 15 {
-		score = 15
-	}
-	if score < 0 {
-		score = 0
-	}
-	return score
-}
-
 // Resource (trading) utility
 func (a *AgentThree) UpdateUtilityResource(baseAgent agent.BaseAgent, msg message.TradeResponse, id commons.ID) {
 	// Check if msg type is correct
@@ -90,7 +78,7 @@ func (a *AgentThree) UpdateUtilityChair(baseAgent agent.BaseAgent, prop immutabl
 func (a *AgentThree) UpdateTotalUtility(baseAgent agent.BaseAgent) {
 	// Weighted Average
 	for i := range a.utilityScore {
-		a.utilityScore[i] = int((0.45*float64(a.uC[i]) + 0.45*float64(a.uR[i]) + 0.10*float64(a.uP[i])) / 3)
+		a.utilityScore[i] = int(0.45*float64(a.uC[i]) + 0.45*float64(a.uR[i]) + 0.10*float64(a.uP[i]))
 	}
 }
 

@@ -2,6 +2,8 @@ package team3
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
+	"math/rand"
 	"os"
 	"strconv"
 )
@@ -102,4 +104,43 @@ func GetStartingHP() int {
 func GetStartingStamina() int {
 	n, _ := strconv.ParseUint(os.Getenv("BASE_STAMINA"), 10, 0)
 	return int(n)
+}
+
+func CreateUtility() map[commons.ID]int {
+	u := make(map[commons.ID]int, 7)
+	return u
+}
+
+func (a *AgentThree) InitUtility(baseAgent agent.BaseAgent) map[commons.ID]int {
+
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+
+	u := make(map[commons.ID]int, 7)
+
+	for !itr.Done() {
+		id, _, _ := itr.Next()
+
+		u[id] = rand.Intn(10)
+	}
+	return u
+}
+
+func (a *AgentThree) ResetContacts() {
+	for i := range a.contactsLastRound {
+		a.contactsLastRound[i] = false
+	}
+}
+
+// Utility scores in range [0, 15]
+func limitScore(score int) int {
+	// Implement Boundaries
+	if score > 15 {
+		score = 15
+	}
+	if score < 0 {
+		score = 0
+	}
+	return score
 }

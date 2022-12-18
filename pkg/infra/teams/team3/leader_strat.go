@@ -7,6 +7,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
 	"infra/game/state"
 
 	"github.com/benbjohnson/immutable"
@@ -14,7 +15,7 @@ import (
 
 // Manifesto
 func (a *AgentThree) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
-	manifesto := decision.NewManifesto(false, false, 10, 50)
+	manifesto := decision.NewManifesto(true, false, 10, 50)
 	return manifesto
 }
 
@@ -26,6 +27,34 @@ func (a *AgentThree) HandleFightProposalRequest(_ message.Proposal[decision.Figh
 	default:
 		return false
 	}
+}
+
+// Fight imposition
+func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]], proposedActions immutable.Map[string, decision.FightAction]) immutable.Map[string, decision.FightAction] {
+	view := baseAgent.View()
+	// AS := baseAgent.AgentState()
+	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
+
+	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
+		var fightAction decision.FightAction
+
+		// Check for our agent and assign what we want to do
+		if id == baseAgent.ID() {
+			action := a.CurrentAction(baseAgent)
+			fightAction = action
+		} else {
+			switch rand.Intn(3) {
+			case 0:
+				fightAction = decision.Attack
+			case 1:
+				fightAction = decision.Defend
+			default:
+				fightAction = decision.Cower
+			}
+		}
+		builder.Set(id, fightAction)
+	}
+	return *builder.Map()
 }
 
 func (a *AgentThree) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
