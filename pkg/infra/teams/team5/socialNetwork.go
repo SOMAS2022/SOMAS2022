@@ -1,8 +1,10 @@
 package team5
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
+	"infra/logging"
 )
 
 type AgentTrusts struct {
@@ -25,6 +27,10 @@ type AgentProfile struct {
 	Trusts   AgentTrusts
 	Strategy Strategy
 	Goodwill Goodwill
+}
+
+func (ap *AgentProfile) JSON() string {
+	return fmt.Sprintf("AgentProfile: {ID: %s, Strategy: %f, Goodwill: %f}", ap.AgentID, ap.Trusts.StrategyScore, ap.Trusts.GoodwillScore)
 }
 
 func initAgentProfile(AgentID commons.ID) AgentProfile {
@@ -54,6 +60,14 @@ type SocialNetwork struct {
 	ChaoticMax   float32
 	GoodMin      float32
 	EvilMax      float32
+}
+
+func (sn *SocialNetwork) Log(id commons.ID, level uint) {
+	logs := logging.LogField{"ID": id, "level": level}
+	for _, ap := range sn.AgentProfile {
+		logs[ap.AgentID] = ap.JSON()
+	}
+	logging.Log(logging.Trace, logs, "TEAM5.SocialNetwork")
 }
 
 func InitSocialNetwork(ba agent.BaseAgent) SocialNetwork {
