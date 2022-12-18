@@ -184,12 +184,10 @@ func (a *Agent2) updateSocialCapital(fightResult commons.ImmutableList[decision.
 	a.numAgentsBeginLevel = numOfAgents[0]
 	a.numAgentsEndLevel = numOfAgents[len(numOfAgents)-1]
 	a.survivalRates = append(a.survivalRates, float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel))
-	// a.broadcastRates = append(a.broadcastRates, float64(a.proposalsBroadcast)/float64(a.proposalsTotal))
-	a.broadcastRates = append(a.broadcastRates, 1)
+	a.broadcastRates = append(a.broadcastRates, float64(a.proposalsBroadcast)/float64(a.proposalsTotal))
 	a.avgSurvivalCurrTerm = avg(a.survivalRates)
 	a.avgBroadcastRateCurrTerm = avg(a.broadcastRates)
-	// a.avgSurvival = (a.avgSurvival*float64(view.CurrentLevel()-1) + float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel)) / float64(view.CurrentLevel())
-	a.avgSurvival = 1
+	a.avgSurvival = (a.avgSurvival*float64(view.CurrentLevel()-1) + float64(a.numAgentsEndLevel)/float64(a.numAgentsBeginLevel)) / float64(view.CurrentLevel())
 	a.avgBroadcastRate = (a.avgBroadcastRate*float64(view.CurrentLevel()-1) + float64(a.proposalsBroadcast)/float64(a.proposalsTotal)) / float64(view.CurrentLevel())
 }
 
@@ -632,26 +630,37 @@ func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
 // HandleConfidencePoll
 // Description: Used for voting on confidence for Leader.
 // Return:		Positive, Negative, or Abstain decision.
-func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	w0, w1, w2, w3, w4, w5 := 2.0, 1.0, 2.0, 1.0, 1.0, -1.0
+// func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
+// 	w0, w1, w2, w3, w4, w5 := 2.0, 1.0, 2.0, 1.0, 1.0, -1.0
 
-	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
-	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
-	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
-	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
-	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
+// 	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
+// 	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
+// 	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
+// 	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
+// 	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
 
-	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
-	trustWorthyness := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm
-	networks := w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm
-	institutions := w4*leadershipXpNorm + w5*noConfRateNorm
+// 	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
+// 	trustWorthyness := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm
+// 	networks := w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm
+// 	institutions := w4*leadershipXpNorm + w5*noConfRateNorm
 
-	sum := trustWorthyness + networks + institutions
+// 	sum := trustWorthyness + networks + institutions
 
-	if sum >= 0 {
-		return decision.Positive
-	} else {
+// 	if sum >= 0 {
+// 		return decision.Positive
+// 	} else {
+// 		return decision.Negative
+// 	}
+// }
+
+func (r *Agent2) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Abstain
+	case 1:
 		return decision.Negative
+	default:
+		return decision.Positive
 	}
 }
 
