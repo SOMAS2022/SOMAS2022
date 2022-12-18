@@ -257,76 +257,76 @@ func (a *AgentFour) HandleFightProposalRequest(_ message.Proposal[decision.Fight
 }
 
 func (a *AgentFour) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
-	Agentstate := baseAgent.AgentState()
-	TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
-	TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
-	view := baseAgent.View()
-	var manifesto_decision decision.FightAction
-	rand_prob := 0.5
+	// Agentstate := baseAgent.AgentState()
+	// TotalAttack := Agentstate.Attack + Agentstate.BonusAttack()
+	// TotalDefense := Agentstate.Defense + Agentstate.BonusDefense()
+	// view := baseAgent.View()
+	// var manifesto_decision decision.FightAction
+	// rand_prob := 0.5
 
-	//var get_HP_levels = a.HPLevels(baseAgent)
-	var HP_levels_list = a.HPLevels(baseAgent)
-	var ST_levels_list = a.STLevels(baseAgent)
-	thresh_fight := 0.3
+	// //var get_HP_levels = a.HPLevels(baseAgent)
+	// var HP_levels_list = a.HPLevels(baseAgent)
+	// var ST_levels_list = a.STLevels(baseAgent)
+	// thresh_fight := 0.3
 
-	var agent_map = view.AgentState()
+	// var agent_map = view.AgentState()
 
-	ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
-	ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
-	ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
+	// ratio_agents_HPLow := len(HP_levels_list[0]) / agent_map.Len()
+	// ratio_agents_HPNormal := len(HP_levels_list[1]) / agent_map.Len()
+	// ratio_agents_HPHigh := len(HP_levels_list[2]) / agent_map.Len()
 
-	ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
-	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
-	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
+	// ratio_agents_STLow := len(ST_levels_list[0]) / agent_map.Len()
+	// ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
+	// ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
 
-	thresh_attack := rand.Intn(20) / agent_map.Len()
-	thresh_defend := rand.Intn(20) / agent_map.Len()
-	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
-	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
+	// thresh_attack := rand.Intn(20) / agent_map.Len()
+	// thresh_defend := rand.Intn(20) / agent_map.Len()
+	// threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
+	// threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
-	var fightRes = rand.Intn(20)
+	// var fightRes = rand.Intn(20) + 1
 
-	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
+	// var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
 
-	if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
-		if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
-			switch {
-			case float64(rand_prob) >= 0.4:
-				manifesto_decision = decision.Defend
-			case float64(rand_prob) <= 0.6:
-				manifesto_decision = decision.Attack
-			}
-		}
-		if TotalAttack > uint(thresh_attack) {
-			manifesto_decision = decision.Attack
-		}
-		if TotalDefense > uint(thresh_defend) {
-			manifesto_decision = decision.Defend
-		}
-	} else {
-		manifesto_decision = decision.Cower
-	}
-
-	if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
-		if float64(rand_prob) < thresh_fight {
-			threshold_fight_HP = a.HP + 10
-			a.C -= 1
-		} else {
-			a.C += 1
-		}
-	}
-
-	return manifesto_decision
-	// Code for random case:
-	// fight := rand.Intn(3)
-	// switch fight {
-	// case 0:
-	// 	return decision.Cower
-	// case 1:
-	// 	return decision.Attack
-	// default:
-	// 	return decision.Defend
+	// if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
+	// 	if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
+	// 		switch {
+	// 		case float64(rand_prob) >= 0.4:
+	// 			manifesto_decision = decision.Defend
+	// 		case float64(rand_prob) <= 0.6:
+	// 			manifesto_decision = decision.Attack
+	// 		}
+	// 	}
+	// 	if TotalAttack > uint(thresh_attack) {
+	// 		manifesto_decision = decision.Attack
+	// 	}
+	// 	if TotalDefense > uint(thresh_defend) {
+	// 		manifesto_decision = decision.Defend
+	// 	}
+	// } else {
+	// 	manifesto_decision = decision.Cower
 	// }
+
+	// if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
+	// 	if float64(rand_prob) < thresh_fight {
+	// 		threshold_fight_HP = a.HP + 10
+	// 		a.C -= 1
+	// 	} else {
+	// 		a.C += 1
+	// 	}
+	// }
+
+	// return manifesto_decision
+	// Code for random case:
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		return decision.Cower
+	case 1:
+		return decision.Attack
+	default:
+		return decision.Defend
+	}
 }
 
 func (a *AgentFour) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
@@ -595,7 +595,7 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
-	var fightRes = rand.Intn(20) + 1
+	var fightRes = (rand.Intn(20)) + 1
 
 	//var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, &fightActions)
 	var FightMethod = a.AttackDefendCower(Agentstate, baseAgent, fightRes)
