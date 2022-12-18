@@ -498,7 +498,7 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 		//update trusts based on trust scores(alternatice to the method above):
 		//if defect, goodwill += 0.2*(0.5-leader's goodwill), strategy += 0.2*(0.5-leader's strategy)
-		//it not deflect, goodwill +0.03
+		//it not defect, goodwill +0.03
 		//==========code===========
 		// if as.Defector.IsDefector() {
 		// 	t5.socialNetwork.UpdatePersonality(id, 0.2*(0.5-t5.socialNetwork.AgentProfile[leaderID].Trusts.GoodwillScore), 0.2*(0.5-t5.socialNetwork.AgentProfile[leaderID].Trusts.StrategyScore))
