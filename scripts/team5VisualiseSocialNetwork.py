@@ -21,9 +21,7 @@ def SocialNetwork(frame):
         gp = item.get("Goodwill")
         colour = (3*sp+gp)
         result.append((g, s, sp, gp, colour))
-
     return result
-
 
 def main(log_file):
     name = os.path.basename(log_file).split(".")[0]
@@ -47,7 +45,7 @@ def main(log_file):
     LEVEL = n_levels
 
     for level in logs:
-        if level.get("LEVEL") == LEVEL:
+        if level.get("LEVEL") in [1, 5, 20, 33]:
             network = SocialNetwork(level)
             res = list(zip(*network))
             plt.plot(res[0], res[1], "o")
@@ -57,15 +55,11 @@ def main(log_file):
             plt.axhline(0.8, color='g', linestyle='--')
             plt.xlim(0, 1)
             plt.ylim(0, 1)
-
-
-                    
-                                                
+                     
     plt.ylabel("Strategy Score")
     plt.xlabel("Goodwill Score")
     plt.title(f"Agent Categorisation on level {LEVEL}")
     plt.savefig(f"{name}_social_network.png")
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 1:
