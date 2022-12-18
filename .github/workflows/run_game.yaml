@@ -41,6 +41,43 @@ jobs:
 
       # Duplicate the following step, but rename the environment variable AGENT_RANDOM_QUANTITY to AGENT_{agent name}_QUANTITY to run
       # the game for your agent
+
+      - name: Test performance of TEAM1 agent
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_TEAM1_QUANTITY: ${{ matrix.agent_quantity }}
+
+      - name: Test performance of TEAM2 agent
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_TEAM2_QUANTITY: ${{ matrix.agent_quantity }}
+
+      - name: Test performance of TEAM6 agent
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_TEAM6_QUANTITY: ${{ matrix.agent_quantity }}
+
       - name: Test performance of RANDOM agent
         run: ./infra
         working-directory: /tmp
@@ -52,5 +89,18 @@ jobs:
           BASE_STAMINA: ${{ matrix.base_stamina }}
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
           AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
+
+      - name: Test performance of all TEAMS agents
+        run: ./infra
+        working-directory: /tmp
+        env:
+          LEVELS: ${{ matrix.levels }}
+          STARTING_HP: ${{ matrix.starting_hp }}
+          STARTING_ATTACK: ${{ matrix.starting_attack }}
+          STARTING_SHIELD: ${{ matrix.starting_shield }}
+          BASE_STAMINA: ${{ matrix.base_stamina }}
+          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+          AGENT_RANDOM_QUANTITY: ${{ matrix.agent_quantity }}
           AGENT_TEAM1_QUANTITY: ${{ matrix.agent_quantity }}
-          AGENT_AGENT2_QUANTITY: ${{ matrix.agent_quantity }}
+          AGENT_TEAM2_QUANTITY: ${{ matrix.agent_quantity }}
+          AGENT_TEAM6_QUANTITY: ${{ matrix.agent_quantity }}
