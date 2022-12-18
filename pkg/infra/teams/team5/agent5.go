@@ -464,6 +464,8 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 		// }
 	}
 
+	t5.socialNetwork.Log(a.ID(), view.CurrentLevel())
+
 	t5.t5Manifesto.updateLeaderCombo(a)
 
 	t5.UpdateQ(a)
