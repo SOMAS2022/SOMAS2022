@@ -176,10 +176,10 @@ func (t5 *Agent5) HandleFightProposal(proposal message.Proposal[decision.FightAc
 	}
 	hamming_distance_placeholder = biwise_xor_sum_placeholder / float32(entry_counter)
 
-	if hamming_distance_placeholder <= 0.3 {
+	if hamming_distance_placeholder <= 0.5 {
 		t5.socialNetwork.UpdatePersonality(id, 0.1, 0)
 		return decision.Positive
-	} else if hamming_distance_placeholder <= 0.5 {
+	} else if hamming_distance_placeholder <= 0.7 {
 		t5.socialNetwork.UpdatePersonality(id, 0.05, 0)
 		return decision.Abstain
 	} else {
