@@ -199,6 +199,7 @@ func newTrade(agent agent.BaseAgent) message.TradeMessage {
 func tradeOffer(agent agent.BaseAgent, wantWeapon bool) message.TradeOffer {
 	weapons := agent.AgentState().Weapons
 	shields := agent.AgentState().Shields
+
 	var offer message.TradeOffer
 	itemType, idx := secondBestItem(agent, wantWeapon)
 	offer, _ = message.NewTradeOffer(itemType, idx, weapons, shields)
@@ -207,18 +208,20 @@ func tradeOffer(agent agent.BaseAgent, wantWeapon bool) message.TradeOffer {
 
 func secondBestItem(agent agent.BaseAgent, wantWeapon bool) (commons.ItemType, uint) {
 	agentState := agent.AgentState()
-
-	weaponIdx, weapon := secondBestItems(agent, commons.Weapon)
-	shieldIdx, shield := secondBestItems(agent, commons.Shield)
+	weapons := agentState.Weapons
+	shields := agentState.Shields
 
 	bestWeapon := bestItemIndex(agent, commons.Weapon)
 	bestShield := bestItemIndex(agent, commons.Shield)
 
-	if weaponIdx == -1 {
-		return commons.Shield, bestItemIndex(agent, commons.Shield)
-	} else if shieldIdx == -1 {
+	if weapons.Len() == 0 {
+		return commons.Shield, bestShield
+	} else if shields.Len() == 0 {
 		return commons.Weapon, bestWeapon
 	}
+
+	weaponIdx, weapon := secondBestItems(agent, commons.Weapon)
+	shieldIdx, shield := secondBestItems(agent, commons.Shield)
 
 	if wantWeapon {
 		if shield.Value() > agentState.TotalAttack() {

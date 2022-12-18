@@ -175,7 +175,6 @@ func (a *Team6Agent) UpdateInternalState(ba agent.BaseAgent, fightRounds *common
 }
 
 func updateSCValues(a *Team6Agent, view state.View) {
-
 	leader := view.CurrentLeader()
 	if leader != a.leaderID {
 		// New leader was elected - update leadership for old leader
