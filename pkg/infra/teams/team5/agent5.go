@@ -17,15 +17,16 @@ import (
 )
 
 type Agent5 struct {
-	lootInformation commons5.Loot
-	socialNetwork   SocialNetwork
-	t5Manifesto     T5Manifesto
-	myAgentState    commons5.MyAgentState
-	preHealth       uint
-	prePopNum       uint
-	exploreRate     float32
-	qtable          *Qtable
-	ttable          *TrustTable
+	lootInformation   commons5.Loot
+	socialNetwork     SocialNetwork
+	t5Manifesto       T5Manifesto
+	myAgentState      commons5.MyAgentState
+	myFightResolution immutable.Map[commons.ID, decision.FightAction]
+	preHealth         uint
+	prePopNum         uint
+	exploreRate       float32
+	qtable            *Qtable
+	ttable            *TrustTable
 }
 
 // --------------- Election ---------------
@@ -160,14 +161,29 @@ func (t5 *Agent5) HandleFightProposalRequest(
 	return percentCow <= 0.4
 }
 
-func (t5 *Agent5) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+func (t5 *Agent5) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
+	iter := proposal.Rules().Iterator()
+	//var hamming_distance float32 = 0
+	var hamming_distance_placeholder float32 = 0
+	var biwise_xor_sum_placeholder float32 = 0
+	var entry_counter float32 = 0
+	id := proposal.ProposerID()
+	if !iter.Done() {
+		//using xor bitwise operator to find the hamming distance of their proposal and ours
+		//hamming_distance += t5.myFightResolution.Get(decision.FightAction)^iter.Next()
+		entry_counter += 1
+		biwise_xor_sum_placeholder += rand.Float32()
+	}
+	hamming_distance_placeholder = biwise_xor_sum_placeholder / float32(entry_counter)
 
-	fight_max := math.Max(float64(t5.myAgentState.MyAttackPoint), float64(t5.myAgentState.MyShieldPoint))
-	HPST_min := math.Max(float64(t5.myAgentState.MyStamina), float64(t5.myAgentState.MyHP))
-
-	if fight_max > HPST_min {
+	if hamming_distance_placeholder <= 0.3 {
+		t5.socialNetwork.UpdatePersonality(id, 0.1, 0)
 		return decision.Positive
+	} else if hamming_distance_placeholder <= 0.5 {
+		t5.socialNetwork.UpdatePersonality(id, 0.05, 0)
+		return decision.Abstain
 	} else {
+		t5.socialNetwork.UpdatePersonality(id, -0.01, 0)
 		return decision.Negative
 	}
 }
@@ -202,16 +218,26 @@ func (t5 *Agent5) FightResolution(baseAgent agent.BaseAgent, prop commons.Immuta
 	builder := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		var fightAction decision.FightAction
-		switch rand.Intn(3) {
-		case 0:
-			fightAction = decision.Attack
-		case 1:
-			fightAction = decision.Defend
-		default:
+		agentAttack_placeholder := rand.Float64()
+		agentShield_placeholder := rand.Float64()
+		agentHP_placeholder := rand.Float64()      // *250 to convert hidden state to estination
+		agentStamina_placeholder := rand.Float64() //*500 to convert hiddent state to estimation
+		fight_max := math.Max(agentAttack_placeholder, agentShield_placeholder)
+		HPST_min := math.Max(agentHP_placeholder, agentStamina_placeholder)
+		if fight_max > HPST_min {
+			if agentAttack_placeholder > agentShield_placeholder {
+				fightAction = decision.Attack
+			} else {
+				fightAction = decision.Defend
+			}
+		} else {
 			fightAction = decision.Cower
 		}
+
 		builder.Set(id, fightAction)
 	}
+	//update agent's own fight resolution stored
+	t5.myFightResolution = *builder.Map()
 	return *builder.Map()
 }
 
@@ -499,8 +525,15 @@ func (t5 *Agent5) UpdateInternalState(a agent.BaseAgent, _ *commons.ImmutableLis
 
 func NewAgent5() agent.Strategy {
 	return &Agent5{
-		socialNetwork: SocialNetwork{},
-		exploreRate:   float32(0.25),
-		qtable:        NewQTable(0.25, 0.75),
-		ttable:        NewTrustTable()}
+		socialNetwork: SocialNetwork{
+			AgentProfile: make(map[commons.ID]AgentProfile),
+			LawfullMin:   0.8,
+			ChaoticMax:   0.2,
+			GoodMin:      0.8,
+			EvilMax:      0.2,
+		},
+		exploreRate: float32(0.25),
+		qtable:      NewQTable(0.25, 0.75),
+		ttable:      NewTrustTable(),
+	}
 }
