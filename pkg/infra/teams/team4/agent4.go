@@ -528,8 +528,8 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 	ratio_agents_STNormal := len(ST_levels_list[1]) / agent_map.Len()
 	ratio_agents_STHigh := len(ST_levels_list[2]) / agent_map.Len()
 
-	thresh_attack := rand.Intn(20) / agent_map.Len()
-	thresh_defend := rand.Intn(20) / agent_map.Len()
+	thresh_attack := rand.Intn(50) / agent_map.Len()
+	thresh_defend := rand.Intn(50) / agent_map.Len()
 	threshold_fight_HP := ratio_agents_HPLow*(250) + ratio_agents_HPNormal*(500) + ratio_agents_HPHigh*(750)
 	threshold_fight_ST := ratio_agents_STLow*(500) + ratio_agents_STNormal*(1000) + ratio_agents_STHigh*(1500)
 
@@ -540,36 +540,33 @@ func (a *AgentFour) FightManifesto(baseAgent agent.BaseAgent, prop commons.Immut
 
 	for _, id := range commons.ImmutableMapKeys(view.AgentState()) {
 		if a.HP > threshold_fight_HP && a.ST > threshold_fight_ST {
-			switch {
-			case TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend):
+			if TotalAttack > uint(thresh_attack) && TotalDefense > uint(thresh_defend) {
 				switch {
-				case float64(rand_prob) >= 0.4:
+				case rand_prob >= 0.4:
 					manifesto_decision = decision.Defend
-				case float64(rand_prob) <= 0.6:
+				case rand_prob <= 0.6:
 					manifesto_decision = decision.Attack
 				}
-			case TotalAttack > uint(thresh_attack):
+			}
+			if TotalAttack > uint(thresh_attack) {
 				manifesto_decision = decision.Attack
-
-			case TotalDefense > uint(thresh_defend):
+			}
+			if TotalDefense > uint(thresh_defend) {
 				manifesto_decision = decision.Defend
 			}
-
 		} else {
 			manifesto_decision = decision.Cower
 		}
 
 		if *FightMethod == decision.Cower && manifesto_decision == decision.Attack {
-			if float64(rand_prob) < thresh_fight {
+			if rand_prob < thresh_fight {
 				threshold_fight_HP = a.HP + 10
 				a.C -= 1
 			} else {
 				a.C += 1
 			}
-
 		}
 		builder.Set(id, *FightMethod)
-
 	}
 	return *builder.Map()
 }
