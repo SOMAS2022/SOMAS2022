@@ -69,7 +69,7 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 
 	makesProposal := rand.Intn(100)
 
-	if makesProposal > 50 {
+	if makesProposal > 90 {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
 		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
