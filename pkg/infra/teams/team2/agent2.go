@@ -11,8 +11,6 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
-	"reflect"
-	"sort"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -518,236 +516,11 @@ func logistic(x float64, k float64, x0 float64) float64 {
 	return 1 / (1 + math.Exp(-k*(x-x0)))
 }
 
-/* ---- STRATEGY ---- */
+// -------------
 
-// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.Weapons
-func (a *Agent2) HandleUpdateWeapon(agent agent.BaseAgent) decision.ItemIdx {
-	weaponsInventory := agent.AgentState().Weapons
-	if weaponsInventory.Len() != 0 {
-		desiredWeaponIndex := decision.ItemIdx(weaponsInventory.Len() - 1)
-		for i := 0; i < weaponsInventory.Len(); i++ {
-			if weaponsInventory.Get(i).Value() < agent.AgentState().Stamina {
-				desiredWeaponIndex = decision.ItemIdx(i)
-				break
-			}
-		}
-		for i := 0; i < weaponsInventory.Len(); i++ {
-			if weaponsInventory.Get(i).Value() < agent.AgentState().Stamina {
-				if weaponsInventory.Get(int(desiredWeaponIndex)).Value() < weaponsInventory.Get(i).Value() {
-					desiredWeaponIndex = decision.ItemIdx(i)
-				} else {
-					continue
-				}
-			}
-		}
-		return desiredWeaponIndex
-	} else {
-		return decision.ItemIdx(0)
-	}
-}
-
-// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields
-func (a *Agent2) HandleUpdateShield(agent agent.BaseAgent) decision.ItemIdx {
-	shieldInventory := agent.AgentState().Shields
-	if shieldInventory.Len() != 0 {
-		desiredShieldIndex := decision.ItemIdx(shieldInventory.Len() - 1)
-
-		for i := 0; i < shieldInventory.Len(); i++ {
-			if shieldInventory.Get(i).Value() < agent.AgentState().Stamina {
-				desiredShieldIndex = decision.ItemIdx(i)
-				break
-			}
-		}
-		for i := 0; i < shieldInventory.Len(); i++ {
-			if shieldInventory.Get(i).Value() < agent.AgentState().Stamina {
-				if shieldInventory.Get(int(desiredShieldIndex)).Value() < shieldInventory.Get(i).Value() {
-					desiredShieldIndex = decision.ItemIdx(i)
-				} else {
-					continue
-				}
-			}
-		}
-		return desiredShieldIndex
-	} else {
-		return decision.ItemIdx(0)
-	}
-}
-
-// UpdateInternalState
-// Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
-func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
-	a.updateBaseAgentPerLevel(baseAgent)
-	a.updateFightResultPerLevel(*fightResult)
-	a.updateVoteResultPerLevel(*voteResult)
-	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
-	a.updateSocialCapital(*fightResult, baseAgent)
-	a.newGovernmentTimeline(baseAgent, a.haveElections)
-}
-
-/* ---- ELECTION ---- */
-
-// CreateManifesto
-// Description: Used to give Manifesto Information if elected Leader.
-// Return:		The Manifesto with FightImposition, LootImposition, term length and overthrow threshold.
-func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
-	fightThreshold := 2.5
-	lootThreshold := 2.5
-	fightDecisionPower := false // default value
-
-	if !a.wasOverthrown(agent.ID()) {
-		if (a.adjustedExpertise(agent, 0, 5) + a.lastFightDecisionPower(agent.ID(), 2.5)) > fightThreshold {
-			fightDecisionPower = true
-		}
-	} else {
-		if a.adjustedExpertise(agent, 0, 5) > fightThreshold {
-			fightDecisionPower = true
-		}
-	}
-
-	lootDecisionPower := false
-
-	if !a.wasOverthrown(agent.ID()) {
-		if (a.adjustedExpertise(agent, 0, 5) + a.lastLootDecisionPower(agent.ID(), 2.5)) > lootThreshold {
-			lootDecisionPower = true
-		}
-	} else {
-		if a.adjustedExpertise(agent, 0, 5) > lootThreshold {
-			lootDecisionPower = true
-		}
-	}
-
-	termLength := uint(a.adjustedExpertise(agent, 0, 4) + 1)
-
-	overthrowPercentage := uint(51)
-	if a.wasOverthrown(agent.ID()) {
-		overthrowPercentage = uint(float64(overthrowPercentage) + a.adjustedExpertise(agent, -10, 10))
-	}
-
-	manifesto := decision.NewManifesto(fightDecisionPower, lootDecisionPower, termLength, overthrowPercentage)
-	return manifesto
-}
-
-// HandleConfidencePoll
-// Description: Used for voting on confidence for Leader.
-// Return:		Positive, Negative, or Abstain decision.
-func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	w0, w1, w2, w3, w4, w5 := 2.0, 1.0, 2.0, 1.0, 1.0, -1.0
-	avgSurvivalCurrTermNorm := (a.avgSurvivalCurrTerm - a.avgSurvival) / a.avgSurvival
-	avgSurvivalPastTermsNorm := (a.avgSurvivalPastTerms - a.avgSurvival) / a.avgSurvival
-	avgBroadcastRateCurrTermNorm := (a.avgBroadcastRateCurrTerm - a.avgBroadcastRate) / a.avgBroadcastRate
-	avgBroadcastRatePastTermNorm := (a.avgBroadcastRatePastTerms - a.avgBroadcastRate) / a.avgBroadcastRate
-	leadershipXpNorm := (a.leadershipXp - a.avgLeadershipXp) / a.avgLeadershipXp
-
-	noConfRateNorm := (a.noConfRate - a.avgNoConfRate) / a.avgNoConfRate
-	trustWorthyness := w0*avgSurvivalCurrTermNorm + w1*avgSurvivalPastTermsNorm
-	networks := w2*avgBroadcastRateCurrTermNorm + w3*avgBroadcastRatePastTermNorm
-	institutions := w4*leadershipXpNorm + w5*noConfRateNorm
-
-	sum := trustWorthyness + networks + institutions
-
-	if sum >= 0 {
-		return decision.Positive
-	} else {
-		return decision.Negative
-	}
-}
-
-// HandleElectionBallot
-// Description: Used to elect a Leader.
-// Return:  	A single Commons.ID for choose-one voting or an array of commons.ID of top leader choices for ranked-voting.
-func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
-	view := baseAgent.View()
-	//agentState := view.AgentState()
-	cans := params.CandidateList()
-	// Updating Leader Parameters
-	a.termEndLevel = view.CurrentLevel()                    //level_temp is another priv attribute initialized to 0/1?
-	a.termDuration = view.CurrentLevel() - a.termBeginLevel // term_begin_level was last updated at the beginning of the term that is now ending
-	a.termBeginLevel = view.CurrentLevel()                  // now that it has been used, can reset to track new leadership
-	a.avgTermSurvival = a.avgSurvivalCurrTerm               //(assert len(a.survival_rates)==term_duration )
-	a.avgTermBroadcastRate = a.avgBroadcastRateCurrTerm     //(assert len(a.broadcast_rates)==term_duration )
-	a.haveElections = true
-	if len(a.governmentTimeline) > 0 {
-		lastLeaderInfo := a.governmentTimeline[len(a.governmentTimeline)-1]
-		if lastLeaderInfo.duration < lastLeaderInfo.manifesto.TermLength() {
-			lastLeaderInfo.overthrown = true
-		}
-		a.governmentTimeline[len(a.governmentTimeline)-1] = lastLeaderInfo
-	}
-
-	candidates := make([]commons.ID, cans.Len())
-	mainfestos := make([]decision.Manifesto, cans.Len())
-	i := 0
-	itr := cans.Iterator()
-	for !itr.Done() {
-		can, manifesto, ok := itr.Next()
-		if ok {
-			candidates[i] = can
-			mainfestos[i] = manifesto
-			i++
-		}
-	}
-
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(candidates)
-	agentScores := make(map[commons.ID]float64, numAliveAgents)
-	for i := 0; i < numAliveAgents; i++ {
-		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(1.0))
-		par2 := a.lastFightDecisionPower(candidates[i], 5)
-		par3 := a.lastLootDecisionPower(candidates[i], 5)
-		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
-		agentScores[candidates[i]] = prospectLeaderScore(par1, par2, par3, sot)
-	}
-	sort.SliceStable(candidates, func(i, j int) bool {
-		return agentScores[candidates[i]] < agentScores[candidates[j]]
-	})
-	for i := uint(0); i < params.NumberOfPreferences(); i++ {
-		ballot = append(ballot, candidates[i])
-	}
-	return ballot
-}
-
-/* ---- FIGHT ---- */
-
-// HandleFightInformation
-// Description: Called every time a fight information message is received (I believe it could be from a leader for providing a proposal or another agent for providing fight info (e.g proposal directly to them?)
-// Return:		nil
-func (a *Agent2) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	rules := make([]proposal.Rule[decision.FightAction], 0)
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth(baseAgent)),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth(baseAgent)),
-			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina(baseAgent))),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(baseAgent)),
-			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.GreaterThan, minAttack(baseAgent))),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(baseAgent)),
-			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, minDefend(baseAgent))),
-	))
-
-	prop := *commons.NewImmutableList(rules)
-	_ = baseAgent.SendFightProposalToLeader(prop)
-}
-
-// HandleFightRequest
-// Description: Called every time a fight request message is received
-// Return		Message Payload
-func (a *Agent2) HandleFightRequest(m message.TaggedRequestMessage[message.FightRequest], log *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
-	return nil
-}
-
-func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
+func (r *Agent2) FightResolution(
+	agent agent.BaseAgent,
+	prop commons.ImmutableList[proposal.Rule[decision.FightAction]],
 	proposedActions immutable.Map[commons.ID, decision.FightAction],
 ) immutable.Map[commons.ID, decision.FightAction] {
 	view := agent.View()
@@ -767,282 +540,7 @@ func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableLi
 	return *builder.Map()
 }
 
-// HandleFightProposal
-// Description: Through that function our agent votes on a broadcasts proposal
-func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
-	if intent == 0 {
-		return decision.Positive
-	} else {
-		return decision.Negative
-	}
-}
-
-// HandleFightProposalRequest
-// Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
-// Return:		Bool: True/False
-func (a *Agent2) HandleFightProposalRequest(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
-	propRules := prop.Rules()
-	itr := propRules.Iterator()
-	for !itr.Done() {
-		a, ok := itr.Next()
-		if ok {
-			if reflect.TypeOf(a.Condition()) == reflect.TypeOf(proposal.NewComparativeCondition) {
-				a.Condition()
-			}
-		}
-	}
-
-	switch rand.Intn(2) {
-	case 0:
-		return true
-	default:
-		return false
-	}
-}
-
-func (a *Agent2) FightActionNoProposal(agent agent.BaseAgent) decision.FightAction {
-	// If not enough Stamina, no choice
-	attack := agent.AgentState().Attack
-	defense := agent.AgentState().Defense
-	stamina := agent.AgentState().Stamina
-	bonusAttack := getBonusAttack(agent)
-	bonusDefense := getBonusDefense(agent)
-	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
-		return decision.Cower
-	}
-
-	currentDecision := a.initialDecision(agent)
-
-	if currentDecision == decision.Cower {
-		currentDecision = a.replaceDecision(agent, 10) // Second argument is the number of previous rounds to consider
-	}
-	/* Removed because damage per round is not relevant
-	if currentDecision == decision.Cower {
-		currentDecision = a.estimateDecision(baseAgent)
-	}
-	*/
-	return currentDecision
-}
-
-// Description : Compare defense and attack potential, output a decision
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) initialDecision(baseAgent agent.BaseAgent) decision.FightAction {
-	// method to retrieve state ?
-	attack := baseAgent.AgentState().Attack
-	defense := baseAgent.AgentState().Defense
-	health := baseAgent.AgentState().Hp
-	stamina := baseAgent.AgentState().Stamina
-	bonusAttack := getBonusAttack(baseAgent)
-	bonusDefense := getBonusDefense(baseAgent)
-
-	// Bravery is a function of health and stamina
-	bravery := 0.5*logistic(float64(health), 0.01, 500) + 0.5*logistic(float64(stamina), 0.005, 1000)
-
-	// If current bravery is higher than parameter tendency, do something
-	if bravery >= a.personalTendency {
-		if stamina >= attack+bonusAttack {
-			return decision.Attack
-		} else if stamina >= defense+bonusDefense {
-			return decision.Defend
-		}
-	}
-
-	return decision.Cower // Else cower
-}
-
-func countDecisionInMaps(value decision.FightAction, decisionMaps []immutable.Map[commons.ID, decision.FightAction]) int {
-	N := 0
-	for _, m := range decisionMaps {
-		itr := m.Iterator()
-		for !itr.Done() {
-			_, v, _ := itr.Next()
-			if v == value {
-				N += 1
-			}
-		}
-	}
-	return N
-}
-
-// Description : Compare current number of cowering agents to previous numbers
-// and possibly replace them
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) replaceDecision(baseAgent agent.BaseAgent, N int) decision.FightAction {
-	decisionHistory := a.getDecisionHelper(true)
-
-	meanNLastRounds := countDecisionInMaps(decision.Attack, decisionHistory[len(decisionHistory)-N:]) / N
-	lastFighting := countDecisionInMaps(decision.Attack, decisionHistory[len(decisionHistory)-1:])
-
-	if lastFighting < meanNLastRounds {
-		attack := baseAgent.AgentState().Attack
-		defense := baseAgent.AgentState().Defense
-		health := baseAgent.AgentState().Hp
-		stamina := baseAgent.AgentState().Stamina
-		bonusAttack := getBonusAttack(baseAgent)
-		bonusDefense := getBonusDefense(baseAgent)
-
-		// Bravery is a function of health and stamina
-		bravery := 0.5*logistic(float64(health), 0.01, 500) + 0.5*logistic(float64(stamina), 0.005, 1000)
-
-		if bravery >= a.replacementTendency {
-			if stamina >= attack+bonusAttack {
-				return decision.Attack
-			} else if stamina >= defense+bonusDefense {
-				return decision.Defend
-			}
-		}
-	}
-	return decision.Cower
-}
-
-// FightAction
-// Description: Logic of Fighting Action Decision-Making.
-// Return:		Cower, Defend or Attack decision.
-func (a *Agent2) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	// If not enough Stamina, no choice
-	attack := baseAgent.AgentState().Attack
-	defense := baseAgent.AgentState().Defense
-	stamina := baseAgent.AgentState().Stamina
-	bonusAttack := getBonusAttack(baseAgent)
-	bonusDefense := getBonusDefense(baseAgent)
-	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
-		return decision.Cower
-	}
-
-	currentDecision := a.initialDecision(baseAgent)
-
-	if currentDecision == decision.Cower {
-		currentDecision = a.replaceDecision(baseAgent, 10) // Second argument is the number of previous rounds to consider
-	}
-	/* Removed because damage per round is not relevant
-	if currentDecision == decision.Cower {
-		currentDecision = a.estimateDecision(baseAgent)
-	}
-	*/
-
-	return currentDecision
-}
-
-/* ---- LOOT ---- */
-
-func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
-	rules := make([]proposal.Rule[decision.LootAction], 0)
-
-	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.HealthPotion,
-		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth(agent)),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.StaminaPotion,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth(agent)),
-			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina(agent))),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Weapon,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
-			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, minAttack(agent))),
-	))
-
-	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Shield,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
-			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, minDefend(agent))),
-	))
-
-	prop := *commons.NewImmutableList(rules)
-	_ = agent.SendLootProposalToLeader(prop)
-}
-
-func (a *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
-	return nil
-}
-
-func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], agent agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Positive
-	case 1:
-		return decision.Negative
-	default:
-		return decision.Abstain
-	}
-}
-
-func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent agent.BaseAgent) bool {
-	switch rand.Intn(2) {
-	case 0:
-		return true
-	default:
-		return false
-	}
-}
-
-func (a *Agent2) LootAllocation(
-	baseAgent agent.BaseAgent,
-	proposal message.Proposal[decision.LootAction],
-	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
-) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	lootAllocation := make(map[commons.ID][]commons.ItemID)
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	healthIDs := make(map[commons.ID]uint, agentState.Len())
-	staminaIDs := make(map[commons.ID]uint, agentState.Len())
-	weapons := make(map[commons.ID]uint, agentState.Len())
-	shields := make(map[commons.ID]uint, agentState.Len())
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			healthIDs[id] = uint(a.Hp)
-			staminaIDs[id] = uint(a.Stamina)
-			weapons[id] = a.BonusAttack
-			shields[id] = a.BonusDefense
-		}
-	}
-
-	ids := commons.ImmutableMapKeys(view.AgentState())
-	iterator := baseAgent.Loot().Weapons().Iterator()
-	allocateEgaliterian(iterator, ids, weapons, lootAllocation)
-	iterator = baseAgent.Loot().Shields().Iterator()
-	allocateEgaliterian(iterator, ids, shields, lootAllocation)
-	iterator = baseAgent.Loot().HpPotions().Iterator()
-	allocateEgaliterian(iterator, ids, healthIDs, lootAllocation)
-	iterator = baseAgent.Loot().StaminaPotions().Iterator()
-	allocateEgaliterian(iterator, ids, staminaIDs, lootAllocation)
-	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-	for id, itemIDS := range lootAllocation {
-		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
-	}
-	return commons.MapToImmutable(mMapped)
-}
-
-func allocateEgaliterian(iterator commons.Iterator[state.Item], ids []commons.ID, values map[commons.ID]uint, lootAllocation map[commons.ID][]commons.ItemID) {
-	sort.SliceStable(ids, func(i, j int) bool {
-		return values[ids[i]] < values[ids[j]]
-	})
-	i := 0
-	for !iterator.Done() {
-		next, _ := iterator.Next()
-		toBeAllocated := ids[i]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		}
-	}
-}
-
-func (a *Agent2) LootAction(
-	_ agent.BaseAgent,
-	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
-	_ message.Proposal[decision.LootAction],
-) immutable.SortedMap[commons.ItemID, struct{}] {
-	return proposedLoot
-}
-
-func (a *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+func (r *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
 	loot := baseAgent.Loot()
 	weapons := loot.Weapons().Iterator()
 	shields := loot.Shields().Iterator()
@@ -1082,20 +580,223 @@ func (a *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.Sorte
 	return *builder.Map()
 }
 
-/* ---- HPPOOL ---- */
+func (r *Agent2) LootAction(
+	_ agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	_ message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
+	return proposedLoot
+}
 
-// DonateToHpPool
-// Description: The function returns the amount of Hp that our agent is willing to donate to the HpPool
-func (a *Agent2) DonateToHpPool(agent agent.BaseAgent) uint {
-	agentState := agent.AgentState()
-	if agentState.Hp < minHealth(agent) {
-		return 0
-	} else {
-		return 10 + dynamicDonation(agent)
+func (r *Agent2) FightActionNoProposal(_ agent.BaseAgent) decision.FightAction {
+	fight := rand.Intn(3)
+	switch fight {
+	case 0:
+		return decision.Cower
+	case 1:
+		return decision.Attack
+	default:
+		return decision.Defend
 	}
 }
 
-/* ---- TRADE ----- */
-func (a *Agent2) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+func (r *Agent2) FightAction(
+	baseAgent agent.BaseAgent,
+	_ decision.FightAction,
+	_ message.Proposal[decision.FightAction],
+) decision.FightAction {
+	return r.FightActionNoProposal(baseAgent)
+}
+
+func (r *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], _ agent.BaseAgent) {
+}
+
+func (r *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+	return nil
+}
+
+func (r *Agent2) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Positive
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Abstain
+	}
+}
+
+func (r *Agent2) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+func (r *Agent2) LootAllocation(
+	baseAgent agent.BaseAgent,
+	proposal message.Proposal[decision.LootAction],
+	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+	lootAllocation := make(map[commons.ID][]commons.ItemID)
+	view := baseAgent.View()
+	ids := commons.ImmutableMapKeys(view.AgentState())
+	iterator := baseAgent.Loot().Weapons().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().Shields().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().HpPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	iterator = baseAgent.Loot().StaminaPotions().Iterator()
+	allocateRandomly(iterator, ids, lootAllocation)
+	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
+	for id, itemIDS := range lootAllocation {
+		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
+	}
+	return commons.MapToImmutable(mMapped)
+}
+
+func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+	for !iterator.Done() {
+		next, _ := iterator.Next()
+		toBeAllocated := ids[rand.Intn(len(ids))]
+		if l, ok := lootAllocation[toBeAllocated]; ok {
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		} else {
+			l := make([]commons.ItemID, 0)
+			l = append(l, next.Id())
+			lootAllocation[toBeAllocated] = l
+		}
+	}
+}
+
+func (r *Agent2) DonateToHpPool(baseAgent agent.BaseAgent) uint {
+	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+}
+
+// UpdateInternalState
+// Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
+func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
+	a.updateBaseAgentPerLevel(baseAgent)
+	a.updateFightResultPerLevel(*fightResult)
+	a.updateVoteResultPerLevel(*voteResult)
+	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
+	a.updateSocialCapital(*fightResult, baseAgent)
+	a.newGovernmentTimeline(baseAgent, a.haveElections)
+}
+
+func (r *Agent2) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(false, false, 10, 5)
+	return manifesto
+}
+
+func (r *Agent2) HandleConfidencePoll(_ agent.BaseAgent) decision.Intent {
+	switch rand.Intn(3) {
+	case 0:
+		return decision.Abstain
+	case 1:
+		return decision.Negative
+	default:
+		return decision.Positive
+	}
+}
+
+func (r *Agent2) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, _ *immutable.Map[commons.ID, decision.FightAction]) {
+	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
+	makesProposal := rand.Intn(100)
+
+	if makesProposal > 80 {
+		rules := make([]proposal.Rule[decision.FightAction], 0)
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
+				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
+		))
+
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+		))
+
+		prop := *commons.NewImmutableList(rules)
+		_ = baseAgent.SendFightProposalToLeader(prop)
+	}
+}
+
+func (r *Agent2) HandleFightRequest(_ message.TaggedRequestMessage[message.FightRequest], _ *immutable.Map[commons.ID, decision.FightAction]) message.FightInform {
+	return nil
+}
+
+func (r *Agent2) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	// Extract ID of alive agents
+	view := b.View()
+	agentState := view.AgentState()
+	aliveAgentIDs := make([]string, agentState.Len())
+	i := 0
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			aliveAgentIDs[i] = id
+			i++
+		}
+	}
+
+	// Randomly fill the ballot
+	var ballot decision.Ballot
+	numAliveAgents := len(aliveAgentIDs)
+	numCandidate := rand.Intn(numAliveAgents)
+	for i := 0; i < numCandidate; i++ {
+		randomIdx := rand.Intn(numAliveAgents)
+		randomCandidate := aliveAgentIDs[uint(randomIdx)]
+		ballot = append(ballot, randomCandidate)
+	}
+
+	return ballot
+}
+
+func (r *Agent2) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+	intent := rand.Intn(2)
+	if intent == 0 {
+		return decision.Positive
+	} else {
+		return decision.Negative
+	}
+}
+
+func (r *Agent2) HandleFightProposalRequest(
+	_ message.Proposal[decision.FightAction],
+	_ agent.BaseAgent,
+	_ *immutable.Map[commons.ID, decision.FightAction],
+) bool {
+	switch rand.Intn(2) {
+	case 0:
+		return true
+	default:
+		return false
+	}
+}
+
+func (r *Agent2) HandleUpdateWeapon(_ agent.BaseAgent) decision.ItemIdx {
+	// 0th weapon has the greatest attack points
+	return decision.ItemIdx(0)
+}
+
+func (r *Agent2) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
+	// 0th weapon has the greatest shield points
+	return decision.ItemIdx(0)
+}
+
+func (r *Agent2) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
