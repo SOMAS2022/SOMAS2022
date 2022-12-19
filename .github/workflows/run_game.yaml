@@ -67,14 +67,14 @@ jobs:
           THRESHOLD_PCT: ${{ matrix.threshold_pct }}
           AGENT_TEAM1_QUANTITY: ${{ matrix.agent_quantity }}
 
-      - name: Test Performance of TEAM3 agent
-        run: ./infra
-        working-directory: /tmp
-        env:
-          LEVELS: ${{ matrix.levels }}
-          STARTING_HP: ${{ matrix.starting_hp }}
-          STARTING_ATTACK: ${{ matrix.starting_attack }}
-          STARTING_SHIELD: ${{ matrix.starting_shield }}
-          BASE_STAMINA: ${{ matrix.base_stamina }}
-          THRESHOLD_PCT: ${{ matrix.threshold_pct }}
-          AGENT_TEAM3_QUANTITY: ${{ matrix.agent_quantity }}
+      # - name: Test Performance of TEAM3 agent
+      #   run: ./infra
+      #   working-directory: /tmp
+      #   env:
+      #     LEVELS: ${{ matrix.levels }}
+      #     STARTING_HP: ${{ matrix.starting_hp }}
+      #     STARTING_ATTACK: ${{ matrix.starting_attack }}
+      #     STARTING_SHIELD: ${{ matrix.starting_shield }}
+      #     BASE_STAMINA: ${{ matrix.base_stamina }}
+      #     THRESHOLD_PCT: ${{ matrix.threshold_pct }}
+      #     AGENT_TEAM3_QUANTITY: ${{ matrix.agent_quantity }}
