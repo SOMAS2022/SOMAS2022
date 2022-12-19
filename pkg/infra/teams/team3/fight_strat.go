@@ -134,17 +134,14 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 
 // Vote on proposal
 func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	agree := true
-
+	intent := rand.Intn(2)
 	// rules := m.Rules()
 	// itr := rules.Iterator()
 	// for !itr.Done() {
 	// 	rule, _ := itr.Next()
 	// 	// baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
 	// }
-
-	// Selfish, only agree if our decision is ok
-	if agree {
+	if intent == 0 {
 		return decision.Positive
 	} else {
 		return decision.Negative
@@ -156,27 +153,27 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 	agentState := baseAgent.AgentState()
 	HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := 0.0, 0.0, 0.0, 0.0
 
-	// var agentFought bool = false
+	var agentFought bool = false
 
 	// iterate until we get most recent history
-	// i := 0
-	// itr := a.fightDecisionsHistory.Iterator()
-	// for !itr.Done() {
-	// 	res, _ := itr.Next()
-	// 	i += 1
+	i := 0
+	itr := a.fightDecisionsHistory.Iterator()
+	for !itr.Done() {
+		res, _ := itr.Next()
+		i += 1
 
-	// 	if i == a.fightDecisionsHistory.Len()-1 {
-	// 		agents := res.AttackingAgents()
-	// 		itr2 := agents.Iterator()
-	// 		// search for our agent in fight list
-	// 		for !itr.Done() {
-	// 			_, attackingAgentID := itr2.Next()
-	// 			if attackingAgentID == baseAgent.ID() {
-	// 				agentFought = true
-	// 			}
-	// 		}
-	// 	}
-	// }
+		if i == a.fightDecisionsHistory.Len()-1 {
+			agents := res.AttackingAgents()
+			itr2 := agents.Iterator()
+			// search for our agent in fight list
+			for !itr.Done() {
+				_, attackingAgentID := itr2.Next()
+				if attackingAgentID == baseAgent.ID() {
+					agentFought = true
+				}
+			}
+		}
+	}
 
 	if choice == decision.Cower {
 		if agentState.Hp >= uint(AverageArray(GetHealthAllAgents(baseAgent))) {
@@ -197,12 +194,12 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 		DefenseThreshold1 = 1.1 * AverageArray(GetDefenceAllAgents(baseAgent))
 	}
 
-	// if agentFought {
-	// 	HPThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
-	// 	StaminaThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
-	// 	AttackThreshold1 = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
-	// 	DefenseThreshold1 = 0.4 * AverageArray(GetDefenceAllAgents(baseAgent))
-	// }
+	if agentFought {
+		HPThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
+		StaminaThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
+		AttackThreshold1 = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
+		DefenseThreshold1 = 0.4 * AverageArray(GetDefenceAllAgents(baseAgent))
+	}
 	return HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1
 }
 
