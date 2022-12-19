@@ -27,7 +27,7 @@ type Agent5 struct {
 	exploreRate       float32
 	qtable            *Qtable
 	ttable            *TrustTable
-	round             uint
+	round             int
 }
 
 // --------------- Election ---------------
@@ -536,6 +536,6 @@ func NewAgent5() agent.Strategy {
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
 		ttable:      NewTrustTable(),
-		round:       uint(0),
+		round:       int(-1),
 	}
 }
