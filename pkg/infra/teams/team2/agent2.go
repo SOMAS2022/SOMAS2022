@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"reflect"
 	"sort"
+
 	"github.com/benbjohnson/immutable"
 )
 
