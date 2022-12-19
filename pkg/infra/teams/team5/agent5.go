@@ -27,6 +27,7 @@ type Agent5 struct {
 	exploreRate       float32
 	qtable            *Qtable
 	ttable            *TrustTable
+	round             int
 }
 
 // --------------- Election ---------------
@@ -401,9 +402,9 @@ func (t5 *Agent5) HandleLootProposalRequest(_ message.Proposal[decision.LootActi
 
 // --------------- Trade ---------------
 
-func (t5 *Agent5) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
-	return message.TradeRequest{}
-}
+//func (t5 *Agent5) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+//	return message.TradeRequest{}
+//}
 
 // --------------- Hp Pool ---------------
 
@@ -535,5 +536,6 @@ func NewAgent5() agent.Strategy {
 		exploreRate: float32(0.25),
 		qtable:      NewQTable(0.25, 0.75),
 		ttable:      NewTrustTable(),
+		round:       int(-1),
 	}
 }
