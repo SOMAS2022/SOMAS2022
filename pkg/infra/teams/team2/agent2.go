@@ -578,7 +578,7 @@ func (a *Agent2) HandleUpdateShield(agent agent.BaseAgent) decision.ItemIdx {
 func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
 	a.updateBaseAgentPerLevel(baseAgent)
 	a.updateFightResultPerLevel(*fightResult)
-	a.updateVoteResultPerLevel(*voteResult)
+	//a.updateVoteResultPerLevel(*voteResult)
 	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
 	//a.updateSocialCapital(*fightResult, baseAgent)
 	a.newGovernmentTimeline(baseAgent, a.haveElections)
