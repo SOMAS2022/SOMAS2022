@@ -927,29 +927,37 @@ func (a *Agent2) replaceDecision(baseAgent agent.BaseAgent, N int) decision.Figh
 // FightAction
 // Description: Logic of Fighting Action Decision-Making.
 // Return:		Cower, Defend or Attack decision.
-func (a *Agent2) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
-	// If not enough Stamina, no choice
-	attack := baseAgent.AgentState().Attack
-	defense := baseAgent.AgentState().Defense
-	stamina := baseAgent.AgentState().Stamina
-	bonusAttack := getBonusAttack(baseAgent)
-	bonusDefense := getBonusDefense(baseAgent)
-	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
-		return decision.Cower
-	}
+// func (a *Agent2) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
+// 	// If not enough Stamina, no choice
+// 	attack := baseAgent.AgentState().Attack
+// 	defense := baseAgent.AgentState().Defense
+// 	stamina := baseAgent.AgentState().Stamina
+// 	bonusAttack := getBonusAttack(baseAgent)
+// 	bonusDefense := getBonusDefense(baseAgent)
+// 	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
+// 		return decision.Cower
+// 	}
 
-	currentDecision := a.initialDecision(baseAgent)
+// 	currentDecision := a.initialDecision(baseAgent)
 
-	if currentDecision == decision.Cower {
-		currentDecision = a.replaceDecision(baseAgent, 10) // Second argument is the number of previous rounds to consider
-	}
-	/* Removed because damage per round is not relevant
-	if currentDecision == decision.Cower {
-		currentDecision = a.estimateDecision(baseAgent)
-	}
-	*/
+// 	if currentDecision == decision.Cower {
+// 		currentDecision = a.replaceDecision(baseAgent, 10) // Second argument is the number of previous rounds to consider
+// 	}
+// 	/* Removed because damage per round is not relevant
+// 	if currentDecision == decision.Cower {
+// 		currentDecision = a.estimateDecision(baseAgent)
+// 	}
+// 	*/
 
-	return currentDecision
+// 	return currentDecision
+// }
+
+func (r *Agent2) FightAction(
+	baseAgent agent.BaseAgent,
+	_ decision.FightAction,
+	_ message.Proposal[decision.FightAction],
+) decision.FightAction {
+	return r.FightActionNoProposal(baseAgent)
 }
 
 /* ---- LOOT ---- */
