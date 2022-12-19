@@ -539,7 +539,15 @@ func (a *Agent2) FightResolution(agent agent.BaseAgent, prop commons.ImmutableLi
 	return *builder.Map()
 }
 
-func (r *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
+func (a *Agent2) LootAction(
+	_ agent.BaseAgent,
+	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
+	_ message.Proposal[decision.LootAction],
+) immutable.SortedMap[commons.ItemID, struct{}] {
+	return proposedLoot
+}
+
+func (a *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
 	loot := baseAgent.Loot()
 	weapons := loot.Weapons().Iterator()
 	shields := loot.Shields().Iterator()
@@ -577,14 +585,6 @@ func (r *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.Sorte
 	}
 
 	return *builder.Map()
-}
-
-func (r *Agent2) LootAction(
-	_ agent.BaseAgent,
-	proposedLoot immutable.SortedMap[commons.ItemID, struct{}],
-	_ message.Proposal[decision.LootAction],
-) immutable.SortedMap[commons.ItemID, struct{}] {
-	return proposedLoot
 }
 
 func (r *Agent2) FightActionNoProposal(_ agent.BaseAgent) decision.FightAction {
@@ -715,8 +715,15 @@ func allocateEgaliterian(iterator commons.Iterator[state.Item], ids []commons.ID
 	}
 }
 
-func (r *Agent2) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	return uint(rand.Intn(int(baseAgent.AgentState().Hp)))
+// DonateToHpPool
+// Description: The function returns the amount of Hp that our agent is willing to donate to the HpPool
+func (a *Agent2) DonateToHpPool(agent agent.BaseAgent) uint {
+	agentState := agent.AgentState()
+	if agentState.Hp < minHealth(agent) {
+		return 0
+	} else {
+		return 10 + dynamicDonation(agent)
+	}
 }
 
 // UpdateInternalState
@@ -933,6 +940,7 @@ func (r *Agent2) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 	return decision.ItemIdx(0)
 }
 
-func (r *Agent2) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
+/* ---- TRADE ----- */
+func (a *Agent2) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
 }
