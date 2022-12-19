@@ -657,22 +657,38 @@ func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.Lo
 	}
 }
 
-func (r *Agent2) LootAllocation(
+func (a *Agent2) LootAllocation(
 	baseAgent agent.BaseAgent,
 	proposal message.Proposal[decision.LootAction],
 	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
+	agentState := view.AgentState()
+	healthIDs := make(map[commons.ID]uint, agentState.Len())
+	staminaIDs := make(map[commons.ID]uint, agentState.Len())
+	weapons := make(map[commons.ID]uint, agentState.Len())
+	shields := make(map[commons.ID]uint, agentState.Len())
+	itr := agentState.Iterator()
+	for !itr.Done() {
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			healthIDs[id] = uint(a.Hp)
+			staminaIDs[id] = uint(a.Stamina)
+			weapons[id] = a.BonusAttack
+			shields[id] = a.BonusDefense
+		}
+	}
+
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	iterator := baseAgent.Loot().Weapons().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, weapons, lootAllocation)
 	iterator = baseAgent.Loot().Shields().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, shields, lootAllocation)
 	iterator = baseAgent.Loot().HpPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, healthIDs, lootAllocation)
 	iterator = baseAgent.Loot().StaminaPotions().Iterator()
-	allocateRandomly(iterator, ids, lootAllocation)
+	allocateEgaliterian(iterator, ids, staminaIDs, lootAllocation)
 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
 	for id, itemIDS := range lootAllocation {
 		mMapped[id] = commons.ListToImmutableSortedSet(itemIDS)
@@ -680,10 +696,14 @@ func (r *Agent2) LootAllocation(
 	return commons.MapToImmutable(mMapped)
 }
 
-func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+func allocateEgaliterian(iterator commons.Iterator[state.Item], ids []commons.ID, values map[commons.ID]uint, lootAllocation map[commons.ID][]commons.ItemID) {
+	sort.SliceStable(ids, func(i, j int) bool {
+		return values[ids[i]] < values[ids[j]]
+	})
+	i := 0
 	for !iterator.Done() {
 		next, _ := iterator.Next()
-		toBeAllocated := ids[rand.Intn(len(ids))]
+		toBeAllocated := ids[i]
 		if l, ok := lootAllocation[toBeAllocated]; ok {
 			l = append(l, next.Id())
 			lootAllocation[toBeAllocated] = l
