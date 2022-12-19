@@ -686,44 +686,8 @@ func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *com
 	a.newGovernmentTimeline(baseAgent, a.haveElections)
 }
 
-// CreateManifesto
-// Description: Used to give Manifesto Information if elected Leader.
-// Return:		The Manifesto with FightImposition, LootImposition, term length and overthrow threshold.
-func (a *Agent2) CreateManifesto(agent agent.BaseAgent) *decision.Manifesto {
-	fightThreshold := 2.5
-	lootThreshold := 2.5
-	fightDecisionPower := false // default value
-
-	if !a.wasOverthrown(agent.ID()) {
-		if (a.adjustedExpertise(agent, 0, 5) + a.lastFightDecisionPower(agent.ID(), 2.5)) > fightThreshold {
-			fightDecisionPower = true
-		}
-	} else {
-		if a.adjustedExpertise(agent, 0, 5) > fightThreshold {
-			fightDecisionPower = true
-		}
-	}
-
-	lootDecisionPower := false
-
-	if !a.wasOverthrown(agent.ID()) {
-		if (a.adjustedExpertise(agent, 0, 5) + a.lastLootDecisionPower(agent.ID(), 2.5)) > lootThreshold {
-			lootDecisionPower = true
-		}
-	} else {
-		if a.adjustedExpertise(agent, 0, 5) > lootThreshold {
-			lootDecisionPower = true
-		}
-	}
-
-	termLength := uint(a.adjustedExpertise(agent, 0, 4) + 1)
-
-	overthrowPercentage := uint(51)
-	if a.wasOverthrown(agent.ID()) {
-		overthrowPercentage = uint(float64(overthrowPercentage) + a.adjustedExpertise(agent, -10, 10))
-	}
-
-	manifesto := decision.NewManifesto(fightDecisionPower, lootDecisionPower, termLength, overthrowPercentage)
+func (r *Agent2) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
+	manifesto := decision.NewManifesto(false, false, 10, 5)
 	return manifesto
 }
 
