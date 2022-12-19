@@ -580,7 +580,7 @@ func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *com
 	//a.updateFightResultPerLevel(*fightResult)
 	//a.updateVoteResultPerLevel(*voteResult)
 	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
-	//a.updateSocialCapital(*fightResult, baseAgent)
+	a.updateSocialCapital(*fightResult, baseAgent)
 	a.newGovernmentTimeline(baseAgent, a.haveElections)
 }
 
