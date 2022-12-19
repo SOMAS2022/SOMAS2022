@@ -6,6 +6,10 @@ run:
   # Mainly related to generics support since go1.18.
   # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.18
   go: '1.19'
+linters-settings:
+  cyclop:
+    # the maximal code complexity to report
+    max-complexity: 30
 linters:
   disable-all: true
   enable:
