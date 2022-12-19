@@ -24,7 +24,7 @@ type AgentThree struct {
 }
 
 // Update internal parameters at the end of each stage
-func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	AS := baseAgent.AgentState()
 	view := baseAgent.View()
 	// Initialise utils
@@ -38,7 +38,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *com
 	a.AT = int(AS.Attack + AS.BonusAttack())
 	a.SH = int(AS.Defense + AS.BonusDefense())
 
-	a.fightDecisionsHistory = *history
+	// a.fightDecisionsHistory = *history
 
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
