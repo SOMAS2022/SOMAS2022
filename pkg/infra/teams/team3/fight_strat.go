@@ -37,8 +37,8 @@ func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 func (a *AgentThree) FightAction(
 	baseAgent agent.BaseAgent,
-	proposedAction decision.FightAction,
-	acceptedProposal message.Proposal[decision.FightAction],
+	_ decision.FightAction,
+	_ message.Proposal[decision.FightAction],
 ) decision.FightAction {
 	return a.FightActionNoProposal(baseAgent)
 }
@@ -63,31 +63,35 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	// baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "decision": a.CurrentAction(baseAgent)}, "HP")
 	// baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
 
-	id := baseAgent.ID()
-	choice, _ := fightactionMap.Get(id)
-	HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
+	// id := baseAgent.ID()
+	// choice, _ := fightactionMap.Get(id)
+	// HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
 
-	rules := make([]proposal.Rule[decision.FightAction], 0)
+	makesProposal := rand.Intn(100)
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(AttackThreshold1)),
-			*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(AttackThreshold1))),
-	))
+	if makesProposal > 50 {
+		rules := make([]proposal.Rule[decision.FightAction], 0)
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, uint(DefenseThreshold1)),
-	))
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 500),
+				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 500)),
+		))
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
-		proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(HPThreshold1)),
-	))
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 200),
+		))
 
-	rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-		proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(StaminaThreshold1)),
-	))
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+			proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1),
+		))
 
-	prop := *commons.NewImmutableList(rules)
-	_ = baseAgent.SendFightProposalToLeader(prop)
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
+		))
+
+		prop := *commons.NewImmutableList(rules)
+		_ = baseAgent.SendFightProposalToLeader(prop)
+	}
 }
 
 // Calculate our agents action
@@ -98,7 +102,7 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 	currentLevel := int(view.CurrentLevel())
 	var attackDealt int
 	// only sample at start
-	if currentLevel == 0 {
+	if currentLevel == 1 {
 		initHP = int(agentState.Hp)
 		initMonsterHP = int(view.MonsterHealth())
 	}

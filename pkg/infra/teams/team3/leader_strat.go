@@ -40,7 +40,7 @@ func (a *AgentThree) FightResolution(baseAgent agent.BaseAgent, prop commons.Imm
 
 		// Check for our agent and assign what we want to do
 		if id == baseAgent.ID() {
-			action := a.CurrentAction(baseAgent)
+			action := a.FightActionNoProposal(baseAgent)
 			fightAction = action
 		} else {
 			switch rand.Intn(3) {
