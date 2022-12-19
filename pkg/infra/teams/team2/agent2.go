@@ -576,11 +576,11 @@ func (a *Agent2) HandleUpdateShield(agent agent.BaseAgent) decision.ItemIdx {
 // UpdateInternalState
 // Description: the function is called at the end of each level (provides a list of type FightResult / can be thought as raw & processed overall game info)
 func (a *Agent2) UpdateInternalState(baseAgent agent.BaseAgent, fightResult *commons.ImmutableList[decision.ImmutableFightResult], voteResult *immutable.Map[decision.Intent, uint], logChan chan<- logging.AgentLog) {
-	a.updateBaseAgentPerLevel(baseAgent)
-	a.updateFightResultPerLevel(*fightResult)
-	a.updateVoteResultPerLevel(*voteResult)
+	//a.updateBaseAgentPerLevel(baseAgent)
+	//a.updateFightResultPerLevel(*fightResult)
+	//a.updateVoteResultPerLevel(*voteResult)
 	a.avgHp, a.avgDefend, a.avgAttack, a.avgStamina = updateAverages(baseAgent)
-	//a.updateSocialCapital(*fightResult, baseAgent)
+	a.updateSocialCapital(*fightResult, baseAgent)
 	a.newGovernmentTimeline(baseAgent, a.haveElections)
 }
 
