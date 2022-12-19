@@ -16,8 +16,8 @@ func (t5 *Agent5) HandleTradeNegotiation(a agent.BaseAgent, T_TradeInfo message.
 		t5.round -= 5
 	}
 	leaderfightpredictionmap := FindBestStrategy(a.View())
-	T_fightDecision, _ := leaderfightpredictionmap.Get(a.ID())
-	T_fightDecision = decision.FightAction(rand.Intn(3))
+	//T_fightDecision, _ := leaderfightpredictionmap.Get(a.ID())
+	T_fightDecision := decision.FightAction(rand.Intn(3))
 	if len(T_TradeInfo.Negotiations) == 0 && t5.round <= 2 && T_fightDecision != decision.Cower { //no offers then request
 		return T_request(a, T_fightDecision, leaderfightpredictionmap)
 	} else if len(T_TradeInfo.Negotiations) != 0 && t5.round <= 2 { //process requests
