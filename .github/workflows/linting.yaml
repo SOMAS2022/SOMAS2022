@@ -1,32 +1,32 @@
-name: Lint and format check
-# Controls when the workflow will run
-on:
-  # Triggers the workflow on push events but only for the "main" branch
-  push:
-    branches: ["**"]
-  pull_request:
-    branches: ["main"]
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Setup go
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.19"
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
-          # version: v1.29
+# name: Lint and format check
+# # Controls when the workflow will run
+# on:
+#   # Triggers the workflow on push events but only for the "main" branch
+#   push:
+#     branches: ["**"]
+#   pull_request:
+#     branches: ["main"]
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
+# jobs:
+#   linting:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+#       - name: Setup go
+#         uses: actions/setup-go@v3
+#         with:
+#           go-version: "1.19"
+#       - name: golangci-lint
+#         uses: golangci/golangci-lint-action@v3
+#         with:
+#           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+#           # version: v1.29
 
-          # Optional: working directory, useful for monorepos
-          working-directory: pkg/infra
-          # Optional: golangci-lint command line arguments.
-          args: -v
-      - name: go-vet
-        run: go vet ./pkg/infra
+#           # Optional: working directory, useful for monorepos
+#           working-directory: pkg/infra
+#           # Optional: golangci-lint command line arguments.
+#           args: -v
+#       - name: go-vet
+#         run: go vet ./pkg/infra
