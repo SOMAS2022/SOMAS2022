@@ -172,7 +172,7 @@ func firstResponse(a agent.BaseAgent, T_Negotiations message.TradeInfo, T_fightD
 	return message.TradeAbstain{}
 }
 
-func secondResponse(a agent.BaseAgent, T_Negotiations message.TradeInfo, T_fightDecision decision.FightAction, T_map *immutable.Map[commons.ID, decision.FightAction]) message.TradeMessage {
+func secondResponse(a agent.BaseAgent, T_Negotiations message.TradeInfo, T_map *immutable.Map[commons.ID, decision.FightAction]) message.TradeMessage {
 	//process request
 	for agent_id, T_TradeNegotiation := range T_Negotiations.Negotiations {
 		agentDecision, _ := T_map.Get(agent_id)
