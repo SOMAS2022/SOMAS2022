@@ -11,7 +11,43 @@ import (
 )
 
 func (a *AgentThree) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
-	return *immutable.NewSortedMap[commons.ItemID, struct{}](nil)
+	loot := baseAgent.Loot()
+	weapons := loot.Weapons().Iterator()
+	shields := loot.Shields().Iterator()
+	hpPotions := loot.HpPotions().Iterator()
+	staminaPotions := loot.StaminaPotions().Iterator()
+
+	builder := immutable.NewSortedMapBuilder[commons.ItemID, struct{}](nil)
+
+	for !weapons.Done() {
+		weapon, _ := weapons.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(weapon.Id(), struct{}{})
+		}
+	}
+
+	for !shields.Done() {
+		shield, _ := shields.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(shield.Id(), struct{}{})
+		}
+	}
+
+	for !hpPotions.Done() {
+		pot, _ := hpPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	for !staminaPotions.Done() {
+		pot, _ := staminaPotions.Next()
+		if rand.Int()%2 == 0 {
+			builder.Set(pot.Id(), struct{}{})
+		}
+	}
+
+	return *builder.Map()
 }
 
 func (a *AgentThree) LootAction(

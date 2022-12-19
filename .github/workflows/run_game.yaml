@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         # Configurations with which the script will be run
-        levels: [ 20 ]
+        levels: [ 40 ]
         starting_hp: [ 10 ]
         starting_attack: [ 100 ]
         starting_shield: [ 100 ]
