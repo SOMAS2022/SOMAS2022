@@ -82,7 +82,7 @@ func NewTradeOffer(itemType commons.ItemType, idx uint, weapon immutable.List[st
 	} else if itemType == commons.Shield {
 		inventory = shield
 	}
-	if idx > uint(inventory.Len()) {
+	if idx >= uint(inventory.Len()) {
 		return TradeOffer{}, false
 	}
 	item := inventory.Get(int(idx))
