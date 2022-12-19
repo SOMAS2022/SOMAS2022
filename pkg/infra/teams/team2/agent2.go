@@ -134,6 +134,7 @@ func NewAgent2() agent.Strategy {
 }
 
 /* ---- HELPER FUNCTIONS ---- */
+
 type leaderInfo struct {
 	id         commons.ID
 	manifesto  decision.Manifesto
