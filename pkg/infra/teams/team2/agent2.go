@@ -607,14 +607,37 @@ func (r *Agent2) FightAction(
 	return r.FightActionNoProposal(baseAgent)
 }
 
-func (r *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], _ agent.BaseAgent) {
+func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+	rules := make([]proposal.Rule[decision.LootAction], 0)
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.HealthPotion,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, minHealth(agent)),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.StaminaPotion,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, minHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, minStamina(agent))),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Weapon,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, minAttack(agent))),
+	))
+
+	rules = append(rules, *proposal.NewRule[decision.LootAction](decision.Shield,
+		proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, baseHealth(agent)),
+			*proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, minDefend(agent))),
+	))
+
+	prop := *commons.NewImmutableList(rules)
+	_ = agent.SendLootProposalToLeader(prop)
 }
 
-func (r *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
+func (a *Agent2) HandleLootRequest(m message.TaggedRequestMessage[message.LootRequest]) message.LootInform {
 	return nil
 }
 
-func (r *Agent2) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
+func (a *Agent2) HandleLootProposal(r message.Proposal[decision.LootAction], agent agent.BaseAgent) decision.Intent {
 	switch rand.Intn(3) {
 	case 0:
 		return decision.Positive
@@ -625,7 +648,7 @@ func (r *Agent2) HandleLootProposal(_ message.Proposal[decision.LootAction], _ a
 	}
 }
 
-func (r *Agent2) HandleLootProposalRequest(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) bool {
+func (a *Agent2) HandleLootProposalRequest(proposal message.Proposal[decision.LootAction], agent agent.BaseAgent) bool {
 	switch rand.Intn(2) {
 	case 0:
 		return true
