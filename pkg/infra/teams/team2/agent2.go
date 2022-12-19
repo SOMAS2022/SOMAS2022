@@ -11,6 +11,7 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
+	"reflect"
 	"sort"
 	"github.com/benbjohnson/immutable"
 )
@@ -845,7 +846,9 @@ func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decisio
 	return ballot
 }
 
-func (r *Agent2) HandleFightProposal(_ message.Proposal[decision.FightAction], _ agent.BaseAgent) decision.Intent {
+// HandleFightProposal
+// Description: Through that function our agent votes on a broadcasts proposal
+func (a *Agent2) HandleFightProposal(proposal message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
 	intent := rand.Intn(2)
 	if intent == 0 {
 		return decision.Positive
@@ -854,11 +857,21 @@ func (r *Agent2) HandleFightProposal(_ message.Proposal[decision.FightAction], _
 	}
 }
 
-func (r *Agent2) HandleFightProposalRequest(
-	_ message.Proposal[decision.FightAction],
-	_ agent.BaseAgent,
-	_ *immutable.Map[commons.ID, decision.FightAction],
-) bool {
+// HandleFightProposalRequest
+// Description: Only called as a leader: True for broadcasting the proposal / False for declining the proposal
+// Return:		Bool: True/False
+func (a *Agent2) HandleFightProposalRequest(prop message.Proposal[decision.FightAction], baseAgent agent.BaseAgent, log *immutable.Map[commons.ID, decision.FightAction]) bool {
+	propRules := prop.Rules()
+	itr := propRules.Iterator()
+	for !itr.Done() {
+		a, ok := itr.Next()
+		if ok {
+			if reflect.TypeOf(a.Condition()) == reflect.TypeOf(proposal.NewComparativeCondition) {
+				a.Condition()
+			}
+		}
+	}
+
 	switch rand.Intn(2) {
 	case 0:
 		return true
