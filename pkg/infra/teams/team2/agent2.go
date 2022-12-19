@@ -655,56 +655,84 @@ func (a *Agent2) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent
 // HandleElectionBallot
 // Description: Used to elect a Leader.
 // Return:  	A single Commons.ID for choose-one voting or an array of commons.ID of top leader choices for ranked-voting.
-func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
-	// Extract ID of alive agents
-	view := baseAgent.View()
-	//agentState := view.AgentState()
-	cans := params.CandidateList()
-	// Updating Leader Parameters
-	a.termEndLevel = view.CurrentLevel()                    //level_temp is another priv attribute initialized to 0/1?
-	a.termDuration = view.CurrentLevel() - a.termBeginLevel // term_begin_level was last updated at the beginning of the term that is now ending
-	a.termBeginLevel = view.CurrentLevel()                  // now that it has been used, can reset to track new leadership
-	a.avgTermSurvival = a.avgSurvivalCurrTerm               //(assert len(a.survival_rates)==term_duration )
-	a.avgTermBroadcastRate = a.avgBroadcastRateCurrTerm     //(assert len(a.broadcast_rates)==term_duration )
-	a.haveElections = true
-	if len(a.governmentTimeline) > 0 {
-		lastLeaderInfo := a.governmentTimeline[len(a.governmentTimeline)-1]
-		if lastLeaderInfo.duration < lastLeaderInfo.manifesto.TermLength() {
-			lastLeaderInfo.overthrown = true
-		}
-		a.governmentTimeline[len(a.governmentTimeline)-1] = lastLeaderInfo
-	}
+// func (a *Agent2) HandleElectionBallot(baseAgent agent.BaseAgent, params *decision.ElectionParams) decision.Ballot {
+// 	// Extract ID of alive agents
+// 	view := baseAgent.View()
+// 	//agentState := view.AgentState()
+// 	cans := params.CandidateList()
+// 	// Updating Leader Parameters
+// 	a.termEndLevel = view.CurrentLevel()                    //level_temp is another priv attribute initialized to 0/1?
+// 	a.termDuration = view.CurrentLevel() - a.termBeginLevel // term_begin_level was last updated at the beginning of the term that is now ending
+// 	a.termBeginLevel = view.CurrentLevel()                  // now that it has been used, can reset to track new leadership
+// 	a.avgTermSurvival = a.avgSurvivalCurrTerm               //(assert len(a.survival_rates)==term_duration )
+// 	a.avgTermBroadcastRate = a.avgBroadcastRateCurrTerm     //(assert len(a.broadcast_rates)==term_duration )
+// 	a.haveElections = true
+// 	if len(a.governmentTimeline) > 0 {
+// 		lastLeaderInfo := a.governmentTimeline[len(a.governmentTimeline)-1]
+// 		if lastLeaderInfo.duration < lastLeaderInfo.manifesto.TermLength() {
+// 			lastLeaderInfo.overthrown = true
+// 		}
+// 		a.governmentTimeline[len(a.governmentTimeline)-1] = lastLeaderInfo
+// 	}
 
-	candidates := make([]commons.ID, cans.Len())
-	mainfestos := make([]decision.Manifesto, cans.Len())
+// 	candidates := make([]commons.ID, cans.Len())
+// 	mainfestos := make([]decision.Manifesto, cans.Len())
+// 	i := 0
+// 	itr := cans.Iterator()
+// 	for !itr.Done() {
+// 		can, manifesto, ok := itr.Next()
+// 		if ok {
+// 			candidates[i] = can
+// 			mainfestos[i] = manifesto
+// 			i++
+// 		}
+// 	}
+
+// 	// Randomly fill the ballot
+// 	var ballot decision.Ballot
+// 	numAliveAgents := len(candidates)
+// 	agentScores := make(map[commons.ID]float64, numAliveAgents)
+// 	for i := 0; i < numAliveAgents; i++ {
+// 		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(1.0))
+// 		par2 := a.lastFightDecisionPower(candidates[i], 5)
+// 		par3 := a.lastLootDecisionPower(candidates[i], 5)
+// 		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
+// 		agentScores[candidates[i]] = prospectLeaderScore(par1, par2, par3, sot)
+// 	}
+// 	sort.SliceStable(candidates, func(i, j int) bool {
+// 		return agentScores[candidates[i]] < agentScores[candidates[j]]
+// 	})
+// 	for i := uint(0); i < params.NumberOfPreferences(); i++ {
+// 		ballot = append(ballot, candidates[i])
+// 	}
+// 	return ballot
+// }
+
+func (r *Agent2) HandleElectionBallot(b agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+	// Extract ID of alive agents
+	view := b.View()
+	agentState := view.AgentState()
+	aliveAgentIDs := make([]string, agentState.Len())
 	i := 0
-	itr := cans.Iterator()
+	itr := agentState.Iterator()
 	for !itr.Done() {
-		can, manifesto, ok := itr.Next()
-		if ok {
-			candidates[i] = can
-			mainfestos[i] = manifesto
+		id, a, ok := itr.Next()
+		if ok && a.Hp > 0 {
+			aliveAgentIDs[i] = id
 			i++
 		}
 	}
 
 	// Randomly fill the ballot
 	var ballot decision.Ballot
-	numAliveAgents := len(candidates)
-	agentScores := make(map[commons.ID]float64, numAliveAgents)
-	for i := 0; i < numAliveAgents; i++ {
-		par1 := a.leaderElectedBefore(candidates[i], a.weightedFracTermsDeposed(-1, candidates[i])+a.weightedAvgSurRateUnderLeader(1.0))
-		par2 := a.lastFightDecisionPower(candidates[i], 5)
-		par3 := a.lastLootDecisionPower(candidates[i], 5)
-		sot := a.SOT(candidates[i], mainfestos[i], 0.10)
-		agentScores[candidates[i]] = prospectLeaderScore(par1, par2, par3, sot)
+	numAliveAgents := len(aliveAgentIDs)
+	numCandidate := rand.Intn(numAliveAgents)
+	for i := 0; i < numCandidate; i++ {
+		randomIdx := rand.Intn(numAliveAgents)
+		randomCandidate := aliveAgentIDs[uint(randomIdx)]
+		ballot = append(ballot, randomCandidate)
 	}
-	sort.SliceStable(candidates, func(i, j int) bool {
-		return agentScores[candidates[i]] < agentScores[candidates[j]]
-	})
-	for i := uint(0); i < params.NumberOfPreferences(); i++ {
-		ballot = append(ballot, candidates[i])
-	}
+
 	return ballot
 }
 
