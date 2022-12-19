@@ -587,24 +587,127 @@ func (a *Agent2) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.Sorte
 	return *builder.Map()
 }
 
-func (r *Agent2) FightActionNoProposal(_ agent.BaseAgent) decision.FightAction {
-	fight := rand.Intn(3)
-	switch fight {
-	case 0:
+func (a *Agent2) FightActionNoProposal(agent agent.BaseAgent) decision.FightAction {
+	// If not enough Stamina, no choice
+	attack := agent.AgentState().Attack
+	defense := agent.AgentState().Defense
+	stamina := agent.AgentState().Stamina
+	bonusAttack := getBonusAttack(agent)
+	bonusDefense := getBonusDefense(agent)
+	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
 		return decision.Cower
-	case 1:
-		return decision.Attack
-	default:
-		return decision.Defend
 	}
+
+	currentDecision := a.initialDecision(agent)
+
+	if currentDecision == decision.Cower {
+		currentDecision = a.replaceDecision(agent, 10) // Second argument is the number of previous rounds to consider
+	}
+	/* Removed because damage per round is not relevant
+	if currentDecision == decision.Cower {
+		currentDecision = a.estimateDecision(baseAgent)
+	}
+	*/
+	return currentDecision
 }
 
-func (r *Agent2) FightAction(
-	baseAgent agent.BaseAgent,
-	_ decision.FightAction,
-	_ message.Proposal[decision.FightAction],
-) decision.FightAction {
-	return r.FightActionNoProposal(baseAgent)
+// Description : Compare defense and attack potential, output a decision
+// Return:		Cower, Defend or Attack decision.
+func (a *Agent2) initialDecision(baseAgent agent.BaseAgent) decision.FightAction {
+	// method to retrieve state ?
+	attack := baseAgent.AgentState().Attack
+	defense := baseAgent.AgentState().Defense
+	health := baseAgent.AgentState().Hp
+	stamina := baseAgent.AgentState().Stamina
+	bonusAttack := getBonusAttack(baseAgent)
+	bonusDefense := getBonusDefense(baseAgent)
+
+	// Bravery is a function of health and stamina
+	bravery := 0.5*logistic(float64(health), 0.01, 500) + 0.5*logistic(float64(stamina), 0.005, 1000)
+
+	// If current bravery is higher than parameter tendency, do something
+	if bravery >= a.personalTendency {
+		if stamina >= attack+bonusAttack {
+			return decision.Attack
+		} else if stamina >= defense+bonusDefense {
+			return decision.Defend
+		}
+	}
+
+	return decision.Cower // Else cower
+}
+
+func countDecisionInMaps(value decision.FightAction, decisionMaps []immutable.Map[commons.ID, decision.FightAction]) int {
+	N := 0
+	for _, m := range decisionMaps {
+		itr := m.Iterator()
+		for !itr.Done() {
+			_, v, _ := itr.Next()
+			if v == value {
+				N += 1
+			}
+		}
+	}
+	return N
+}
+
+// Description : Compare current number of cowering agents to previous numbers
+// and possibly replace them
+// Return:		Cower, Defend or Attack decision.
+func (a *Agent2) replaceDecision(baseAgent agent.BaseAgent, N int) decision.FightAction {
+	decisionHistory := a.getDecisionHelper(true)
+
+	meanNLastRounds := countDecisionInMaps(decision.Attack, decisionHistory[len(decisionHistory)-N:]) / N
+	lastFighting := countDecisionInMaps(decision.Attack, decisionHistory[len(decisionHistory)-1:])
+
+	if lastFighting < meanNLastRounds {
+		attack := baseAgent.AgentState().Attack
+		defense := baseAgent.AgentState().Defense
+		health := baseAgent.AgentState().Hp
+		stamina := baseAgent.AgentState().Stamina
+		bonusAttack := getBonusAttack(baseAgent)
+		bonusDefense := getBonusDefense(baseAgent)
+
+		// Bravery is a function of health and stamina
+		bravery := 0.5*logistic(float64(health), 0.01, 500) + 0.5*logistic(float64(stamina), 0.005, 1000)
+
+		if bravery >= a.replacementTendency {
+			if stamina >= attack+bonusAttack {
+				return decision.Attack
+			} else if stamina >= defense+bonusDefense {
+				return decision.Defend
+			}
+		}
+	}
+	return decision.Cower
+}
+
+// FightAction
+// Description: Logic of Fighting Action Decision-Making.
+// Return:		Cower, Defend or Attack decision.
+func (a *Agent2) FightAction(baseAgent agent.BaseAgent, proposedAction decision.FightAction, acceptedProposal message.Proposal[decision.FightAction]) decision.FightAction {
+	// If not enough Stamina, no choice
+	attack := baseAgent.AgentState().Attack
+	defense := baseAgent.AgentState().Defense
+	stamina := baseAgent.AgentState().Stamina
+	bonusAttack := getBonusAttack(baseAgent)
+	bonusDefense := getBonusDefense(baseAgent)
+	if stamina < attack+bonusAttack && stamina < defense+bonusDefense {
+		return decision.Cower
+	}
+
+	currentDecision := a.initialDecision(baseAgent)
+
+	if currentDecision == decision.Cower {
+		currentDecision = a.replaceDecision(baseAgent, 10) // Second argument is the number of previous rounds to consider
+	}
+	/* Removed because damage per round is not relevant
+	if currentDecision == decision.Cower {
+		currentDecision = a.estimateDecision(baseAgent)
+	}
+	*/
+
+	return currentDecision
 }
 
 func (a *Agent2) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
