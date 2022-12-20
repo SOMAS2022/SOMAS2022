@@ -21,13 +21,13 @@ import (
 type SocialAgent struct {
 	socialCapital map[string][4]float64 // agentID -> [Institutions, Networks, Trustworthiness, Honour]
 	selfishness   float64               // Weighting of how selfish an agent is (0 -> not selfish, 1 -> very selfish)
-	// Will gosip to all agents who's network value is above this
+	// Will gossip to all agents whose network value is above this
 	gossipThreshold float64
 	// Proportion of agents to talk badly about
 	propHate float64
 	// Proportion of agents to talk well about
 	propAdmire float64
-	// Propportion of agents to trade with
+	// Proportion of agents to trade with
 	propTrade float64
 
 	graphID int // for logging
@@ -559,22 +559,21 @@ func (s *SocialAgent) HandleFightProposal(prop message.Proposal[decision.FightAc
 	ids := commons.ImmutableMapKeys(view.AgentState())
 	agents := view.AgentState()
 	rules := prop.Rules()
-	action_checker := proposal.ToSinglePredicate(rules)
+	actionChecker := proposal.ToSinglePredicate(&rules)
 	accuracy := 0.0
-	for id_index := 0; id_index < 20; id_index++ {
-		id_index := rand.Intn(len(ids))
-		agent_state, _ := agents.Get(ids[id_index])
-		proposal_action := action_checker(state.AgentState{
-			Hp:      uint(agent_state.Hp),
-			Stamina: uint(agent_state.Stamina),
-			Attack:  agent_state.Attack,
-			Defense: agent_state.Defense,
+	for idIndex := 0; idIndex < 20; idIndex++ {
+		idIndex := rand.Intn(len(ids))
+		agentState, _ := agents.Get(ids[idIndex])
+		proposalAction := actionChecker(state.AgentState{
+			Hp:      uint(agentState.Hp),
+			Stamina: uint(agentState.Stamina),
+			Attack:  agentState.Attack,
+			Defense: agentState.Defense,
 		})
-		qState := internal.HiddenAgentToQState(agent_state, view)
+		qState := internal.HiddenAgentToQState(agentState, view)
 		rewards := internal.CooperationQ(qState)
-		q_action := decision.FightAction(internal.Argmax(rewards[:]))
-		decision_match := q_action == proposal_action
-		if decision_match {
+		qAction := decision.FightAction(internal.Argmax(rewards[:]))
+		if qAction == proposalAction {
 			accuracy += 1.0
 		}
 	}
