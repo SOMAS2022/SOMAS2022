@@ -20,7 +20,7 @@ func ResolveFightDiscussion(gs state.State, agentMap map[commons.ID]agent.Agent,
 	prop := tally.GetMax()
 	rules := prop.Rules()
 
-	predicate := proposal.ToSinglePredicate(rules)
+	predicate := proposal.ToSinglePredicate(&rules)
 	if predicate == nil {
 		for id, a := range agentMap {
 			fightActions[id] = a.FightActionNoProposal(*a.BaseAgent)

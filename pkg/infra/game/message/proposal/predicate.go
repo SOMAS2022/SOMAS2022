@@ -6,7 +6,7 @@ import (
 	"infra/game/state"
 )
 
-func ToSinglePredicate[A decision.ProposalAction](rules commons.ImmutableList[Rule[A]]) func(state.AgentState) A {
+func ToSinglePredicate[A decision.ProposalAction](rules *commons.ImmutableList[Rule[A]]) func(state.AgentState) A {
 	iterator := rules.Iterator()
 	predicates := make([]func(agentState state.AgentState) (A, bool), 0)
 	for !iterator.Done() {
@@ -62,17 +62,17 @@ func ToMultiPredicate[A decision.ProposalAction](rules commons.ImmutableList[Rul
 func makePredicate(cond Condition) func(agentState state.AgentState) bool {
 	switch condT := cond.(type) {
 	case *ComparativeCondition:
-		return buildCompPredicate(*condT)
-	case ComparativeCondition:
 		return buildCompPredicate(condT)
+	case ComparativeCondition:
+		return buildCompPredicate(&condT)
 	case *AndCondition:
-		return andEval(*condT)
-	case AndCondition:
 		return andEval(condT)
+	case AndCondition:
+		return andEval(&condT)
 	case *OrCondition:
-		return orEval(*condT)
-	case OrCondition:
 		return orEval(condT)
+	case OrCondition:
+		return orEval(&condT)
 	case DefectorCondition:
 		return defectorEval()
 	default:
@@ -82,13 +82,13 @@ func makePredicate(cond Condition) func(agentState state.AgentState) bool {
 	}
 }
 
-func andEval(cond AndCondition) func(state.AgentState) bool {
+func andEval(cond *AndCondition) func(state.AgentState) bool {
 	return func(agentState state.AgentState) bool {
 		return makePredicate(cond.CondA())(agentState) && makePredicate(cond.CondB())(agentState)
 	}
 }
 
-func orEval(cond OrCondition) func(state.AgentState) bool {
+func orEval(cond *OrCondition) func(state.AgentState) bool {
 	return func(agentState state.AgentState) bool {
 		return makePredicate(cond.CondA())(agentState) || makePredicate(cond.CondB())(agentState)
 	}
@@ -100,7 +100,7 @@ func defectorEval() func(state.AgentState) bool {
 	}
 }
 
-func buildCompPredicate(condT ComparativeCondition) func(agentState state.AgentState) bool {
+func buildCompPredicate(condT *ComparativeCondition) func(agentState state.AgentState) bool {
 	return func(agentState state.AgentState) bool {
 		var attr uint
 		switch condT.Attribute {
