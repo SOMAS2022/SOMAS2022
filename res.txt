@@ -1,0 +1,7 @@
+0 150 time="2023-01-19T03:25:00Z" level=info msg="Lost on level 22 with 1 remaining"
+25 125 time="2023-01-19T03:25:18Z" level=info msg="Lost on level 23 with 80 remaining"
+50 100 time="2023-01-19T03:25:37Z" level=info msg="Lost on level 29 with 83 remaining"
+75 75 time="2023-01-19T03:25:56Z" level=info msg="Lost on level 29 with 86 remaining"
+100 50 time="2023-01-19T03:26:20Z" level=info msg="Lost on level 34 with 79 remaining"
+125 25 time="2023-01-19T03:26:43Z" level=info msg="Lost on level 36 with 75 remaining"
+150 0 time="2023-01-19T03:27:08Z" level=info msg="Lost on level 39 with 56 remaining"
