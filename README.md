@@ -1,6 +1,10 @@
 # Self Organising Multi Agent Systems 2022
 
+##NB: if using testing script, you need to comment out AGENT_TEAM3_QUANTITY and AGENT_RANDOM_QUANTITY in the `.env` file. 
+
 ## [Specifications](spec.pdf)
+
+
 
 ## Programming Language
 
