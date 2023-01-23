@@ -38,10 +38,15 @@ func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 func (a *AgentThree) FightAction(
 	baseAgent agent.BaseAgent,
-	_ decision.FightAction,
-	_ message.Proposal[decision.FightAction],
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
 ) decision.FightAction {
-	return a.FightActionNoProposal(baseAgent)
+	disobey := rand.Intn(100)
+	if disobey < a.disobedience {
+		return proposedAction
+	} else {
+		return a.FightActionNoProposal(baseAgent)
+	}
 }
 
 func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
