@@ -5,6 +5,8 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
+	"os"
+	"strconv"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -21,6 +23,7 @@ type AgentThree struct {
 	chairTolerance        int
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
+	disobedience          int
 }
 
 // Update internal parameters at the end of each stage
@@ -53,7 +56,8 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	}
 }
 
-func NewAgentThree() agent.Strategy {
+func NewAgentThreeNeutral() agent.Strategy {
+	dis, _ := strconv.ParseInt(os.Getenv("NEUT_DIS"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -61,5 +65,30 @@ func NewAgentThree() agent.Strategy {
 		uC:                CreateUtility(),
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
+		disobedience:      int(dis),
+	}
+}
+func NewAgentThreePassive() agent.Strategy {
+	dis, _ := strconv.ParseInt(os.Getenv("PAS_DIS"), 10, 0)
+	return &AgentThree{
+		utilityScore:      CreateUtility(),
+		uR:                CreateUtility(),
+		uP:                CreateUtility(),
+		uC:                CreateUtility(),
+		chairTolerance:    0,
+		proposalTolerance: make(map[commons.ID]int, 0),
+		disobedience:      int(dis),
+	}
+}
+func NewAgentThreeAggressive() agent.Strategy {
+	dis, _ := strconv.ParseInt(os.Getenv("AGR_DIS"), 10, 0)
+	return &AgentThree{
+		utilityScore:      CreateUtility(),
+		uR:                CreateUtility(),
+		uP:                CreateUtility(),
+		uC:                CreateUtility(),
+		chairTolerance:    0,
+		proposalTolerance: make(map[commons.ID]int, 0),
+		disobedience:      int(dis),
 	}
 }
