@@ -19,20 +19,21 @@ var (
 
 // HP pool donation
 func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
-	AS := baseAgent.AgentState()
-	donation := rand.Intn(2)
-	// If our health is > 50% and we feel generous then donate some (max 20%) HP
-	if donation == 1 {
-		if int(AS.Hp) > int(0.8*float64(GetStartingHP())) {
-			return uint(rand.Intn((int(AS.Hp) * 30)) / 100)
-		} else if int(AS.Hp) > int(0.5*float64(GetStartingHP())) {
-			return uint(rand.Intn((int(AS.Hp) * 10)) / 100)
-		} else {
-			return 0
-		}
-	} else {
-		return 0
-	}
+	// AS := baseAgent.AgentState()
+	// donation := rand.Intn(2)
+	// // If our health is > 50% and we feel generous then donate some (max 20%) HP
+	// if donation == 1 {
+	// 	if int(AS.Hp) > int(0.8*float64(GetStartingHP())) {
+	// 		return uint(rand.Intn((int(AS.Hp) * 30)) / 100)
+	// 	} else if int(AS.Hp) > int(0.5*float64(GetStartingHP())) {
+	// 		return uint(rand.Intn((int(AS.Hp) * 10)) / 100)
+	// 	} else {
+	// 		return 0
+	// 	}
+	// } else {
+	// 	return 0
+	// }
+	return 0
 }
 
 func (a *AgentThree) FightAction(

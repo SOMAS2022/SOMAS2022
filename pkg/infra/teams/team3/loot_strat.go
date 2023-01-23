@@ -5,6 +5,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/message"
+	"infra/game/message/proposal"
 	"math/rand"
 
 	"github.com/benbjohnson/immutable"
@@ -58,7 +59,16 @@ func (a *AgentThree) LootAction(
 	return proposedLoot
 }
 
-func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], agent agent.BaseAgent) {
+func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
+	switch m.Message().(type) {
+	case *message.StartLoot:
+		sendsProposal := rand.Intn(100)
+		if sendsProposal > 90 {
+			baseAgent.SendLootProposalToLeader(a.generateLootProposal())
+		}
+	default:
+		return
+	}
 }
 
 func (a *AgentThree) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
@@ -70,4 +80,22 @@ func (a *AgentThree) HandleLootProposal(_ message.Proposal[decision.LootAction],
 	default:
 		return decision.Abstain
 	}
+}
+
+func (a *AgentThree) generateLootProposal() commons.ImmutableList[proposal.Rule[decision.LootAction]] {
+	rules := make([]proposal.Rule[decision.LootAction], 0)
+
+	rules = append(rules, *proposal.NewRule(decision.HealthPotion,
+		proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, uint(0.5*float64(GetStartingHP())))))
+
+	rules = append(rules, *proposal.NewRule(decision.StaminaPotion,
+		proposal.NewComparativeCondition(proposal.Stamina, proposal.LessThan, uint(0.5*float64(GetStartingStamina())))))
+
+	rules = append(rules, *proposal.NewRule(decision.Weapon,
+		proposal.NewComparativeCondition(proposal.TotalAttack, proposal.LessThan, uint(0.5*float64(GetStartingHP())))))
+
+	rules = append(rules, *proposal.NewRule(decision.Shield,
+		proposal.NewComparativeCondition(proposal.TotalDefence, proposal.LessThan, uint(0.5*float64(GetStartingHP())))))
+
+	return *commons.NewImmutableList(rules)
 }
