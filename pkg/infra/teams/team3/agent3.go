@@ -6,6 +6,7 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
+	"math/rand"
 	"os"
 	"strconv"
 
@@ -57,9 +58,23 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.UpdatePersonality()
 }
 
+func (a *AgentThree) Sanctioning() int {
+	return 50
+}
+
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
-	fmt.Println("Agent 3")
-	return make(map[commons.ID]agent.Agent)
+	// fmt.Println("Agent 3")
+	prunned := make(map[commons.ID]agent.Agent)
+	for id, agent := range agentMap {
+		// Compare to 50 in order to sanction
+		toSanctionOrNot := rand.Intn(100)
+		if toSanctionOrNot > a.Sanctioning() {
+			prunned[id] = agent
+		}
+	}
+	fmt.Println(len(agentMap))
+	fmt.Println(len(prunned))
+	return prunned
 }
 
 func (a *AgentThree) UpdatePersonality() {
