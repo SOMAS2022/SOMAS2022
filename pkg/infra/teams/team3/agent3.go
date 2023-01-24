@@ -1,6 +1,7 @@
 package team3
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -56,6 +57,11 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	}
 }
 
+func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	fmt.Println("Agent 3")
+	return make(map[commons.ID]agent.Agent)
+}
+
 func NewAgentThreeNeutral() agent.Strategy {
 	dis, _ := strconv.ParseInt(os.Getenv("NEUT_DIS"), 10, 0)
 	return &AgentThree{
@@ -68,6 +74,7 @@ func NewAgentThreeNeutral() agent.Strategy {
 		disobedience:      int(dis),
 	}
 }
+
 func NewAgentThreePassive() agent.Strategy {
 	dis, _ := strconv.ParseInt(os.Getenv("PAS_DIS"), 10, 0)
 	return &AgentThree{
