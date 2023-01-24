@@ -25,6 +25,7 @@ type AgentThree struct {
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
 	disobedience          int
+	statsQueue            StatsQueue
 }
 
 // Update internal parameters at the end of each stage
@@ -48,17 +49,20 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)
 
-	// Potions
-	if int(AS.Hp) < int(0.5*float64(GetStartingHP())) {
-		// Drink HP Potion
-	}
-	if int(AS.Stamina) < int(0.5*float64(GetStartingStamina())) {
-		// Drink Stamina Potion
-	}
+	stat := Stats{1, 2, 3, 4}
+	a.statsQueue.addStat(stat)
+	fmt.Println("AVG: ", a.statsQueue.averageStats())
+
+	// // Potions
+	// if int(AS.Hp) < int(0.5*float64(GetStartingHP())) {
+	// 	// Drink HP Potion
+	// }
+	// if int(AS.Stamina) < int(0.5*float64(GetStartingStamina())) {
+	// 	// Drink Stamina Potion
+	// }
 }
 
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
-	fmt.Println("Agent 3")
 	return make(map[commons.ID]agent.Agent)
 }
 
@@ -72,6 +76,7 @@ func NewAgentThreeNeutral() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		disobedience:      int(dis),
+		statsQueue:        *makeStatsQueue(3),
 	}
 }
 
@@ -85,6 +90,7 @@ func NewAgentThreePassive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		disobedience:      int(dis),
+		statsQueue:        *makeStatsQueue(3),
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -97,5 +103,6 @@ func NewAgentThreeAggressive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		disobedience:      int(dis),
+		statsQueue:        *makeStatsQueue(3),
 	}
 }
