@@ -177,7 +177,11 @@ func startGameLoop() {
 		fmt.Println("PRUNED: ", prunedAgentMap)
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
-		globalState = loot.HandleLootAllocation(*globalState, &lootActions, lootPool)
+		// fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
+		// fmt.Println("WEAPONS BEFORE: ", len(globalState.InventoryMap.Weapons))
+		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool)
+		// fmt.Println("SHIELDS AFTER: ", len(globalState.InventoryMap.Shields))
+		// fmt.Println("WEAPONS AFTER: ", len(globalState.InventoryMap.Weapons))
 
 		trade.HandleTrade(*globalState, agentMap, 5, 3)
 

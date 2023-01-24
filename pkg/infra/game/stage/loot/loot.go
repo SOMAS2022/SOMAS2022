@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/benbjohnson/immutable"
+	// "github.com/benbjohnson/immutable"
 
 	"infra/game/agent"
 	"infra/game/commons"
@@ -112,31 +112,33 @@ func AgentLootDecisions(
 	return propTally
 }
 
-func HandleLootAllocation(globalState state.State, allocation *immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]], pool *state.LootPool) *state.State {
+func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map[commons.ItemID]struct{}, pool *state.LootPool) *state.State {
 	weaponSet := itemListToSet(pool.Weapons())
 	shieldSet := itemListToSet(pool.Shields())
 	hpPotionSet := itemListToSet(pool.HpPotions())
 	staminaPotionSet := itemListToSet(pool.StaminaPotions())
 
-	allocationIterator := allocation.Iterator()
+	// allocationIterator := allocation.Iterator()
 
-	for !allocationIterator.Done() {
-		agentID, items, _ := allocationIterator.Next()
-		itemIterator := items.Iterator()
-		for !itemIterator.Done() {
-			item, _, _ := itemIterator.Next()
+	for agentID, items := range allocation {
+		// itemIterator := items.Iterator()
+		for item := range items {
 			agentState := globalState.AgentState[agentID]
 
 			if val, ok := weaponSet[item]; ok {
 				globalState.InventoryMap.Weapons[item] = val
 				agentState.AddWeapon(*state.NewItem(item, val))
+				delete(globalState.InventoryMap.Weapons, item)
 			} else if val, ok := shieldSet[item]; ok {
 				globalState.InventoryMap.Shields[item] = val
 				agentState.AddShield(*state.NewItem(item, val))
+				delete(globalState.InventoryMap.Shields, item)
 			} else if val, ok := hpPotionSet[item]; ok {
 				agentState.Hp += val
+				delete(hpPotionSet, item)
 			} else if val, ok := staminaPotionSet[item]; ok {
 				agentState.Stamina += val
+				delete(staminaPotionSet, item)
 			} else {
 				logging.Log(logging.Warn, nil, "unknown item attempted to be allocated")
 			}

@@ -75,7 +75,7 @@ func (a *AgentThree) HandleLootProposalRequest(_ message.Proposal[decision.LootA
 	}
 }
 
-func (a *AgentThree) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations immutable.Map[string, immutable.SortedMap[string, struct{}]]) immutable.Map[string, immutable.SortedMap[string, struct{}]] {
+func (a *AgentThree) LootAllocation(baseAgent agent.BaseAgent, proposal message.Proposal[decision.LootAction], proposedAllocations map[commons.ID]map[commons.ItemID]struct{}) immutable.Map[string, immutable.SortedMap[string, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
 	ids := commons.ImmutableMapKeys(view.AgentState())

@@ -16,7 +16,7 @@ type Loot interface {
 	LootAllocation(
 		baseAgent BaseAgent,
 		proposal message.Proposal[decision.LootAction],
-		proposedAllocations immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+		proposedAllocations map[commons.ID]map[commons.ItemID]struct{},
 	) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]]
 	LootActionNoProposal(baseAgent BaseAgent) immutable.SortedMap[commons.ItemID, struct{}]
 	LootAction(baseAgent BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}]

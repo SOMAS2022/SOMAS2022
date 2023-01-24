@@ -137,7 +137,7 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 func (r *RandomAgent) LootAllocation(
 	baseAgent agent.BaseAgent,
 	proposal message.Proposal[decision.LootAction],
-	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+	proposedAllocation map[commons.ID]map[commons.ItemID]struct{},
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()

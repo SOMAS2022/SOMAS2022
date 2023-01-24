@@ -80,7 +80,7 @@ func ResolveLootDiscussion(
 	leader agent.Agent,
 	manifesto decision.Manifesto,
 	tally *tally.Tally[decision.LootAction],
-) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+) map[commons.ID]map[commons.ItemID]struct{} {
 	prop := tally.GetMax()
 	allocation := getAllocation(gs, agentMap, pool, prop)
 	if manifesto.LootDecisionPower() && leader.Strategy != nil {
@@ -92,7 +92,7 @@ func ResolveLootDiscussion(
 
 		defectedAllocation := commons.MapToImmutable(actualAllocation)
 		iterator = defectedAllocation.Iterator()
-		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
+		wantedItems := make(map[commons.ItemID]map[commons.ID]struct{}) // item mapped to (map of people who want it)
 		for !iterator.Done() {
 			agentID, items, _ := iterator.Next()
 			itemIterator := items.Iterator()
@@ -108,13 +108,13 @@ func ResolveLootDiscussion(
 			}
 		}
 
-		return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
+		return (formAllocationFromConflicts(wantedItems))
 	} else {
 		return allocation
 	}
 }
 
-func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *state.LootPool, prop message.Proposal[decision.LootAction]) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *state.LootPool, prop message.Proposal[decision.LootAction]) map[commons.ID]map[commons.ItemID]struct{} {
 	predicate := proposal.ToMultiPredicate(prop.Rules())
 	if predicate == nil {
 		// either leader died or no proposal was made
@@ -142,7 +142,7 @@ func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *st
 			addWantedLootToItemAllocMap(alloc, wantedItems, id)
 		}
 	}
-	return convertAllocationMapToImmutable(formAllocationFromConflicts(wantedItems))
+	return (formAllocationFromConflicts(wantedItems))
 }
 
 func handleDefectionLoot(
@@ -191,7 +191,7 @@ func demandList(
 	return getsWeapon, getsShield, getsHealthPotion, getsStaminaPotion
 }
 
-func handleNilLootAllocation(agentMap map[commons.ID]agent.Agent) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+func handleNilLootAllocation(agentMap map[commons.ID]agent.Agent) map[commons.ID]map[commons.ItemID]struct{} {
 	wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
 	for id, a := range agentMap {
 		wantedLoot := a.Strategy.LootActionNoProposal(*agentMap[id].BaseAgent)
@@ -199,7 +199,7 @@ func handleNilLootAllocation(agentMap map[commons.ID]agent.Agent) immutable.Map[
 	}
 	allocations := formAllocationFromConflicts(wantedItems)
 
-	return convertAllocationMapToImmutable(allocations)
+	return (allocations)
 }
 
 func convertAllocationMapToImmutable(allocations map[commons.ID]map[commons.ItemID]struct{}) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
