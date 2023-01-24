@@ -96,17 +96,12 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 	// alg 6
 	if stamina > 0 {
 		w1 += 0.2
-	} else {
+	} else if stamina < 0 {
 		w1 -= 0.2
 	}
 	if HP > 0 {
 		w1 += 0.2
-	} else {
-		if HP == 0 {
-			//w1 = w1
-		} else {
-			w1 -= 0.2
-		}
+	} else if HP < 0 {
 		w1 -= 0.2
 	}
 
@@ -123,6 +118,7 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 
 func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	var agentFought bool = false
+	var agentShielded bool = false
 	// iterate until we get most recent history
 	i := 0
 	itr := a.fightDecisionsHistory.Iterator()
@@ -131,8 +127,10 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		i += 1
 
 		if i == a.fightDecisionsHistory.Len()-1 {
-			agents := res.AttackingAgents()
-			itr2 := agents.Iterator()
+			agents_attack := res.AttackingAgents()
+			agents_defended := res.ShieldingAgents()
+			itr2 := agents_attack.Iterator()
+			itr3 := agents_defended.Iterator()
 			// search for our agent in fight list
 			for !itr.Done() {
 				_, attackingAgentID := itr2.Next()
@@ -140,9 +138,16 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 					agentFought = true
 				}
 			}
+			for !itr.Done() {
+				_, defendAgentID := itr3.Next()
+				if defendAgentID == baseAgent.ID() {
+					agentShielded = true
+				}
+			}
+
 		}
 	}
-	if agentFought {
+	if agentFought || agentShielded {
 		w2 += 0.2
 	} else {
 		w2 -= 0.2
