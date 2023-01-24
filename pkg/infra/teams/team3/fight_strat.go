@@ -42,7 +42,7 @@ func (a *AgentThree) FightAction(
 	acceptedProposal message.Proposal[decision.FightAction],
 ) decision.FightAction {
 	disobey := rand.Intn(100)
-	if disobey < a.disobedience {
+	if disobey < a.personality {
 		return proposedAction
 	} else {
 		return a.FightActionNoProposal(baseAgent)
