@@ -74,10 +74,10 @@ func HandleTrade(s state.State, agents map[commons.ID]agent.Agent, round uint, r
 				negotiations[id] = negotiation
 			}
 		}
-		logging.Log(logging.Info, logging.LogField{
-			"round":          r,
-			"numNegotiation": len(negotiations),
-		}, fmt.Sprintf("Round %d: %d ongoing negotiations", r, len(negotiations)))
+		// logging.Log(logging.Info, logging.LogField{
+		// 	"round":          r,
+		// 	"numNegotiation": len(negotiations),
+		// }, fmt.Sprintf("Round %d: %d ongoing negotiations", r, len(negotiations)))
 	}
 
 	// End of trade stage, update agent inventory
