@@ -1,7 +1,7 @@
-BINARY_NAME=cmd\main.out
-SOURCE_DIR=pkg\infra
+BINARY_NAME=cmd/main.out
+SOURCE_DIR=pkg/infra
 
-PACKAGES=$(shell go list .\pkg\infra | grep -v 'tests')
+PACKAGES=$(shell go list ./pkg/infra | grep -v 'tests')
 
 all: run
 
@@ -26,7 +26,7 @@ runDebugWithJSON: build
 
 clean:
 		go clean
-		rm -r logs\*
+		rm -r logs/*
 		rm -rf ${BINARY_NAME}
 
 # formatting and linting
@@ -36,14 +36,14 @@ fmt:
 # should just be `run`, but seems to be problems with go.work  
 # nb: using cd to /pkg/infra dosen't fix this (on wsl2)
 check:
-	golangci-lint -v run .\pkg\infra
+	golangci-lint -v run ./pkg/infra
 
 # for future testing
 unit_test:
 	go test $(PACKAGES)
 
 test:
-	go test .\pkg\infra -covermode=atomic
+	go test ./pkg/infra -covermode=atomic
 
 test_race:
-	go test .\pkg\infra --race
+	go test ./pkg/infra --race
