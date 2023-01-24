@@ -78,20 +78,20 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	if makesProposal > 90 {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *proposal.NewRule(decision.Attack,
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
 			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 500),
 				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 500)),
 		))
 
-		rules = append(rules, *proposal.NewRule(decision.Defend,
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
 			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 200),
 		))
 
-		rules = append(rules, *proposal.NewRule(decision.Cower,
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
 			proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1),
 		))
 
-		rules = append(rules, *proposal.NewRule(decision.Attack,
+		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
 			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 		))
 
