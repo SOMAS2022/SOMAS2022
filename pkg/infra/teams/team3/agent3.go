@@ -24,7 +24,8 @@ type AgentThree struct {
 	chairTolerance        int
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
-	disobedience          int
+	personality           int
+	sanctioned            int
 	statsQueue            StatsQueue
 }
 
@@ -53,21 +54,20 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.statsQueue.addStat(stat)
 	fmt.Println("AVG: ", a.statsQueue.averageStats())
 
-	// // Potions
-	// if int(AS.Hp) < int(0.5*float64(GetStartingHP())) {
-	// 	// Drink HP Potion
-	// }
-	// if int(AS.Stamina) < int(0.5*float64(GetStartingStamina())) {
-	// 	// Drink Stamina Potion
-	// }
+	a.UpdatePersonality()
 }
 
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	fmt.Println("Agent 3")
 	return make(map[commons.ID]agent.Agent)
 }
 
+func (a *AgentThree) UpdatePersonality() {
+	a.personality += 1
+}
+
 func NewAgentThreeNeutral() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("NEUT_DIS"), 10, 0)
+	dis, _ := strconv.ParseInt(os.Getenv("PASSIVE_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -75,13 +75,14 @@ func NewAgentThreeNeutral() agent.Strategy {
 		uC:                CreateUtility(),
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
-		disobedience:      int(dis),
+		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
 
 func NewAgentThreePassive() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("PAS_DIS"), 10, 0)
+	dis, _ := strconv.ParseInt(os.Getenv("COLLECTIVE_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -89,12 +90,13 @@ func NewAgentThreePassive() agent.Strategy {
 		uC:                CreateUtility(),
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
-		disobedience:      int(dis),
+		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("AGR_DIS"), 10, 0)
+	dis, _ := strconv.ParseInt(os.Getenv("SELFISH_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -102,7 +104,8 @@ func NewAgentThreeAggressive() agent.Strategy {
 		uC:                CreateUtility(),
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
-		disobedience:      int(dis),
+		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
