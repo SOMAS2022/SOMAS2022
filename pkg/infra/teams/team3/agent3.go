@@ -25,6 +25,7 @@ type AgentThree struct {
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
 	personality           int
+	sanctioned            int
 	statsQueue            StatsQueue
 }
 
@@ -75,6 +76,7 @@ func NewAgentThreeNeutral() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
@@ -89,6 +91,7 @@ func NewAgentThreePassive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
@@ -102,6 +105,7 @@ func NewAgentThreeAggressive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 	}
 }
