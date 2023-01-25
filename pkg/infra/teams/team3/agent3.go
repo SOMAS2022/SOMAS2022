@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -53,7 +52,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 
 	stat := Stats{1, 2, 3, 4}
 	a.statsQueue.addStat(stat)
-	fmt.Println("AVG: ", a.statsQueue.averageStats())
+	// fmt.Println("AVG: ", a.statsQueue.averageStats())
 
 	a.UpdatePersonality()
 }
@@ -72,8 +71,8 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 			prunned[id] = agent
 		}
 	}
-	fmt.Println(len(agentMap))
-	fmt.Println(len(prunned))
+	// fmt.Println(len(agentMap))
+	// fmt.Println(len(prunned))
 	return prunned
 }
 
