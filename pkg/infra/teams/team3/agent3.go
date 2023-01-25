@@ -53,7 +53,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 
 	stat := Stats{1, 2, 3, 4}
 	a.statsQueue.addStat(stat)
-	fmt.Println("AVG: ", a.statsQueue.averageStats())
+	// fmt.Println("AVG: ", a.statsQueue.averageStats())
 
 	a.UpdatePersonality()
 }

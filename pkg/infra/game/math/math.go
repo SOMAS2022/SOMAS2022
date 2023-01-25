@@ -22,17 +22,15 @@ func CalculateDelta() float64 {
 // X, the monster’s resilience
 func CalculateMonsterHealth(nAgent uint, stamina uint, nLevel uint, currentLevel uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * (2.0*float64(currentLevel)/float64(nLevel) + 0.5)))
+	return uint(math.Ceil((float64(nAgent) * float64(stamina) / float64(nLevel)) * delta * (float64(currentLevel)/float64(nLevel) + 0.5)))
 }
 
 // Y, monster’s damage rating
 func CalculateMonsterDamage(nAgent uint, HP uint, stamina uint, thresholdPercentage float32, nLevel uint, currentLevel uint) uint {
 	delta := CalculateDelta()
-	// Agent Survival Threshold
-	M := math.Ceil(float64(nAgent) * float64(thresholdPercentage))
 	NFp := float64(nAgent)
 	LFp := float64(nLevel)
-	return uint(delta * (NFp / LFp) * (float64(HP) + float64(stamina)) * (2.0*float64(currentLevel)/LFp + 0.5) * (1.0 - M/NFp))
+	return uint(delta * (NFp / LFp) * (float64(HP) + float64(stamina)) * (float64(currentLevel)/LFp + 0.5))
 }
 
 func GetNextLevelMonsterValues(gameConfig config.GameConfig, currentLevel uint) (uint, uint) {
@@ -71,20 +69,20 @@ func GetEquipmentDistribution(nAgent uint) (uint, uint) {
 
 func GetWeaponDamage(X uint, nAgent uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((delta * float64(X)) / (4.0 * float64(nAgent) * 0.8)))
+	return uint(math.Ceil((delta * float64(X) * 2) / float64(nAgent)))
 }
 
 func GetShieldProtection(Y uint, nAgent uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((delta * float64(Y) * 0.5) / (float64(nAgent) * 0.8)))
+	return uint(math.Ceil((delta * float64(Y)) / (float64(nAgent))))
 }
 
 func GetHealthPotionValue(Y uint, nAgent uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((delta * float64(Y) * 5.0) / (float64(nAgent) * 0.8)))
+	return uint(math.Ceil((delta * float64(Y) * 5.0) / (float64(nAgent))))
 }
 
 func GetStaminaPotionValue(X uint, nAgent uint) uint {
 	delta := CalculateDelta()
-	return uint(math.Ceil((delta * float64(X)) / (float64(nAgent) * 0.8)))
+	return uint(math.Ceil((delta * float64(X) * 5.0) / (float64(nAgent))))
 }
