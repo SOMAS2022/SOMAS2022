@@ -134,6 +134,24 @@ func startGameLoop() {
 			}
 			fightTally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, fightTally)
+			// Printing voted rules
+			prop := fightTally.GetMax()
+			rules := prop.Rules()
+			iterator := rules.Iterator()
+			for !iterator.Done() {
+				rule, _ := iterator.Next()
+				condition := rule.Condition()
+				associatedAction := ""
+				switch rule.Action() {
+				case 0:
+					associatedAction = "Defend"
+				case 1:
+					associatedAction = "Cower"
+				default:
+					associatedAction = "Attack"
+				}
+				fmt.Println(associatedAction, condition)
+			}
 			globalState = fight.HandleFightRound(*globalState, gameConfig.Stamina, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
