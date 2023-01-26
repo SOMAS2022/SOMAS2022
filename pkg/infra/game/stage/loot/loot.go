@@ -1,7 +1,6 @@
 package loot
 
 import (
-	"fmt"
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/tally"
@@ -130,7 +129,7 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 			agentState := globalState.AgentState[agentID]
 
 			hpBool, stBool, AttBool, DefBool := chooseItem(agentState, averageHP, averageST, averageATT, averageDEF)
-			fmt.Println(hpBool, stBool, AttBool, DefBool)
+			// fmt.Println(hpBool, stBool, AttBool, DefBool)
 			if val, ok := weaponSet[item]; ok && AttBool {
 				globalState.InventoryMap.Weapons[item] = val
 				agentState.AddWeapon(*state.NewItem(item, val))
