@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -83,7 +82,7 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 
 func (a *AgentThree) UpdatePersonality() {
 	a.personality += 1
-	fmt.Println(a.personality)
+	// fmt.Println(a.personality)
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
