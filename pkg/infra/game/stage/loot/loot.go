@@ -133,11 +133,11 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 			if val, ok := weaponSet[item]; ok && AttBool {
 				globalState.InventoryMap.Weapons[item] = val
 				agentState.AddWeapon(*state.NewItem(item, val))
-				// delete(globalState.InventoryMap.Weapons, item)
+				delete(globalState.InventoryMap.Weapons, item)
 			} else if val, ok := shieldSet[item]; ok && DefBool {
 				globalState.InventoryMap.Shields[item] = val
 				agentState.AddShield(*state.NewItem(item, val))
-				// delete(globalState.InventoryMap.Shields, item)
+				delete(globalState.InventoryMap.Shields, item)
 			} else if val, ok := hpPotionSet[item]; ok && hpBool {
 				agentState.Hp += val
 				delete(hpPotionSet, item)
