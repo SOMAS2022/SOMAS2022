@@ -133,11 +133,11 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 			if val, ok := weaponSet[item]; ok && AttBool {
 				globalState.InventoryMap.Weapons[item] = val
 				agentState.AddWeapon(*state.NewItem(item, val))
-				delete(globalState.InventoryMap.Weapons, item)
+				// delete(globalState.InventoryMap.Weapons, item)
 			} else if val, ok := shieldSet[item]; ok && DefBool {
 				globalState.InventoryMap.Shields[item] = val
 				agentState.AddShield(*state.NewItem(item, val))
-				delete(globalState.InventoryMap.Shields, item)
+				// delete(globalState.InventoryMap.Shields, item)
 			} else if val, ok := hpPotionSet[item]; ok && hpBool {
 				agentState.Hp += val
 				delete(hpPotionSet, item)
@@ -177,9 +177,8 @@ func getAverageStats(globalState state.State) (float64, float64, float64, float6
 	for _, state := range globalState.AgentState {
 		averageHP += float64(state.Hp)
 		averageST += float64(state.Stamina)
-		averageATT += float64(state.Attack)
-		averageDEF += float64(state.Defense)
-
+		averageATT += float64(state.BonusAttack())
+		averageDEF += float64(state.BonusDefense())
 	}
 
 	averageHP /= agentLen
@@ -187,7 +186,7 @@ func getAverageStats(globalState state.State) (float64, float64, float64, float6
 	averageATT /= agentLen
 	averageDEF /= agentLen
 	// fmt.Println(averageHP, averageST, averageATT, averageDEF)
-	meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF := meanScale4El(averageHP, averageST, averageATT, averageDEF)
+	meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF := normalize4El(averageHP, averageST, averageATT, averageDEF)
 	// fmt.Println(meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF)
 	return meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF
 }
@@ -196,10 +195,10 @@ func chooseItem(agent state.AgentState, averageHP float64, averageST float64, av
 
 	HP := float64(agent.Hp)
 	ST := float64(agent.Stamina)
-	ATT := float64(agent.Attack)
-	DEF := float64(agent.Defense)
+	ATT := float64(agent.BonusAttack())
+	DEF := float64(agent.BonusDefense())
 	// fmt.Println(HP, ST, ATT, DEF)
-	meanHP, meanST, meanATT, meanDEF := meanScale4El(HP, ST, ATT, DEF)
+	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
 	// fmt.Println(meanHP, meanST, meanATT, meanDEF)
 	diffHP := averageHP - meanHP
 	diffST := averageST - meanST
@@ -219,13 +218,47 @@ func chooseItem(agent state.AgentState, averageHP float64, averageST float64, av
 
 }
 
-func meanScale4El(el1 float64, el2 float64, el3 float64, el4 float64) (float64, float64, float64, float64) {
-	var mean float64 = (el1 + el2 + el3 + el4) / 4.0
-	// fmt.Println(el1, el2, el3, el4)
-	el1 /= mean
-	el2 /= mean
-	el3 /= mean
-	el4 /= mean
-
-	return el1, el2, el3, el4
+// works bc normalization changes the data distribution, so small sheild/weapon difference values are significant enough now
+func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
+	maxVal := max4El(x, y, z, w)
+	minVal := min4El(x, y, z, w)
+	return (x - minVal) / (maxVal - minVal), (y - minVal) / (maxVal - minVal), (z - minVal) / (maxVal - minVal), (w - minVal) / (maxVal - minVal)
 }
+
+func max4El(x, y, z, w float64) float64 {
+	if x > y && x > z && x > w {
+		return x
+	}
+	if y > z && y > w {
+		return y
+	}
+	if z > w {
+		return z
+	}
+	return w
+}
+
+func min4El(x, y, z, w float64) float64 {
+	if x < y && x < z && x < w {
+		return x
+	}
+	if y < z && y < w {
+		return y
+	}
+	if z < w {
+		return z
+	}
+	return w
+}
+
+// didn't work as mean scaling just recenters the distribution -> sheild/weapon values were too small compared to the rest
+// func meanScale4El(el1 float64, el2 float64, el3 float64, el4 float64) (float64, float64, float64, float64) {
+// 	var mean float64 = (el1 + el2 + el3 + el4) / 4.0
+// 	// fmt.Println(el1, el2, el3, el4)
+// 	el1 /= mean
+// 	el2 /= mean
+// 	el3 /= mean
+// 	el4 /= mean
+
+// 	return el1, el2, el3, el4
+// }
