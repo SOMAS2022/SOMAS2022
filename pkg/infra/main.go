@@ -82,31 +82,6 @@ func startGameLoop() {
 			levelLog.VONCStage.Abstain = votes[decision.Abstain]
 		}
 
-		avgHP, avgAT, avgSH, avgST := uint(0), uint(0), uint(0), uint(0)
-		for _, a := range agentMap {
-			state := a.AgentState()
-			avgHP += a.AgentState().Hp
-			avgAT += state.TotalAttack()
-			avgSH += state.TotalDefense()
-			avgST += a.AgentState().Stamina
-		}
-		agents := uint(len(agentMap))
-		avgHP, avgAT, avgSH, avgST = avgHP/agents, avgAT/agents, avgSH/agents, avgST/agents
-
-		levelLog.LevelStats = logging.LevelStats{
-			NumberOfAgents:       uint(len(agentMap)),
-			CurrentLevel:         globalState.CurrentLevel,
-			LeaderBeforeElection: leaderBeforeElection,
-			LeaderAfterElection:  globalState.CurrentLeader,
-			HPPool:               globalState.HpPool,
-			MonsterHealth:        globalState.MonsterHealth,
-			MonsterAttack:        globalState.MonsterAttack,
-			AverageAgentHealth:   avgHP,
-			AverageAgentAttack:   avgAT,
-			AverageAgentShield:   avgSH,
-			AverageAgentStamina:  avgST,
-		}
-
 		levelLog.LevelStats.SkippedThroughHpPool = checkHpPool()
 
 		// allow agents to change the weapon and the shield in use
@@ -126,6 +101,32 @@ func startGameLoop() {
 					maxAttack += agentState.TotalAttack()
 				}
 			}
+			// calculate average stats
+			avgHP, avgAT, avgSH, avgST := uint(0), uint(0), uint(0), uint(0)
+			for _, a := range agentMap {
+				state := a.AgentState()
+				avgHP += a.AgentState().Hp
+				avgAT += state.TotalAttack()
+				avgSH += state.TotalDefense()
+				avgST += a.AgentState().Stamina
+			}
+			agents := uint(len(agentMap))
+			avgHP, avgAT, avgSH, avgST = avgHP/agents, avgAT/agents, avgSH/agents, avgST/agents
+
+			levelLog.LevelStats = logging.LevelStats{
+				NumberOfAgents:       uint(len(agentMap)),
+				CurrentLevel:         globalState.CurrentLevel,
+				LeaderBeforeElection: leaderBeforeElection,
+				LeaderAfterElection:  globalState.CurrentLeader,
+				HPPool:               globalState.HpPool,
+				MonsterHealth:        globalState.MonsterHealth,
+				MonsterAttack:        globalState.MonsterAttack,
+				AverageAgentHealth:   avgHP,
+				AverageAgentAttack:   avgAT,
+				AverageAgentShield:   avgSH,
+				AverageAgentStamina:  avgST,
+			}
+			// end calc average stats
 
 			decisionMapView := immutable.NewMapBuilder[commons.ID, decision.FightAction](nil)
 			for u, action := range decisionMap {
@@ -133,7 +134,25 @@ func startGameLoop() {
 			}
 			fightTally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, fightTally)
-			globalState = fight.HandleFightRound(*globalState, gameConfig.StartingHealthPoints, &fightActions)
+			// Printing voted rules
+			// prop := fightTally.GetMax()
+			// rules := prop.Rules()
+			// iterator := rules.Iterator()
+			// for !iterator.Done() {
+			// 	rule, _ := iterator.Next()
+			// 	condition := rule.Condition()
+			// 	associatedAction := ""
+			// 	switch rule.Action() {
+			// 	case 0:
+			// 		associatedAction = "Defend"
+			// 	case 1:
+			// 		associatedAction = "Cower"
+			// 	default:
+			// 		associatedAction = "Attack"
+			// 	}
+			// 	fmt.Println(associatedAction, condition)
+			// }
+			globalState = fight.HandleFightRound(*globalState, gameConfig.Stamina, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
 			logging.Log(logging.Info, logging.LogField{
@@ -145,8 +164,11 @@ func startGameLoop() {
 				"shieldSum":     fightActions.ShieldSum,
 				"numAgents":     len(agentMap),
 				"maxAttack":     maxAttack,
+				"AvHP":          avgHP,
+				"AvST":          avgST,
+				"AvAttack":      avgAT,
+				"AvDefence":     avgSH,
 			}, "Battle Summary")
-
 			// NOTE: update the following function when you change AgentState
 			damageCalculation(fightActions)
 			levelLog.FightStage.Rounds = append(levelLog.FightStage.Rounds, logging.FightLog{
@@ -173,8 +195,8 @@ func startGameLoop() {
 		// TODO: Loot Discussion Stage
 
 		lootPool := generateLootPool(uint(len(agentMap)))
-		prunedAgentMap := stages.AgentPruneMapping(agentMap, globalState)
-		fmt.Println("PRUNED: ", prunedAgentMap)
+		// prunedAgentMap := stages.AgentPruneMapping(agentMap, globalState)
+		// fmt.Println("PRUNED: ", prunedAgentMap)
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		// fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
