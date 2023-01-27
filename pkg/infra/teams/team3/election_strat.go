@@ -35,6 +35,7 @@ func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.In
 }
 
 func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+
 	// Extract ID of alive agents
 	view := baseAgent.View()
 	agentState := view.AgentState()
@@ -49,17 +50,27 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision
 		}
 	}
 
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := 2
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
-	}
+	// should we vote? based on personality
+	makeVote := rand.Intn(100)
+	// if makeVote is lower than personality, then vote.
+	// low personalty values make selfish actions more likely, i.e not voting
+	if makeVote < a.personality {
+		// Randomly fill the ballot
+		var ballot decision.Ballot
+		numAliveAgents := len(aliveAgentIDs)
+		numCandidate := 2
+		for i := 0; i < numCandidate; i++ {
+			randomIdx := rand.Intn(numAliveAgents)
+			randomCandidate := aliveAgentIDs[uint(randomIdx)]
+			ballot = append(ballot, randomCandidate)
+		}
 
-	return ballot
+		return ballot
+	} else {
+		// return an empty ballot (don't vote)
+		var ballot decision.Ballot
+		return ballot
+	}
 }
 
 //Agent 3 Voting Strategy

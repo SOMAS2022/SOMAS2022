@@ -42,6 +42,8 @@ func (a *AgentThree) FightAction(
 	acceptedProposal message.Proposal[decision.FightAction],
 ) decision.FightAction {
 	disobey := rand.Intn(100)
+	// if disobey value is lower than personality then do not defect
+	// lower personality values mean more selfish (therefore more likely to defect)
 	if disobey < a.personality {
 		return proposedAction
 	} else {
@@ -72,12 +74,13 @@ func (a *AgentThree) HandleFightInformation(m message.TaggedInformMessage[messag
 	id := baseAgent.ID()
 	choice, _ := fightactionMap.Get(id)
 	HPThreshold, StaminaThreshold, _, DefenseThreshold := a.thresholdDecision(baseAgent, choice)
-
 	// fmt.Println(m)
 
+	// should i make a proposal (based on personality)
 	makesProposal := rand.Intn(100)
-
-	if makesProposal > 50 {
+	// if makesProposal is lower than personality, then make proposal
+	// low personality scores mean more selfish,
+	if makesProposal < a.personality {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
 		rules = append(rules, *proposal.NewRule(decision.Attack,
