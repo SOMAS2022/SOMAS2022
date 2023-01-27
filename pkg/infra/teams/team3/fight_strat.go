@@ -200,10 +200,10 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 	// 	DefenseThreshold1 = 1.1 * AverageArray(GetDefenceAllAgents(baseAgent))
 	// }
 
-	HPThreshold = 0.5 * AverageArray(GetHealthAllAgents(baseAgent))
-	StaminaThreshold = 0.5 * AverageArray(GetHealthAllAgents(baseAgent))
+	HPThreshold = 0.85 * AverageArray(GetHealthAllAgents(baseAgent))
+	StaminaThreshold = 0.85 * AverageArray(GetHealthAllAgents(baseAgent))
 	AttackThreshold = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
-	DefenseThreshold = 0.4 * AverageArray(GetDefenceAllAgents(baseAgent))
+	DefenseThreshold = 0.9 * AverageArray(GetDefenceAllAgents(baseAgent))
 	// else {
 	// 	HPThreshold1 = 500.0
 	// 	StaminaThreshold1 = 500.0
