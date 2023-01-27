@@ -62,7 +62,7 @@ func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 }
 
 // Send proposal to leader
-func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
+func (a *AgentThree) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	// AS := baseAgent.AgentState()
 
@@ -72,6 +72,8 @@ func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[messag
 	// id := baseAgent.ID()
 	// choice, _ := fightactionMap.Get(id)
 	// HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
+
+	// fmt.Println(m)
 
 	makesProposal := rand.Intn(100)
 

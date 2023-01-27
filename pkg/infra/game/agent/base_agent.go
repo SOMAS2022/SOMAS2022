@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"infra/game/decision"
 	"infra/game/message/proposal"
+	"reflect"
 
 	"infra/game/commons"
 	"infra/game/message"
@@ -111,4 +112,28 @@ func (ba *BaseAgent) Log(lvl logging.Level, fields logging.LogField, msg string)
 
 func (ba *BaseAgent) AgentState() state.AgentState {
 	return ba.latestState
+}
+
+func (ba *BaseAgent) HandleTrustMessage(m message.Trust) {
+	fmt.Println("RECEIVED: ", reflect.TypeOf(m))
+}
+
+func (a *Agent) CompileTrustMessage(agentMap map[commons.ID]Agent) message.Trust {
+
+	keys := make([]commons.ID, len(agentMap))
+
+	i := 0
+	for k := range agentMap {
+		keys[i] = k
+		i++
+	}
+
+	// declare new trust message
+	trustMsg := new(message.Trust)
+
+	// put stuff inside
+	trustMsg.MakeNewTrust(keys, make(map[string]int))
+
+	// send off
+	return *trustMsg
 }

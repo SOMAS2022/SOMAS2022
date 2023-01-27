@@ -187,6 +187,8 @@ func startGameLoop() {
 
 		channelsMap = addCommsChannels()
 
+		stages.HandleTrustStage(agentMap)
+
 		levelLog.HPPoolStage = logging.HPPoolStage{Occurred: true, OldHPPool: globalState.HpPool}
 		hppool.UpdateHpPool(agentMap, globalState)
 		levelLog.HPPoolStage.NewHPPool = globalState.HpPool

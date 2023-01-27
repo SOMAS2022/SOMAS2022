@@ -133,6 +133,20 @@ func (a *Agent) HandleLoot(agentState state.AgentState, votes chan commons.Propo
 	}
 }
 
+func (a *Agent) HandleTrust(
+	closures chan struct{},
+	agentMap map[commons.ID]Agent,
+) {
+	for {
+		select {
+		case taggedMessage := <-a.BaseAgent.communication.receipt:
+			a.Strategy.HandleTrustMessage(taggedMessage)
+		case <-closures:
+			return
+		}
+	}
+}
+
 func (a *Agent) handleLootRoundMessage(
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,

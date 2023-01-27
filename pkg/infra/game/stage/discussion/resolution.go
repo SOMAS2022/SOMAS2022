@@ -130,7 +130,7 @@ func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *st
 	wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
 
 	for id, itemIDS := range m {
-		alloc := commons.MapToSortedImmutable[commons.ItemID, struct{}](itemIDS)
+		alloc := commons.MapToSortedImmutable(itemIDS)
 		if gs.Defection {
 			agentLoot := agentMap[id].Strategy.LootAction(*agentMap[id].BaseAgent, alloc, prop)
 			addWantedLootToItemAllocMap(agentLoot, wantedItems, id)
@@ -202,13 +202,13 @@ func handleNilLootAllocation(agentMap map[commons.ID]agent.Agent) map[commons.ID
 	return (allocations)
 }
 
-func convertAllocationMapToImmutable(allocations map[commons.ID]map[commons.ItemID]struct{}) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
-	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
-	for id, itemIDS := range allocations {
-		mMapped[id] = commons.MapToSortedImmutable(itemIDS)
-	}
-	return commons.MapToImmutable(mMapped)
-}
+// func convertAllocationMapToImmutable(allocations map[commons.ID]map[commons.ItemID]struct{}) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
+// 	mMapped := make(map[commons.ID]immutable.SortedMap[commons.ItemID, struct{}])
+// 	for id, itemIDS := range allocations {
+// 		mMapped[id] = commons.MapToSortedImmutable(itemIDS)
+// 	}
+// 	return commons.MapToImmutable(mMapped)
+// }
 
 func formAllocationFromConflicts(wantedItems map[commons.ItemID]map[commons.ID]struct{}) map[commons.ID]map[commons.ItemID]struct{} {
 	allocations := make(map[commons.ID]map[commons.ItemID]struct{})
