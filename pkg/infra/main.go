@@ -135,23 +135,23 @@ func startGameLoop() {
 			fightTally := stages.AgentFightDecisions(*globalState, agentMap, *decisionMapView.Map(), channelsMap)
 			fightActions := discussion.ResolveFightDiscussion(*globalState, agentMap, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, fightTally)
 			// Printing voted rules
-			prop := fightTally.GetMax()
-			rules := prop.Rules()
-			iterator := rules.Iterator()
-			for !iterator.Done() {
-				rule, _ := iterator.Next()
-				condition := rule.Condition()
-				associatedAction := ""
-				switch rule.Action() {
-				case 0:
-					associatedAction = "Defend"
-				case 1:
-					associatedAction = "Cower"
-				default:
-					associatedAction = "Attack"
-				}
-				fmt.Println(associatedAction, condition)
-			}
+			// prop := fightTally.GetMax()
+			// rules := prop.Rules()
+			// iterator := rules.Iterator()
+			// for !iterator.Done() {
+			// 	rule, _ := iterator.Next()
+			// 	condition := rule.Condition()
+			// 	associatedAction := ""
+			// 	switch rule.Action() {
+			// 	case 0:
+			// 		associatedAction = "Defend"
+			// 	case 1:
+			// 		associatedAction = "Cower"
+			// 	default:
+			// 		associatedAction = "Attack"
+			// 	}
+			// 	fmt.Println(associatedAction, condition)
+			// }
 			globalState = fight.HandleFightRound(*globalState, gameConfig.Stamina, gameConfig.StartingHealthPoints, &fightActions)
 			*viewPtr = globalState.ToView()
 
@@ -199,11 +199,11 @@ func startGameLoop() {
 		// fmt.Println("PRUNED: ", prunedAgentMap)
 		lootTally := stages.AgentLootDecisions(*globalState, *lootPool, agentMap, channelsMap)
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
-		fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
-		fmt.Println("WEAPONS BEFORE: ", len(globalState.InventoryMap.Weapons))
+		// fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
+		// fmt.Println("WEAPONS BEFORE: ", len(globalState.InventoryMap.Weapons))
 		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool)
-		fmt.Println("SHIELDS AFTER: ", len(globalState.InventoryMap.Shields))
-		fmt.Println("WEAPONS AFTER: ", len(globalState.InventoryMap.Weapons))
+		// fmt.Println("SHIELDS AFTER: ", len(globalState.InventoryMap.Shields))
+		// fmt.Println("WEAPONS AFTER: ", len(globalState.InventoryMap.Weapons))
 
 		trade.HandleTrade(*globalState, agentMap, 5, 3)
 
