@@ -144,16 +144,22 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 
 // Vote on proposal
 func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
+	// determine whether to vote based on personality.
+	intent := rand.Intn(100)
+
 	// rules := m.Rules()
 	// itr := rules.Iterator()
 	// for !itr.Done() {
 	// 	rule, _ := itr.Next()
 	// 	// baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
 	// }
-	if intent == 0 {
+
+	// if the intent is less than personality, then decide vote action
+	if intent < a.personality {
+		// calculate vote action
 		return decision.Positive
 	} else {
+		// can we abstain from this vote?
 		return decision.Negative
 	}
 }
