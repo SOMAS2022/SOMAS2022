@@ -1,6 +1,7 @@
 package team3
 
 import (
+	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -54,7 +55,10 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.statsQueue.addStat(stat)
 	// fmt.Println("AVG: ", a.statsQueue.averageStats())
 
-	a.UpdatePersonality()
+	enable := config.EnvToBool("UPDATE_PERSONALITY", true)
+	if enable {
+		a.UpdatePersonality()
+	}
 }
 
 func (a *AgentThree) Sanctioning() int {
@@ -78,6 +82,7 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 
 func (a *AgentThree) UpdatePersonality() {
 	a.personality += 1
+	// fmt.Println(a.personality)
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
