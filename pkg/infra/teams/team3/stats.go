@@ -1,10 +1,10 @@
 package team3
 
-import "infra/game/state"
+//import "infra/game/state"
 
 type Stats struct {
-	Health  state.HealthRange
-	Stamina state.StaminaRange
+	Health  uint
+	Stamina uint
 	Attack  uint
 	Shield  uint
 }
