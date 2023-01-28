@@ -47,6 +47,12 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 
 	// a.fightDecisionsHistory = *history
 
+	// a.sendGossipMessage(baseAgent)
+
+	// if preLog != postLog {
+	// 	fmt.Println("MSG RECEIVED")
+	// }
+
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)

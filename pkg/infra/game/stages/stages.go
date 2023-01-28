@@ -1,6 +1,7 @@
 package stages
 
 import (
+	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -13,6 +14,7 @@ import (
 	"infra/game/state"
 	"infra/game/tally"
 	"infra/logging"
+	"time"
 
 	"github.com/benbjohnson/immutable"
 	//? Add you team folder like this:
@@ -77,6 +79,36 @@ func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *stat
 	// 	return t1.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
 	default:
 		return update.UpdateInternalStates(agentMap, globalState, immutableFightRounds, votesResult)
+	}
+}
+
+func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
+	closures := make(map[commons.ID]chan<- struct{})
+
+	// SEND ALL MESSAGES OUT
+	for _, a := range agentMap {
+		msg := a.Strategy.CompileTrustMessage(agentMap)
+		senderList := msg.Recipients
+
+		for _, ag := range senderList {
+			fmt.Println("SENDING:")
+			a.SendBlockingMessage(ag, msg)
+		}
+	}
+
+	for id, a := range agentMap {
+		a := a
+		closure := make(chan struct{})
+		closures[id] = closure
+
+		go (&a).HandleTrust(closure, agentMap)
+	}
+
+	// timeout for agents to respond
+	time.Sleep(300 * time.Millisecond)
+	for _, closure := range closures {
+		closure <- struct{}{}
+		close(closure)
 	}
 }
 
