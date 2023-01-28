@@ -131,6 +131,32 @@ func runConfidenceVote(termLeft uint) (uint, map[decision.Intent]uint) {
 	} else if 100*votes[decision.Negative]/(votes[decision.Negative]+votes[decision.Positive]) > globalState.LeaderManifesto.OverthrowThreshold() {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
 		termLeft = runElection()
+		// log the results of the new election
+		fmt.Println("Current Leader Shit -------------------")
+		fmt.Println(agentMap[globalState.CurrentLeader])
+		fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.ID())
+		fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.Name())
+
+		levelLog := logging.LevelStages{}
+		levelLog.ElectionStage = logging.ElectionStage{
+			Occurred: true,
+			Winner:   globalState.CurrentLeader,
+			Team:     agentMap[globalState.CurrentLeader].BaseAgent.Name(),
+			Manifesto: logging.ManifestoLog{
+				FightImposition:     globalState.LeaderManifesto.FightDecisionPower(),
+				LootImposition:      globalState.LeaderManifesto.LootDecisionPower(),
+				TermLength:          globalState.LeaderManifesto.TermLength(),
+				ThresholdPercentage: globalState.LeaderManifesto.OverthrowThreshold(),
+			},
+		}
+		logging.Log(logging.Info, logging.LogField{
+			"Fight Imp": globalState.LeaderManifesto.FightDecisionPower(),
+			"Loot Imp":  globalState.LeaderManifesto.LootDecisionPower(),
+			"Term":      globalState.LeaderManifesto.TermLength(),
+			"Threshold": globalState.LeaderManifesto.OverthrowThreshold(),
+			"Winner":    globalState.CurrentLeader,
+			"Team":      agentMap[globalState.CurrentLeader].BaseAgent.Name(),
+		}, "Re-Election Vote")
 	}
 	return termLeft, votes
 }
