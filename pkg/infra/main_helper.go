@@ -132,10 +132,10 @@ func runConfidenceVote(termLeft uint) (uint, map[decision.Intent]uint) {
 		logging.Log(logging.Info, nil, fmt.Sprintf("%s got ousted", globalState.CurrentLeader))
 		termLeft = runElection()
 		// log the results of the new election
-		fmt.Println("Current Leader Shit -------------------")
-		fmt.Println(agentMap[globalState.CurrentLeader])
-		fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.ID())
-		fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.Name())
+		// fmt.Println("Current Leader Shit -------------------")
+		// fmt.Println(agentMap[globalState.CurrentLeader])
+		// fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.ID())
+		// fmt.Println(agentMap[globalState.CurrentLeader].BaseAgent.Name())
 
 		levelLog := logging.LevelStages{}
 		levelLog.ElectionStage = logging.ElectionStage{
