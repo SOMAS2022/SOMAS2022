@@ -24,7 +24,7 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 	trustMsg := new(message.Trust)
 
 	// ** and puts stuff inside
-	trustMsg.MakeNewTrust(keys, make(map[string]int))
+	trustMsg.MakeNewTrust(keys[:1], make(map[string]int))
 
 	// send off
 	return *trustMsg
