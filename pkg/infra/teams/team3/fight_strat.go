@@ -160,7 +160,7 @@ func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction
 		return decision.Positive
 	} else {
 		// can we abstain from this vote?
-		return decision.Negative
+		return decision.Abstain
 	}
 }
 

@@ -44,12 +44,12 @@ func InitGameConfig() config.GameConfig {
 		StartingHealthPoints:   config.EnvToUint("STARTING_HP", 1000),
 		StartingAttackStrength: config.EnvToUint("STARTING_ATTACK", 20),
 		StartingShieldStrength: config.EnvToUint("STARTING_SHIELD", 20),
-		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.6),
+		ThresholdPercentage:    config.EnvToFloat("THRESHOLD_PCT", 0.01),
 		InitialNumAgents:       uint(0),
 		Stamina:                config.EnvToUint("BASE_STAMINA", 2000),
-		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 1),
+		VotingStrategy:         config.EnvToUint("VOTING_STRATEGY", 0),
 		VotingPreferences:      config.EnvToUint("VOTING_PREFERENCES", 2),
-		Defection:              config.EnvToBool("DEFECTION", false),
+		Defection:              config.EnvToBool("DEFECTION", true),
 	}
 
 	return gameConfig

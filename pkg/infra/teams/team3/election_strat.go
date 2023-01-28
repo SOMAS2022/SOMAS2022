@@ -31,7 +31,7 @@ func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.In
 		} else {
 			// perform no-confidence calculation
 			// return answer
-			return decision.Positive
+			return decision.Negative
 		}
 	} else {
 		return decision.Abstain
