@@ -7,8 +7,9 @@ import (
 	"infra/game/decision"
 	"infra/logging"
 	"math/rand"
-	"os"
-	"strconv"
+
+	// "os"
+	// "strconv"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -86,7 +87,8 @@ func (a *AgentThree) UpdatePersonality() {
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("PASSIVE_PER"), 10, 0)
+	dis := config.EnvToUint("COLLECTIVE_PER", 50)
+	// dis, _ := strconv.ParseInt(os.Getenv("PASSIVE_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -101,7 +103,8 @@ func NewAgentThreeNeutral() agent.Strategy {
 }
 
 func NewAgentThreePassive() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("COLLECTIVE_PER"), 10, 0)
+	dis := config.EnvToUint("SELFLESS_PER", 75)
+	// dis, _ := strconv.ParseInt(os.Getenv("COLLECTIVE_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
@@ -115,7 +118,8 @@ func NewAgentThreePassive() agent.Strategy {
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
-	dis, _ := strconv.ParseInt(os.Getenv("SELFISH_PER"), 10, 0)
+	dis := config.EnvToUint("SELFISH_PER", 25)
+	// dis, _ := strconv.ParseInt(os.Getenv("SELFISH_PER"), 10, 0)
 	return &AgentThree{
 		utilityScore:      CreateUtility(),
 		uR:                CreateUtility(),
