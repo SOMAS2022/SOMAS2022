@@ -60,10 +60,13 @@ func (a *AgentThree) LootAction(
 }
 
 func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
+	// submit a proposal to the leader
 	switch m.Message().(type) {
 	case *message.StartLoot:
-		sendsProposal := rand.Intn(100)
-		if sendsProposal > 90 {
+		// Send Proposal?
+		sendProposal := rand.Intn(100)
+		if sendProposal < a.personality {
+			// general and send a loot proposal
 			baseAgent.SendLootProposalToLeader(a.generateLootProposal())
 		}
 	default:
@@ -72,12 +75,20 @@ func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message
 }
 
 func (a *AgentThree) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
-	switch rand.Intn(3) {
-	case 0:
-		return decision.Positive
-	case 1:
-		return decision.Negative
-	default:
+	// vote on the loot proposal
+
+	// do i vote?
+	toVote := rand.Intn(100)
+	if toVote < a.personality {
+		// Enter logic for evaluating a loot proposal here
+		switch rand.Intn(2) {
+		case 0:
+			return decision.Positive
+		default:
+			return decision.Negative
+		}
+	} else {
+		// abstain
 		return decision.Abstain
 	}
 }
