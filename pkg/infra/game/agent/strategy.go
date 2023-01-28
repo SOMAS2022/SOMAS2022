@@ -14,6 +14,7 @@ type Strategy interface {
 	Loot
 	HPPool
 	Trade
+	Trust
 	// HandleUpdateWeapon return the index of the weapon you want to use in AgentState.weapons
 	HandleUpdateWeapon(baseAgent BaseAgent) decision.ItemIdx
 	// HandleUpdateShield return the index of the shield you want to use in AgentState.Shields

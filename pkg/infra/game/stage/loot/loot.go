@@ -4,6 +4,7 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/tally"
+	"math"
 	"sync"
 	"time"
 
@@ -220,35 +221,21 @@ func chooseItem(agent state.AgentState, averageHP float64, averageST float64, av
 
 // works bc normalization changes the data distribution, so small sheild/weapon difference values are significant enough now
 func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
-	maxVal := max4El(x, y, z, w)
-	minVal := min4El(x, y, z, w)
+	maxVal := minMax4(true, [...]float64{x, y, z, w})
+	minVal := minMax4(false, [...]float64{x, y, z, w})
 	return (x - minVal) / (maxVal - minVal), (y - minVal) / (maxVal - minVal), (z - minVal) / (maxVal - minVal), (w - minVal) / (maxVal - minVal)
 }
 
-func max4El(x, y, z, w float64) float64 {
-	if x > y && x > z && x > w {
-		return x
+func minMax4(isMax bool, nums [4]float64) float64 {
+	ans := nums[0]
+	for _, num := range nums[1:] {
+		if isMax {
+			ans = math.Max(num, ans)
+		} else {
+			ans = math.Min(num, ans)
+		}
 	}
-	if y > z && y > w {
-		return y
-	}
-	if z > w {
-		return z
-	}
-	return w
-}
-
-func min4El(x, y, z, w float64) float64 {
-	if x < y && x < z && x < w {
-		return x
-	}
-	if y < z && y < w {
-		return y
-	}
-	if z < w {
-		return z
-	}
-	return w
+	return ans
 }
 
 // didn't work as mean scaling just recenters the distribution -> sheild/weapon values were too small compared to the rest

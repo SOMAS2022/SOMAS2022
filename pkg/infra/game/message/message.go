@@ -1,6 +1,9 @@
 package message
 
-import "infra/game/state"
+import (
+	"infra/game/commons"
+	"infra/game/state"
+)
 
 type Message interface {
 	sealedMessage()
@@ -38,6 +41,20 @@ type LootInform interface {
 
 type StartLoot struct {
 	state.LootPool
+}
+
+type Trust struct {
+	Recipients []commons.ID
+	Gossip     map[commons.ID]int
+}
+
+func (t *Trust) MakeNewTrust(recips []commons.ID, gos map[commons.ID]int) {
+	t.Recipients = recips
+	t.Gossip = gos
+}
+
+func (t Trust) sealedMessage() {
+	panic("idk")
 }
 
 func NewStartLoot(lootPool state.LootPool) *StartLoot {

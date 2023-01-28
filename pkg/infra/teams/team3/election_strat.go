@@ -2,6 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
@@ -43,16 +44,7 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision
 	// Extract ID of alive agents
 	view := baseAgent.View()
 	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
-	i := 0
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
-		}
-	}
+	aliveAgentIDs := commons.ImmutableMapKeys(agentState)
 
 	// should we vote? based on personality
 	makeVote := rand.Intn(100)
