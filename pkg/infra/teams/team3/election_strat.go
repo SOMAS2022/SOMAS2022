@@ -2,7 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
-	"infra/game/commons"
+	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
@@ -39,25 +39,32 @@ func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.In
 	}
 }
 
-func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *decision.ElectionParams) decision.Ballot {
 
 	// Extract ID of alive agents
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := commons.ImmutableMapKeys(agentState)
+	// view := baseAgent.View()
+	// agentState := view.AgentState()
+	// aliveAgentIDs := commons.ImmutableMapKeys(agentState)
 
-	// should we vote? based on personality
+	// extract the name of the agents who have submitted manifestos
+	candidates := make([]string, param.CandidateList().Len())
+	iterator := param.CandidateList().Iterator()
+	for !iterator.Done() {
+		id, _, _ := iterator.Next()
+		candidates = append(candidates, id)
+	}
+
+	// should we vote?
 	makeVote := rand.Intn(100)
 	// if makeVote is lower than personality, then vote.
-	// low personalty values make selfish actions more likely, i.e not voting
 	if makeVote < a.personality {
 		// Randomly fill the ballot
 		var ballot decision.Ballot
-		numAliveAgents := len(aliveAgentIDs)
-		numCandidate := 2
+		numAliveAgents := param.CandidateList().Len()
+		numCandidate := int(param.NumberOfPreferences())
 		for i := 0; i < numCandidate; i++ {
 			randomIdx := rand.Intn(numAliveAgents)
-			randomCandidate := aliveAgentIDs[uint(randomIdx)]
+			randomCandidate := candidates[uint(randomIdx)]
 			ballot = append(ballot, randomCandidate)
 		}
 
