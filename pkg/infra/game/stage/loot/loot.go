@@ -4,7 +4,8 @@ import (
 	"infra/game/decision"
 	"infra/game/message"
 	"infra/game/tally"
-	"math"
+
+	// "math"
 	"sync"
 	"time"
 
@@ -112,7 +113,7 @@ func AgentLootDecisions(
 	return propTally
 }
 
-func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map[commons.ItemID]struct{}, pool *state.LootPool) *state.State {
+func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map[commons.ItemID]struct{}, pool *state.LootPool, agentMap map[commons.ID]agent.Agent) *state.State {
 	weaponSet := itemListToSet(pool.Weapons())
 	shieldSet := itemListToSet(pool.Shields())
 	hpPotionSet := itemListToSet(pool.HpPotions())
@@ -122,15 +123,17 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 	// calc diff of user between their normalized average and health/stamina/attack/defense, get highest diff
 	// and use it as a boolean param for item selection
 
-	averageHP, averageST, averageATT, averageDEF := getAverageStats(globalState)
+	// averageHP, averageST, averageATT, averageDEF := getAverageStats(globalState)
 
 	for agentID, items := range allocation {
 		// itemIterator := items.Iterator()
 		for item := range items {
 			agentState := globalState.AgentState[agentID]
-
-			hpBool, stBool, AttBool, DefBool := chooseItem(agentState, averageHP, averageST, averageATT, averageDEF)
+			a := agentMap[agentID]
+			// hpBool, stBool, AttBool, DefBool := chooseItem(agentState, averageHP, averageST, averageATT, averageDEF)
 			// fmt.Println(hpBool, stBool, AttBool, DefBool)
+			hpBool, stBool, AttBool, DefBool := a.chooseItem(*a.BaseAgent)
+
 			if val, ok := weaponSet[item]; ok && AttBool {
 				// globalState.InventoryMap.Weapons[item] = val
 				agentState.AddWeapon(*state.NewItem(item, val))
@@ -170,75 +173,75 @@ func itemListToSet(
 	return res
 }
 
-func getAverageStats(globalState state.State) (float64, float64, float64, float64) {
-	var averageHP float64 = 0
-	var averageST float64 = 0
-	var averageATT float64 = 0
-	var averageDEF float64 = 0
+// func getAverageStats(globalState state.State) (float64, float64, float64, float64) {
+// 	var averageHP float64 = 0
+// 	var averageST float64 = 0
+// 	var averageATT float64 = 0
+// 	var averageDEF float64 = 0
 
-	agentLen := float64(len(globalState.AgentState))
-	for _, state := range globalState.AgentState {
-		averageHP += float64(state.Hp)
-		averageST += float64(state.Stamina)
-		averageATT += float64(state.BonusAttack())
-		averageDEF += float64(state.BonusDefense())
-	}
+// 	agentLen := float64(len(globalState.AgentState))
+// 	for _, state := range globalState.AgentState {
+// 		averageHP += float64(state.Hp)
+// 		averageST += float64(state.Stamina)
+// 		averageATT += float64(state.BonusAttack())
+// 		averageDEF += float64(state.BonusDefense())
+// 	}
 
-	averageHP /= agentLen
-	averageST /= agentLen
-	averageATT /= agentLen
-	averageDEF /= agentLen
-	// fmt.Println(averageHP, averageST, averageATT, averageDEF)
-	meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF := normalize4El(averageHP, averageST, averageATT, averageDEF)
-	// fmt.Println(meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF)
-	return meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF
-}
+// 	averageHP /= agentLen
+// 	averageST /= agentLen
+// 	averageATT /= agentLen
+// 	averageDEF /= agentLen
+// 	// fmt.Println(averageHP, averageST, averageATT, averageDEF)
+// 	meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF := normalize4El(averageHP, averageST, averageATT, averageDEF)
+// 	// fmt.Println(meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF)
+// 	return meanAverageHP, meanAverageST, meanAverageATT, meanAverageDEF
+// }
 
-func chooseItem(agent state.AgentState, averageHP float64, averageST float64, averageATT float64, averageDEF float64) (bool, bool, bool, bool) {
+// func chooseItem(agent state.AgentState, averageHP float64, averageST float64, averageATT float64, averageDEF float64) (bool, bool, bool, bool) {
 
-	HP := float64(agent.Hp)
-	ST := float64(agent.Stamina)
-	ATT := float64(agent.BonusAttack())
-	DEF := float64(agent.BonusDefense())
-	// fmt.Println(HP, ST, ATT, DEF)
-	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
-	// fmt.Println(meanHP, meanST, meanATT, meanDEF)
-	diffHP := averageHP - meanHP
-	diffST := averageST - meanST
-	diffATT := averageATT - meanATT
-	diffDEF := averageDEF - meanDEF
-	// fmt.Println(diffHP, diffST, diffATT, diffDEF)
-	// get largest diff = var most in need
-	if diffHP > diffST && diffHP > diffATT && diffHP > diffDEF {
-		return true, false, false, false // HP highest diff
-	} else if diffST > diffATT && diffST > diffDEF {
-		return false, true, false, false // ST highest diff
-	} else if diffATT > diffDEF {
-		return false, false, true, false // ATT highest diff
-	} else {
-		return false, false, false, true // DEF highest diff
-	}
+// 	HP := float64(agent.Hp)
+// 	ST := float64(agent.Stamina)
+// 	ATT := float64(agent.BonusAttack())
+// 	DEF := float64(agent.BonusDefense())
+// 	// fmt.Println(HP, ST, ATT, DEF)
+// 	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
+// 	// fmt.Println(meanHP, meanST, meanATT, meanDEF)
+// 	diffHP := averageHP - meanHP
+// 	diffST := averageST - meanST
+// 	diffATT := averageATT - meanATT
+// 	diffDEF := averageDEF - meanDEF
+// 	// fmt.Println(diffHP, diffST, diffATT, diffDEF)
+// 	// get largest diff = var most in need
+// 	if diffHP > diffST && diffHP > diffATT && diffHP > diffDEF {
+// 		return true, false, false, false // HP highest diff
+// 	} else if diffST > diffATT && diffST > diffDEF {
+// 		return false, true, false, false // ST highest diff
+// 	} else if diffATT > diffDEF {
+// 		return false, false, true, false // ATT highest diff
+// 	} else {
+// 		return false, false, false, true // DEF highest diff
+// 	}
 
-}
+// }
 
-// works bc normalization changes the data distribution, so small sheild/weapon difference values are significant enough now
-func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
-	maxVal := minMax4(true, [...]float64{x, y, z, w})
-	minVal := minMax4(false, [...]float64{x, y, z, w})
-	return (x - minVal) / (maxVal - minVal), (y - minVal) / (maxVal - minVal), (z - minVal) / (maxVal - minVal), (w - minVal) / (maxVal - minVal)
-}
+// // works bc normalization changes the data distribution, so small sheild/weapon difference values are significant enough now
+// func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
+// 	maxVal := minMax4(true, [...]float64{x, y, z, w})
+// 	minVal := minMax4(false, [...]float64{x, y, z, w})
+// 	return (x - minVal) / (maxVal - minVal), (y - minVal) / (maxVal - minVal), (z - minVal) / (maxVal - minVal), (w - minVal) / (maxVal - minVal)
+// }
 
-func minMax4(isMax bool, nums [4]float64) float64 {
-	ans := nums[0]
-	for _, num := range nums[1:] {
-		if isMax {
-			ans = math.Max(num, ans)
-		} else {
-			ans = math.Min(num, ans)
-		}
-	}
-	return ans
-}
+// func minMax4(isMax bool, nums [4]float64) float64 {
+// 	ans := nums[0]
+// 	for _, num := range nums[1:] {
+// 		if isMax {
+// 			ans = math.Max(num, ans)
+// 		} else {
+// 			ans = math.Min(num, ans)
+// 		}
+// 	}
+// 	return ans
+// }
 
 // didn't work as mean scaling just recenters the distribution -> sheild/weapon values were too small compared to the rest
 // func meanScale4El(el1 float64, el2 float64, el3 float64, el4 float64) (float64, float64, float64, float64) {

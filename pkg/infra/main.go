@@ -209,7 +209,7 @@ func startGameLoop() {
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		// fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
 		// fmt.Println("WEAPONS BEFORE: ", len(globalState.InventoryMap.Weapons))
-		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool)
+		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool, agentMap)
 		// fmt.Println("SHIELDS AFTER: ", len(globalState.InventoryMap.Shields))
 		// fmt.Println("WEAPONS AFTER: ", len(globalState.InventoryMap.Weapons))
 

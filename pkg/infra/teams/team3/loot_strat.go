@@ -110,3 +110,45 @@ func (a *AgentThree) generateLootProposal() commons.ImmutableList[proposal.Rule[
 
 	return *commons.NewImmutableList(rules)
 }
+
+func (a *AgentThree) chooseItem(baseAgent agent.BaseAgent) (bool, bool, bool, bool) {
+	// function to calculate the agents choice of loot
+
+	// calculate the average stats of the group
+	avHP := AverageArray(GetHealthAllAgents(baseAgent))
+	avST := AverageArray(GetStaminaAllAgents(baseAgent))
+	avATT := AverageArray(GetAttackAllAgents(baseAgent))
+	avDEF := AverageArray(GetDefenceAllAgents(baseAgent))
+
+	// normalise the group stats
+	groupAvHP, groupAvST, groupAvATT, groupAvDEF := normalize4El(avHP, avST, avATT, avDEF)
+
+	// calculate the average stats
+	// get agent
+	agentState := baseAgent.AgentState()
+
+	HP := float64(agentState.Hp)
+	ST := float64(agentState.Stamina)
+	ATT := float64(agentState.BonusAttack())
+	DEF := float64(agentState.BonusDefense())
+
+	// normalise the agent stats
+	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
+
+	// cal differences
+	diffHP := groupAvHP - meanHP
+	diffST := groupAvST - meanST
+	diffATT := groupAvATT - meanATT
+	diffDEF := groupAvDEF - meanDEF
+
+	// end loot logic here
+	if diffHP > diffST && diffHP > diffATT && diffHP > diffDEF {
+		return true, false, false, false // HP highest diff
+	} else if diffST > diffATT && diffST > diffDEF {
+		return false, true, false, false // ST highest diff
+	} else if diffATT > diffDEF {
+		return false, false, true, false // ATT highest diff
+	} else {
+		return false, false, false, true // DEF highest diff
+	}
+}
