@@ -132,7 +132,7 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 			a := agentMap[agentID]
 			// hpBool, stBool, AttBool, DefBool := chooseItem(agentState, averageHP, averageST, averageATT, averageDEF)
 			// fmt.Println(hpBool, stBool, AttBool, DefBool)
-			hpBool, stBool, AttBool, DefBool := a.chooseItem(*a.BaseAgent)
+			hpBool, stBool, AttBool, DefBool := a.ChooseItem(*a.BaseAgent)
 
 			if val, ok := weaponSet[item]; ok && AttBool {
 				// globalState.InventoryMap.Weapons[item] = val

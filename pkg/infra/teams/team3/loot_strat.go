@@ -111,7 +111,7 @@ func (a *AgentThree) generateLootProposal() commons.ImmutableList[proposal.Rule[
 	return *commons.NewImmutableList(rules)
 }
 
-func (a *AgentThree) chooseItem(baseAgent agent.BaseAgent) (bool, bool, bool, bool) {
+func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent) (bool, bool, bool, bool) {
 	// function to calculate the agents choice of loot
 
 	// calculate the average stats of the group

@@ -21,5 +21,5 @@ type Loot interface {
 	LootActionNoProposal(baseAgent BaseAgent) immutable.SortedMap[commons.ItemID, struct{}]
 	LootAction(baseAgent BaseAgent, proposedLoot immutable.SortedMap[commons.ItemID, struct{}], acceptedProposal message.Proposal[decision.LootAction]) immutable.SortedMap[commons.ItemID, struct{}]
 	PruneAgentList(agentMap map[commons.ID]Agent) map[commons.ID]Agent
-	chooseItem(BaseAgent BaseAgent) (bool, bool, bool, bool)
+	ChooseItem(BaseAgent BaseAgent) (bool, bool, bool, bool)
 }
