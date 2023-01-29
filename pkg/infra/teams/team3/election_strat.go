@@ -48,10 +48,12 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 
 	// extract the name of the agents who have submitted manifestos
 	candidates := make([]string, param.CandidateList().Len())
+	i := 0
 	iterator := param.CandidateList().Iterator()
 	for !iterator.Done() {
 		id, _, _ := iterator.Next()
-		candidates = append(candidates, id)
+		candidates[i] = id
+		i++
 	}
 
 	// should we vote?
