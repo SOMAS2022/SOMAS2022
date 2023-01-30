@@ -228,6 +228,21 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 	return fairness
 }
 
+func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]int {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+	disobedienceMap := [][]int{}
+	for !itr.Done() {
+		id, hiddenState, _ := itr.Next()
+		idN, _ := strconv.Atoi(id)
+
+		temp := []int{idN, BoolToInt(hiddenState.Defector.IsDefector())}
+		disobedienceMap = append(disobedienceMap, temp)
+	}
+	return disobedienceMap
+}
+
 // func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 // 	view := baseAgent.View()
 // 	agentState := view.AgentState()

@@ -6,10 +6,8 @@ import (
 	"infra/game/commons"
 	"infra/game/decision"
 	"infra/logging"
+	"math"
 	"math/rand"
-
-	// "os"
-	// "strconv"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -29,6 +27,7 @@ type AgentThree struct {
 	personality           int
 	sanctioned            int
 	statsQueue            StatsQueue
+	change_init           float64
 }
 
 // Update internal parameters at the end of each stage
@@ -41,6 +40,15 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 		a.uR = a.InitUtility(baseAgent)
 		a.uP = a.InitUtility(baseAgent)
 		a.uC = a.InitUtility(baseAgent)
+
+		stat := Stats{1000, 0, 0, 0}
+		stat2 := Stats{1000, 0, 0, 0}
+		stat3 := Stats{1000, 0, 0, 0}
+		a.statsQueue.addStat(stat)
+		a.statsQueue.addStat(stat2)
+		a.statsQueue.addStat(stat3)
+
+		a.change_init = 0
 	}
 
 	a.AT = int(AS.Attack + AS.BonusAttack())
@@ -58,13 +66,13 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)
 
-	stat := Stats{1, 2, 3, 4}
-	a.statsQueue.addStat(stat)
-	// fmt.Println("AVG: ", a.statsQueue.averageStats())
-
+	//stat := Stats{1.0, 2, 3, 6}
+	//stat := Stats{1.0, 2, 3, 6}
+	//a.statsQueue.addStat(stat)
+	//// fmt.Println("AVG: ", a.statsQueue)
 	enable := config.EnvToBool("UPDATE_PERSONALITY", true)
 	if enable {
-		a.UpdatePersonality()
+		a.UpdatePersonality(baseAgent)
 	}
 }
 
@@ -87,9 +95,45 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 	return prunned
 }
 
-func (a *AgentThree) UpdatePersonality() {
-	a.personality += 1
-	// fmt.Println(a.personality)
+func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
+	avg_ini := a.statsQueue.averageStats()
+
+	AS := baseAgent.AgentState()
+
+	AT := AS.Attack + AS.BonusAttack()
+	SH := AS.Defense + AS.BonusDefense()
+	HP := AS.Hp
+	ST := AS.Stamina
+
+	stat := Stats{HP, ST, AT, SH}
+	a.statsQueue.addStat(stat)
+	avg_now := a.statsQueue.averageStats()
+
+	change_now := avg_now.Health - avg_ini.Health
+	P_C := ((change_now - a.change_init) / math.Abs(change_now))
+	increment := (P_C * 5)
+
+	if math.IsNaN(increment) {
+		increment = 0
+	}
+	if increment >= 5 {
+		increment = 5
+	}
+	if increment <= -5 {
+		increment = -5
+	}
+
+	a.personality = a.personality + int(math.Ceil(increment))
+
+	if a.personality >= 100 {
+		a.personality = 100
+	}
+
+	if a.personality <= 0 {
+		a.personality = 0
+	}
+
+	a.change_init = (avg_now.Health - avg_ini.Health)
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
