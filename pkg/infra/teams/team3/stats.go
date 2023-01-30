@@ -1,7 +1,5 @@
 package team3
 
-//import "infra/game/state"
-
 type Stats struct {
 	Health  uint
 	Stamina uint
