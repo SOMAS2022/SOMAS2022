@@ -2,6 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
+	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
@@ -18,48 +19,63 @@ var (
 
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	view := baseAgent.View()
-	AS := baseAgent.AgentState()
-	// Vote for leader to stay if he's our friend :)
-	baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "util": a.utilityScore[view.CurrentLeader()]}, "Util")
-	if a.utilityScore[view.CurrentLeader()] > 5 {
-		return decision.Positive
-	} else {
-		switch rand.Intn(2) {
-		case 0:
-			return decision.Abstain
-		default:
-			return decision.Negative
+	// decide whether to vote in the no-confidence vote based on personality
+	toVote := rand.Intn(100)
+
+	if toVote < a.personality {
+		view := baseAgent.View()
+		AS := baseAgent.AgentState()
+		// vote for leader if they have a high reputation
+		baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "util": a.utilityScore[view.CurrentLeader()]}, "Util")
+		if a.utilityScore[view.CurrentLeader()] > 5 {
+			return decision.Positive
+		} else {
+			// perform no-confidence calculation
+			// return answer
+			return decision.Positive
 		}
+	} else {
+		return decision.Abstain
 	}
 }
 
-func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *decision.ElectionParams) decision.Ballot {
+
 	// Extract ID of alive agents
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
+	// view := baseAgent.View()
+	// agentState := view.AgentState()
+	// aliveAgentIDs := commons.ImmutableMapKeys(agentState)
+
+	// extract the name of the agents who have submitted manifestos
+	candidates := make([]string, param.CandidateList().Len())
 	i := 0
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
+	iterator := param.CandidateList().Iterator()
+	for !iterator.Done() {
+		id, _, _ := iterator.Next()
+		candidates[i] = id
+		i++
+	}
+
+	// should we vote?
+	makeVote := rand.Intn(100)
+	// if makeVote is lower than personality, then vote.
+	if makeVote < a.personality {
+		// Randomly fill the ballot
+		var ballot decision.Ballot
+		numAliveAgents := param.CandidateList().Len()
+		numCandidate := int(param.NumberOfPreferences())
+		for i := 0; i < numCandidate; i++ {
+			randomIdx := rand.Intn(numAliveAgents)
+			randomCandidate := candidates[uint(randomIdx)]
+			ballot = append(ballot, randomCandidate)
 		}
-	}
 
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := 2
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
+		return ballot
+	} else {
+		// return an empty ballot (don't vote)
+		var ballot decision.Ballot
+		return ballot
 	}
-
-	return ballot
 }
 
 //Agent 3 Voting Strategy
@@ -96,17 +112,12 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 	// alg 6
 	if stamina > 0 {
 		w1 += 0.2
-	} else {
+	} else if stamina < 0 {
 		w1 -= 0.2
 	}
 	if HP > 0 {
 		w1 += 0.2
-	} else {
-		if HP == 0 {
-			//w1 = w1
-		} else {
-			w1 -= 0.2
-		}
+	} else if HP < 0 {
 		w1 -= 0.2
 	}
 
@@ -123,6 +134,7 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 
 func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	var agentFought bool = false
+	var agentShielded bool = false
 	// iterate until we get most recent history
 	i := 0
 	itr := a.fightDecisionsHistory.Iterator()
@@ -131,8 +143,10 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		i += 1
 
 		if i == a.fightDecisionsHistory.Len()-1 {
-			agents := res.AttackingAgents()
-			itr2 := agents.Iterator()
+			agents_attack := res.AttackingAgents()
+			agents_defended := res.ShieldingAgents()
+			itr2 := agents_attack.Iterator()
+			itr3 := agents_defended.Iterator()
 			// search for our agent in fight list
 			for !itr.Done() {
 				_, attackingAgentID := itr2.Next()
@@ -140,9 +154,16 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 					agentFought = true
 				}
 			}
+			for !itr.Done() {
+				_, defendAgentID := itr3.Next()
+				if defendAgentID == baseAgent.ID() {
+					agentShielded = true
+				}
+			}
+
 		}
 	}
-	if agentFought {
+	if agentFought || agentShielded {
 		w2 += 0.2
 	} else {
 		w2 -= 0.2
@@ -205,6 +226,21 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 	})
 
 	return fairness
+}
+
+func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]int {
+	view := baseAgent.View()
+	agentState := view.AgentState()
+	itr := agentState.Iterator()
+	disobedienceMap := [][]int{}
+	for !itr.Done() {
+		id, hiddenState, _ := itr.Next()
+		idN, _ := strconv.Atoi(id)
+
+		temp := []int{idN, BoolToInt(hiddenState.Defector.IsDefector())}
+		disobedienceMap = append(disobedienceMap, temp)
+	}
+	return disobedienceMap
 }
 
 // func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {

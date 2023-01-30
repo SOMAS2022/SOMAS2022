@@ -90,12 +90,12 @@ func (a *Agent) handleFightRoundMessage(log *immutable.Map[commons.ID, decision.
 ) {
 	switch r := m.Message().(type) {
 	case message.FightRequest:
-		req := *message.NewTaggedRequestMessage[message.FightRequest](m.Sender(), r, m.MID())
+		req := *message.NewTaggedRequestMessage(m.Sender(), r, m.MID())
 		resp := a.Strategy.HandleFightRequest(req, log)
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
 	case message.FightInform:
-		inf := *message.NewTaggedInformMessage[message.FightInform](m.Sender(), r, m.MID())
+		inf := *message.NewTaggedInformMessage(m.Sender(), r, m.MID())
 		a.Strategy.HandleFightInformation(inf, *a.BaseAgent, log)
 
 	case message.Proposal[decision.FightAction]:
@@ -133,6 +133,20 @@ func (a *Agent) HandleLoot(agentState state.AgentState, votes chan commons.Propo
 	}
 }
 
+func (a *Agent) HandleTrust(
+	closures chan struct{},
+	agentMap map[commons.ID]Agent,
+) {
+	for {
+		select {
+		case taggedMessage := <-a.BaseAgent.communication.receipt:
+			a.Strategy.HandleTrustMessage(taggedMessage)
+		case <-closures:
+			return
+		}
+	}
+}
+
 func (a *Agent) handleLootRoundMessage(
 	m message.TaggedMessage,
 	votes chan commons.ProposalID,
@@ -140,12 +154,12 @@ func (a *Agent) handleLootRoundMessage(
 ) {
 	switch r := m.Message().(type) {
 	case message.LootRequest:
-		req := *message.NewTaggedRequestMessage[message.LootRequest](m.Sender(), r, m.MID())
+		req := *message.NewTaggedRequestMessage(m.Sender(), r, m.MID())
 		resp := a.Strategy.HandleLootRequest(req)
 		err := a.BaseAgent.SendBlockingMessage(m.Sender(), resp)
 		logging.Log(logging.Error, nil, err.Error())
 	case message.LootInform:
-		inf := *message.NewTaggedInformMessage[message.LootInform](m.Sender(), r, m.MID())
+		inf := *message.NewTaggedInformMessage(m.Sender(), r, m.MID())
 		a.Strategy.HandleLootInformation(inf, *a.BaseAgent)
 	case message.Proposal[decision.LootAction]:
 		if a.isLeader() {

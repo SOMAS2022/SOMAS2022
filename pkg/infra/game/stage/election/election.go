@@ -16,9 +16,15 @@ func HandleElection(state *state.State, agents map[commons.ID]agent.Agent, strat
 	agentManifestos := make(map[commons.ID]decision.Manifesto)
 
 	for id, a := range agents {
-		agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
+		// agentManifestos[id] = *a.SubmitManifesto(state.AgentState[id])
+		manifesto := *a.SubmitManifesto(state.AgentState[id])
+		// if term is 0, then remove the agent, as no manifesto has been submitted.
+		if manifesto.TermLength() > 0 {
+			agentManifestos[id] = manifesto
+		}
 	}
 
+	// ONLY USED IN BORDA COUNT SO NOT NEEDED... LEFT TO AVOID REFACTOR
 	agentIDs := make([]commons.ID, len(agents))
 
 	i := 0

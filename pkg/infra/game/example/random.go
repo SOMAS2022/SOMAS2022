@@ -137,7 +137,7 @@ func (r *RandomAgent) HandleLootProposalRequest(_ message.Proposal[decision.Loot
 func (r *RandomAgent) LootAllocation(
 	baseAgent agent.BaseAgent,
 	proposal message.Proposal[decision.LootAction],
-	proposedAllocation immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]],
+	proposedAllocation map[commons.ID]map[commons.ItemID]struct{},
 ) immutable.Map[commons.ID, immutable.SortedMap[commons.ItemID, struct{}]] {
 	lootAllocation := make(map[commons.ID][]commons.ItemID)
 	view := baseAgent.View()
@@ -210,20 +210,20 @@ func (r *RandomAgent) HandleFightInformation(_ message.TaggedInformMessage[messa
 	if makesProposal > 80 {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		rules = append(rules, *proposal.NewRule(decision.Attack,
 			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1000),
 				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 1000)),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
+		rules = append(rules, *proposal.NewRule(decision.Defend,
 			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 1000),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		rules = append(rules, *proposal.NewRule(decision.Cower,
 			proposal.NewComparativeCondition(proposal.Health, proposal.LessThan, 1),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
+		rules = append(rules, *proposal.NewRule(decision.Attack,
 			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 		))
 
@@ -298,6 +298,10 @@ func (r *RandomAgent) HandleUpdateShield(_ agent.BaseAgent) decision.ItemIdx {
 
 func (r *RandomAgent) HandleTradeNegotiation(_ agent.BaseAgent, _ message.TradeInfo) message.TradeMessage {
 	return message.TradeRequest{}
+}
+
+func (r *RandomAgent) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	return agentMap
 }
 
 func NewRandomAgent() agent.Strategy {

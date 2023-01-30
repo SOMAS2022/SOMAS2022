@@ -38,10 +38,17 @@ func (a *AgentThree) DonateToHpPool(baseAgent agent.BaseAgent) uint {
 
 func (a *AgentThree) FightAction(
 	baseAgent agent.BaseAgent,
-	_ decision.FightAction,
-	_ message.Proposal[decision.FightAction],
+	proposedAction decision.FightAction,
+	acceptedProposal message.Proposal[decision.FightAction],
 ) decision.FightAction {
-	return a.FightActionNoProposal(baseAgent)
+	disobey := rand.Intn(100)
+	// if disobey value is lower than personality then do not defect
+	// lower personality values mean more selfish (therefore more likely to defect)
+	if disobey < a.personality {
+		return proposedAction
+	} else {
+		return a.FightActionNoProposal(baseAgent)
+	}
 }
 
 func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.FightAction {
@@ -57,37 +64,36 @@ func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 }
 
 // Send proposal to leader
-func (a *AgentThree) HandleFightInformation(_ message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
+func (a *AgentThree) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
 	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
 	// AS := baseAgent.AgentState()
 
 	// baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "decision": a.CurrentAction(baseAgent)}, "HP")
 	// baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
 
-	// id := baseAgent.ID()
-	// choice, _ := fightactionMap.Get(id)
-	// HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := a.thresholdDecision(baseAgent, choice)
+	id := baseAgent.ID()
+	choice, _ := fightactionMap.Get(id)
+	HPThreshold, StaminaThreshold, _, DefenseThreshold := a.thresholdDecision(baseAgent, choice)
+	// fmt.Println(m)
 
+	// should i make a proposal (based on personality)
 	makesProposal := rand.Intn(100)
-
-	if makesProposal > 90 {
+	// if makesProposal is lower than personality, then make proposal
+	// low personality scores mean more selfish,
+	if makesProposal < a.personality {
 		rules := make([]proposal.Rule[decision.FightAction], 0)
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 500),
-				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 500)),
+		rules = append(rules, *proposal.NewRule(decision.Attack,
+			proposal.NewAndCondition(*proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, uint(HPThreshold)),
+				*proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, uint(StaminaThreshold))),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Defend,
-			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, 200),
+		rules = append(rules, *proposal.NewRule(decision.Defend,
+			proposal.NewComparativeCondition(proposal.TotalDefence, proposal.GreaterThan, uint(DefenseThreshold)),
 		))
 
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Cower,
+		rules = append(rules, *proposal.NewRule(decision.Cower,
 			proposal.NewComparativeCondition(proposal.Health, proposal.GreaterThan, 1),
-		))
-
-		rules = append(rules, *proposal.NewRule[decision.FightAction](decision.Attack,
-			proposal.NewComparativeCondition(proposal.Stamina, proposal.GreaterThan, 10),
 		))
 
 		prop := *commons.NewImmutableList(rules)
@@ -139,73 +145,83 @@ func (a *AgentThree) CurrentAction(baseAgent agent.BaseAgent) decision.FightActi
 
 // Vote on proposal
 func (a *AgentThree) HandleFightProposal(m message.Proposal[decision.FightAction], baseAgent agent.BaseAgent) decision.Intent {
-	intent := rand.Intn(2)
+	// determine whether to vote based on personality.
+	intent := rand.Intn(100)
+
 	// rules := m.Rules()
 	// itr := rules.Iterator()
 	// for !itr.Done() {
 	// 	rule, _ := itr.Next()
 	// 	// baseAgent.Log(logging.Trace, logging.LogField{"rule": rule}, "Rule Proposal")
 	// }
-	if intent == 0 {
+
+	// if the intent is less than personality, then decide vote action
+	if intent < a.personality {
+		// calculate vote action
 		return decision.Positive
 	} else {
-		return decision.Negative
+		// can we abstain from this vote?
+		return decision.Abstain
 	}
 }
 
 func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decision.FightAction) (float64, float64, float64, float64) {
 	// view := baseAgent.View()
-	agentState := baseAgent.AgentState()
-	HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1 := 0.0, 0.0, 0.0, 0.0
+	// agentState := baseAgent.AgentState()
+	HPThreshold, StaminaThreshold, AttackThreshold, DefenseThreshold := 0.0, 0.0, 0.0, 0.0
 
-	var agentFought bool = false
+	// var agentFought bool = false
 
-	// iterate until we get most recent history
-	i := 0
-	itr := a.fightDecisionsHistory.Iterator()
-	for !itr.Done() {
-		res, _ := itr.Next()
-		i += 1
+	// // iterate until we get most recent history
+	// i := 0
+	// itr := a.fightDecisionsHistory.Iterator()
+	// for !itr.Done() {
+	// 	res, _ := itr.Next()
+	// 	i += 1
 
-		if i == a.fightDecisionsHistory.Len()-1 {
-			agents := res.AttackingAgents()
-			itr2 := agents.Iterator()
-			// search for our agent in fight list
-			for !itr.Done() {
-				_, attackingAgentID := itr2.Next()
-				if attackingAgentID == baseAgent.ID() {
-					agentFought = true
-				}
-			}
-		}
-	}
+	// 	if i == a.fightDecisionsHistory.Len()-1 {
+	// 		agents := res.AttackingAgents()
+	// 		itr2 := agents.Iterator()
+	// 		// search for our agent in fight list
+	// 		for !itr.Done() {
+	// 			_, attackingAgentID := itr2.Next()
+	// 			if attackingAgentID == baseAgent.ID() {
+	// 				agentFought = true
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	if choice == decision.Cower {
-		if agentState.Hp >= uint(AverageArray(GetHealthAllAgents(baseAgent))) {
-			HPThreshold1 = 1.7 * AverageArray(GetHealthAllAgents(baseAgent))
-		}
-		if agentState.Stamina >= uint(AverageArray(GetStaminaAllAgents(baseAgent))) {
-			StaminaThreshold1 = 1.7 * AverageArray(GetHealthAllAgents(baseAgent))
-		}
+	// if choice == decision.Cower {
+	// 	if agentState.Hp >= uint(AverageArray(GetHealthAllAgents(baseAgent))) {
+	// 		HPThreshold1 = 1.7 * AverageArray(GetHealthAllAgents(baseAgent))
+	// 	}
+	// 	if agentState.Stamina >= uint(AverageArray(GetStaminaAllAgents(baseAgent))) {
+	// 		StaminaThreshold1 = 1.7 * AverageArray(GetHealthAllAgents(baseAgent))
+	// 	}
 
-		if agentState.Hp < uint(AverageArray(GetHealthAllAgents(baseAgent))) {
-			HPThreshold1 = 0.7 * AverageArray(GetHealthAllAgents(baseAgent))
-		}
-		if agentState.Stamina < uint(AverageArray(GetStaminaAllAgents(baseAgent))) {
-			StaminaThreshold1 = 0.7 * AverageArray(GetHealthAllAgents(baseAgent))
-		}
+	// 	if agentState.Hp < uint(AverageArray(GetHealthAllAgents(baseAgent))) {
+	// 		HPThreshold1 = 0.7 * AverageArray(GetHealthAllAgents(baseAgent))
+	// 	}
+	// 	if agentState.Stamina < uint(AverageArray(GetStaminaAllAgents(baseAgent))) {
+	// 		StaminaThreshold1 = 0.7 * AverageArray(GetHealthAllAgents(baseAgent))
+	// 	}
 
-		AttackThreshold1 = 1.1 * AverageArray(GetAttackAllAgents(baseAgent))
-		DefenseThreshold1 = 1.1 * AverageArray(GetDefenceAllAgents(baseAgent))
-	}
+	// 	AttackThreshold1 = 1.1 * AverageArray(GetAttackAllAgents(baseAgent))
+	// 	DefenseThreshold1 = 1.1 * AverageArray(GetDefenceAllAgents(baseAgent))
+	// }
 
-	if agentFought {
-		HPThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
-		StaminaThreshold1 = AverageArray(GetHealthAllAgents(baseAgent))
-		AttackThreshold1 = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
-		DefenseThreshold1 = 0.4 * AverageArray(GetDefenceAllAgents(baseAgent))
-	}
-	return HPThreshold1, StaminaThreshold1, AttackThreshold1, DefenseThreshold1
+	HPThreshold = 0.85 * AverageArray(GetHealthAllAgents(baseAgent))
+	StaminaThreshold = 0.85 * AverageArray(GetHealthAllAgents(baseAgent))
+	AttackThreshold = 0.4 * AverageArray(GetAttackAllAgents(baseAgent))
+	DefenseThreshold = 0.9 * AverageArray(GetDefenceAllAgents(baseAgent))
+	// else {
+	// 	HPThreshold1 = 500.0
+	// 	StaminaThreshold1 = 500.0
+	// 	AttackThreshold1 = 10.0
+	// 	DefenseThreshold1 = 20.0
+	// }
+	return HPThreshold, StaminaThreshold, AttackThreshold, DefenseThreshold
 }
 
 func (a *AgentThree) HandleUpdateWeapon(baseAgent agent.BaseAgent) decision.ItemIdx {
