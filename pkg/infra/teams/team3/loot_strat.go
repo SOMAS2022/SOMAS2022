@@ -7,6 +7,7 @@ import (
 	"infra/game/message"
 	"infra/game/message/proposal"
 	"math/rand"
+	"sort"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -111,27 +112,20 @@ func (a *AgentThree) generateLootProposal() commons.ImmutableList[proposal.Rule[
 	return *commons.NewImmutableList(rules)
 }
 
-func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent) (bool, bool, bool, bool) {
+func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent,
+	items map[string]struct{}, weaponSet map[string]uint, shieldSet map[string]uint, hpPotionSet map[string]uint, staminaPotionSet map[string]uint) string {
 	// function to calculate the agents choice of loot
 
-	// calculate the average stats of the group
-	avHP := AverageArray(GetHealthAllAgents(baseAgent))
-	avST := AverageArray(GetStaminaAllAgents(baseAgent))
-	avATT := AverageArray(GetAttackAllAgents(baseAgent))
-	avDEF := AverageArray(GetDefenceAllAgents(baseAgent))
-
+	// get group average stats
+	avHP, avST, avATT, avDEF := GetGroupAv(baseAgent)
 	// normalise the group stats
 	groupAvHP, groupAvST, groupAvATT, groupAvDEF := normalize4El(avHP, avST, avATT, avDEF)
-
-	// calculate the average stats
 	// get agent
 	agentState := baseAgent.AgentState()
-
 	HP := float64(agentState.Hp)
 	ST := float64(agentState.Stamina)
 	ATT := float64(agentState.BonusAttack())
 	DEF := float64(agentState.BonusDefense())
-
 	// normalise the agent stats
 	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
 
@@ -141,14 +135,71 @@ func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent) (bool, bool, bool, bo
 	diffATT := groupAvATT - meanATT
 	diffDEF := groupAvDEF - meanDEF
 
-	// end loot logic here
-	if diffHP > diffST && diffHP > diffATT && diffHP > diffDEF {
-		return true, false, false, false // HP highest diff
-	} else if diffST > diffATT && diffST > diffDEF {
-		return false, true, false, false // ST highest diff
-	} else if diffATT > diffDEF {
-		return false, false, true, false // ATT highest diff
-	} else {
-		return false, false, false, true // DEF highest diff
+	// create an array of the above, order them
+	diffs := []float64{diffHP, diffST, diffATT, diffDEF}
+	sortedDiffs := make([]float64, len(diffs))
+	copy(sortedDiffs, diffs)
+	sort.Slice(sortedDiffs, func(i, j int) bool {
+		return sortedDiffs[i] > sortedDiffs[j]
+	})
+	var item string
+	// return the item that is needed most (out of the items available)
+	for _, val := range sortedDiffs {
+		if val == 0 {
+			// if val is zero, everyone the same so take arbitrary loot
+			for id := range items {
+				item = id
+				break
+			}
+			return item
+		} else if val == diffHP {
+			//search of item in corresponding set
+			item = searchForItem(hpPotionSet, items)
+			// if excists, then return the item
+			if len(item) > 0 {
+				return item
+			}
+		} else if val == diffST {
+			item = searchForItem(staminaPotionSet, items)
+			if len(item) > 0 {
+				return item
+			}
+		} else if val == diffATT {
+			item = searchForItem(weaponSet, items)
+			if len(item) > 0 {
+				return item
+			}
+		} else if val == diffDEF {
+			item = searchForItem(shieldSet, items)
+			if len(item) > 0 {
+				return item
+			}
+		}
 	}
+	if item == "" {
+		// if got nothing, take arbitrary loot
+		for id := range items {
+			item = id
+			break
+		}
+	}
+	return item
+}
+
+func searchForItem(set map[string]uint, items map[string]struct{}) string {
+	for item := range items {
+		if _, ok := set[item]; ok {
+			return item
+		}
+	}
+	return ""
+}
+
+func GetGroupAv(baseAgent agent.BaseAgent) (float64, float64, float64, float64) {
+	avHP := AverageArray(GetHealthAllAgents(baseAgent))
+	avST := AverageArray(GetStaminaAllAgents(baseAgent))
+	avATT := AverageArray(GetAttackAllAgents(baseAgent))
+	avDEF := AverageArray(GetDefenceAllAgents(baseAgent))
+
+	return avHP, avST, avATT, avDEF
 }
