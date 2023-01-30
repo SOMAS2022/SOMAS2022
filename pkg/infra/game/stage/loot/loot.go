@@ -126,37 +126,25 @@ func HandleLootAllocation(globalState state.State, allocation map[commons.ID]map
 	// averageHP, averageST, averageATT, averageDEF := getAverageStats(globalState)
 
 	for agentID, items := range allocation {
-		// itemIterator := items.Iterator()
-		for item := range items {
-			agentState := globalState.AgentState[agentID]
-			a := agentMap[agentID]
-			// hpBool, stBool, AttBool, DefBool := chooseItem(agentState, averageHP, averageST, averageATT, averageDEF)
-			// fmt.Println(hpBool, stBool, AttBool, DefBool)
-			hpBool, stBool, AttBool, DefBool := a.ChooseItem(*a.BaseAgent)
+		agentState := globalState.AgentState[agentID]
+		a := agentMap[agentID]
 
-			if val, ok := weaponSet[item]; ok && AttBool {
-				// globalState.InventoryMap.Weapons[item] = val
-				agentState.AddWeapon(*state.NewItem(item, val))
-				delete(weaponSet, item)
-				// delete(globalState.InventoryMap.Weapons, item)
-			} else if val, ok := shieldSet[item]; ok && DefBool {
-				// globalState.InventoryMap.Shields[item] = val
-				agentState.AddShield(*state.NewItem(item, val))
-				delete(shieldSet, item)
-				// delete(globalState.InventoryMap.Shields, item)
-			} else if val, ok := hpPotionSet[item]; ok && hpBool {
-				agentState.Hp += val
-				delete(hpPotionSet, item)
-			} else if val, ok := staminaPotionSet[item]; ok && stBool {
-				agentState.Stamina += val
-				delete(staminaPotionSet, item)
-			} else {
-				// this behavior probably happens when a user tries to get an item without it being his most needed
-				continue
-				// logging.Log(logging.Warn, nil, "unknown item attempted to be allocated")
+		// if items is of length 1, then take allocation
+		if len(items) == 1 {
+			// assign the only piece of loot they are eligable for
+			for item := range items {
+				assignChosenItem(item, weaponSet, shieldSet, hpPotionSet, staminaPotionSet, &agentState)
 			}
-			globalState.AgentState[agentID] = agentState
+		} else {
+			// choose the most needed item from the list of allocated items
+			item := a.ChooseItem(*a.BaseAgent, items, weaponSet, shieldSet, hpPotionSet, staminaPotionSet)
+
+			// asign the most needed item to the agent
+			assignChosenItem(item, weaponSet, shieldSet, hpPotionSet, staminaPotionSet, &agentState)
 		}
+
+		globalState.AgentState[agentID] = agentState
+
 	}
 	return &globalState
 }
@@ -171,6 +159,30 @@ func itemListToSet(
 		res[next.Id()] = next.Value()
 	}
 	return res
+}
+
+// assign loot function
+func assignChosenItem(item string, weaponSet map[string]uint, shieldSet map[string]uint, hpPotionSet map[string]uint, staminaPotionSet map[string]uint, agentState *state.AgentState) {
+	// check the item id and assign to the agent
+	// then delete the item from the weaponSet
+
+	if val, ok := weaponSet[item]; ok {
+		// globalState.InventoryMap.Weapons[item] = val
+		agentState.AddWeapon(*state.NewItem(item, val))
+		delete(weaponSet, item)
+		// delete(globalState.InventoryMap.Weapons, item)
+	} else if val, ok := shieldSet[item]; ok {
+		// globalState.InventoryMap.Shields[item] = val
+		agentState.AddShield(*state.NewItem(item, val))
+		delete(shieldSet, item)
+		// delete(globalState.InventoryMap.Shields, item)
+	} else if val, ok := hpPotionSet[item]; ok {
+		agentState.Hp += val
+		delete(hpPotionSet, item)
+	} else if val, ok := staminaPotionSet[item]; ok {
+		agentState.Stamina += val
+		delete(staminaPotionSet, item)
+	}
 }
 
 // func getAverageStats(globalState state.State) (float64, float64, float64, float64) {
