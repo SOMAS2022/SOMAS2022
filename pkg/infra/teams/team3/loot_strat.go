@@ -1,6 +1,7 @@
 package team3
 
 import (
+	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -60,10 +61,12 @@ func (a *AgentThree) LootAction(
 	return proposedLoot
 }
 
+// this is really poor from infra - i'd just ignore tbh
 func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
 	// submit a proposal to the leader
+	fmt.Println("Made it here")
 	switch m.Message().(type) {
-	case *message.StartLoot:
+	case message.LootInform:
 		// Send Proposal?
 		sendProposal := rand.Intn(100)
 		if sendProposal < a.personality {
@@ -75,9 +78,18 @@ func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message
 	}
 }
 
+// forcibly call at start of loot phase to begin proceedings
+func (a *AgentThree) RequestLootProposal(baseAgent agent.BaseAgent) { // put your logic here now, instead
+	sendProposal := rand.Intn(100)
+	if sendProposal > a.personality {
+		return
+	}
+	// general and send a loot proposal at the start of every turn
+	baseAgent.SendLootProposalToLeader(a.generateLootProposal())
+}
+
 func (a *AgentThree) HandleLootProposal(_ message.Proposal[decision.LootAction], _ agent.BaseAgent) decision.Intent {
 	// vote on the loot proposal
-
 	// do i vote?
 	toVote := rand.Intn(100)
 	if toVote < a.personality {

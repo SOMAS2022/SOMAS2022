@@ -78,7 +78,7 @@ func AgentLootDecisions(
 
 		agentState := state.AgentState[a.BaseAgent.ID()]
 		if a.BaseAgent.ID() == state.CurrentLeader {
-			go (&a).HandleLoot(agentState, proposalVotes, proposalSubmission, closure, start)
+			go (&a).HandleLoot(agentState, proposalVotes, proposalSubmission, closure, start) // <----- threaded for voting
 		} else {
 			go (&a).HandleLoot(agentState, proposalVotes, nil, closure, start)
 		}
@@ -184,6 +184,16 @@ func assignChosenItem(item string, weaponSet map[string]uint, shieldSet map[stri
 		delete(staminaPotionSet, item)
 	}
 }
+
+//TODO
+// func getEligibleItems(agent agent.Agent) {
+// 	preference := agent.GetLootPreferenceOrder()
+// 	for _, pref := range preference {
+// 		// TODO: return available items for preference
+// 		// BRANCH: if item length > 0 then return ELSE: keep looping
+// 	}
+// 	// FALLBACK: return empty array
+// }
 
 // func getAverageStats(globalState state.State) (float64, float64, float64, float64) {
 // 	var averageHP float64 = 0
