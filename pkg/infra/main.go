@@ -74,6 +74,14 @@ func startGameLoop() {
 					ThresholdPercentage: globalState.LeaderManifesto.OverthrowThreshold(),
 				},
 			}
+			logging.Log(logging.Info, logging.LogField{
+				"Fight Imp": globalState.LeaderManifesto.FightDecisionPower(),
+				"Loot Imp":  globalState.LeaderManifesto.LootDecisionPower(),
+				"Term":      globalState.LeaderManifesto.TermLength(),
+				"Threshold": globalState.LeaderManifesto.OverthrowThreshold(),
+				"Winner":    globalState.CurrentLeader,
+				"Team":      agentMap[globalState.CurrentLeader].BaseAgent.Name(),
+			}, "Re-Election Vote")
 		} else {
 			levelLog.VONCStage = logging.VONCStage{Occurred: true, Threshold: globalState.LeaderManifesto.OverthrowThreshold()}
 			termLeft, votes = runConfidenceVote(termLeft)
@@ -201,7 +209,7 @@ func startGameLoop() {
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		// fmt.Println("SHIELDS BEFORE: ", len(globalState.InventoryMap.Shields))
 		// fmt.Println("WEAPONS BEFORE: ", len(globalState.InventoryMap.Weapons))
-		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool)
+		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool, agentMap)
 		// fmt.Println("SHIELDS AFTER: ", len(globalState.InventoryMap.Shields))
 		// fmt.Println("WEAPONS AFTER: ", len(globalState.InventoryMap.Weapons))
 

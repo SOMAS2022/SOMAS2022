@@ -3,6 +3,7 @@ package team3
 import (
 	"infra/game/agent"
 	"infra/game/commons"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
@@ -142,4 +143,24 @@ func limitScore(score int) int {
 		score = 0
 	}
 	return score
+}
+
+// normalize function for agent stats
+func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
+	maxVal := minMax4(true, [...]float64{x, y, z, w})
+	minVal := minMax4(false, [...]float64{x, y, z, w})
+	return (x - minVal) / (maxVal - minVal), (y - minVal) / (maxVal - minVal), (z - minVal) / (maxVal - minVal), (w - minVal) / (maxVal - minVal)
+}
+
+// minimum and maximum finder function
+func minMax4(isMax bool, nums [4]float64) float64 {
+	ans := nums[0]
+	for _, num := range nums[1:] {
+		if isMax {
+			ans = math.Max(num, ans)
+		} else {
+			ans = math.Min(num, ans)
+		}
+	}
+	return ans
 }

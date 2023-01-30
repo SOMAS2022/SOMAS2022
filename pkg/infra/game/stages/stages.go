@@ -1,7 +1,6 @@
 package stages
 
 import (
-	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -91,7 +90,7 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
 		senderList := msg.Recipients
 
 		for _, ag := range senderList {
-			fmt.Println("SENDING:")
+			// fmt.Println("SENDING:")
 			a.SendBlockingMessage(ag, msg)
 		}
 	}

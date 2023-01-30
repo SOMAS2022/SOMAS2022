@@ -2,6 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
+	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
@@ -18,48 +19,63 @@ var (
 
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
-	view := baseAgent.View()
-	AS := baseAgent.AgentState()
-	// Vote for leader to stay if he's our friend :)
-	baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "util": a.utilityScore[view.CurrentLeader()]}, "Util")
-	if a.utilityScore[view.CurrentLeader()] > 5 {
-		return decision.Positive
-	} else {
-		switch rand.Intn(2) {
-		case 0:
-			return decision.Abstain
-		default:
-			return decision.Negative
+	// decide whether to vote in the no-confidence vote based on personality
+	toVote := rand.Intn(100)
+
+	if toVote < a.personality {
+		view := baseAgent.View()
+		AS := baseAgent.AgentState()
+		// vote for leader if they have a high reputation
+		baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "util": a.utilityScore[view.CurrentLeader()]}, "Util")
+		if a.utilityScore[view.CurrentLeader()] > 5 {
+			return decision.Positive
+		} else {
+			// perform no-confidence calculation
+			// return answer
+			return decision.Positive
 		}
+	} else {
+		return decision.Abstain
 	}
 }
 
-func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, _ *decision.ElectionParams) decision.Ballot {
+func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *decision.ElectionParams) decision.Ballot {
+
 	// Extract ID of alive agents
-	view := baseAgent.View()
-	agentState := view.AgentState()
-	aliveAgentIDs := make([]string, agentState.Len())
+	// view := baseAgent.View()
+	// agentState := view.AgentState()
+	// aliveAgentIDs := commons.ImmutableMapKeys(agentState)
+
+	// extract the name of the agents who have submitted manifestos
+	candidates := make([]string, param.CandidateList().Len())
 	i := 0
-	itr := agentState.Iterator()
-	for !itr.Done() {
-		id, a, ok := itr.Next()
-		if ok && a.Hp > 0 {
-			aliveAgentIDs[i] = id
-			i++
+	iterator := param.CandidateList().Iterator()
+	for !iterator.Done() {
+		id, _, _ := iterator.Next()
+		candidates[i] = id
+		i++
+	}
+
+	// should we vote?
+	makeVote := rand.Intn(100)
+	// if makeVote is lower than personality, then vote.
+	if makeVote < a.personality {
+		// Randomly fill the ballot
+		var ballot decision.Ballot
+		numAliveAgents := param.CandidateList().Len()
+		numCandidate := int(param.NumberOfPreferences())
+		for i := 0; i < numCandidate; i++ {
+			randomIdx := rand.Intn(numAliveAgents)
+			randomCandidate := candidates[uint(randomIdx)]
+			ballot = append(ballot, randomCandidate)
 		}
-	}
 
-	// Randomly fill the ballot
-	var ballot decision.Ballot
-	numAliveAgents := len(aliveAgentIDs)
-	numCandidate := 2
-	for i := 0; i < numCandidate; i++ {
-		randomIdx := rand.Intn(numAliveAgents)
-		randomCandidate := aliveAgentIDs[uint(randomIdx)]
-		ballot = append(ballot, randomCandidate)
+		return ballot
+	} else {
+		// return an empty ballot (don't vote)
+		var ballot decision.Ballot
+		return ballot
 	}
-
-	return ballot
 }
 
 //Agent 3 Voting Strategy
