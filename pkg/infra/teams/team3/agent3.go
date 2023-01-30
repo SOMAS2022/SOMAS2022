@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -9,9 +8,6 @@ import (
 	"infra/logging"
 	"math"
 	"math/rand"
-
-	// "os"
-	// "strconv"
 
 	"github.com/benbjohnson/immutable"
 )
@@ -138,14 +134,6 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	}
 
 	a.change_init = (avg_now.Health - avg_ini.Health)
-
-	fmt.Println("Try", int(math.Ceil(increment)))
-	fmt.Println("personality", a.personality)
-	//fmt.Println("now ", avg_now)
-	//fmt.Println("init ", avg_ini)
-	//fmt.Println("change ", change_now)
-	//fmt.Println("change_init ", a.change_init)
-	//fmt.Println("P_C ", P_C)
 }
 
 func NewAgentThreeNeutral() agent.Strategy {

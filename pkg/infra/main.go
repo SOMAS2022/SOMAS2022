@@ -117,6 +117,7 @@ func startGameLoop() {
 				avgAT += state.TotalAttack()
 				avgSH += state.TotalDefense()
 				avgST += a.AgentState().Stamina
+				// avgPers += a.personality
 			}
 			agents := uint(len(agentMap))
 			avgHP, avgAT, avgSH, avgST = avgHP/agents, avgAT/agents, avgSH/agents, avgST/agents
