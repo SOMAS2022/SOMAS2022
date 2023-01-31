@@ -125,6 +125,7 @@ func (a *Agent) HandleLoot(agentState state.AgentState, votes chan commons.Propo
 		select {
 		case loot := <-start:
 			a.addLoot(loot.LootPool)
+			go a.Strategy.RequestLootProposal(*a.BaseAgent) // this key function initiates the round. Previously, nothing was threaded to the channel
 		case taggedMessage := <-a.BaseAgent.communication.receipt:
 			a.handleLootRoundMessage(taggedMessage, votes, submission)
 		case <-closure:
