@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"infra/game/agent"
@@ -17,9 +16,7 @@ import (
 	"infra/game/stages"
 	"infra/logging"
 	"infra/teams/team3"
-	"log"
 	"math"
-	"os"
 	"time"
 
 	"github.com/benbjohnson/immutable"
@@ -57,21 +54,7 @@ func startGameLoop() {
 	channelsMap = addCommsChannels()
 	*viewPtr = globalState.ToView()
 
-	// create csv for logging
-
-	dt := time.Now()
-	logName := dt.Format("15-04")
-	csvFile, err := os.Create(logName + "-gameLog.csv")
-	if err != nil {
-		log.Fatalf("failed creating file: %s", err)
-	}
-
-	w := csv.NewWriter(csvFile)
-	// title row
-	firstRow := []string{"level", "total agents alive", "average health", "average stamina", "average attack", "average defense", "average personality", "average sanctioned", "count selfless", "count selfish", "count collective"}
-	if err := w.Write(firstRow); err != nil {
-		log.Fatalln("error writing record to file", err)
-	}
+	w, csvFile := initCsvLogging()
 
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		levelLog := logging.LevelStages{}

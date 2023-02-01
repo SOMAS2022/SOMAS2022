@@ -4,8 +4,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -235,7 +237,24 @@ func generateLootPool(numAgents uint) *state.LootPool {
 func uintStr(in uint) string {
 	return strconv.Itoa(int(in))
 }
+func initCsvLogging() (*csv.Writer, *os.File) {
+	// create csv for logging
 
+	dt := time.Now()
+	logName := dt.Format("15-04")
+	csvFile, err := os.Create(logName + "-gameLog.csv")
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+
+	w := csv.NewWriter(csvFile)
+	// title row
+	firstRow := []string{"level", "total agents alive", "average health", "average stamina", "average attack", "average defense", "average personality", "average sanctioned", "count selfless", "count selfish", "count collective"}
+	if err := w.Write(firstRow); err != nil {
+		log.Fatalln("error writing record to file", err)
+	}
+	return w, csvFile
+}
 func logLevel(levelLog logging.LevelStages, agentmap map[string]agent.Agent, w *csv.Writer) {
 
 	// quantize personalities to count them
