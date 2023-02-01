@@ -249,16 +249,15 @@ func addWantedLootToItemAllocMap(wantedLoot immutable.SortedMap[commons.ItemID, 
 }
 
 func buildAllocation(pool *commons.ImmutableList[state.Item], proposedLooters []commons.ID, allocation map[commons.ID]map[commons.ItemID]struct{}) {
-	idx := 0
 	iterator := pool.Iterator()
 	// iterate over all items in pool
 	for !iterator.Done() {
-		if idx >= len(proposedLooters) {
+		if len(proposedLooters) == 0 {
 			break
 		}
 		// get next item in pool
 		next, _ := iterator.Next()
-		for idx := 0; idx < len(proposedLooters); idx++ {
+		for idx, _ := range proposedLooters {
 			// if agent is in allocation already, add item to their key
 			if m, ok := allocation[proposedLooters[idx]]; ok {
 				m[next.Id()] = struct{}{}
