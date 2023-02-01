@@ -74,7 +74,9 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 func (a *AgentThree) Sanctioning() int {
 	return 50
 }
-
+func (a *AgentThree) GetStats() (int, int) {
+	return a.personality, a.sanctioned
+}
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
 	// fmt.Println("Agent 3")
 	prunned := make(map[commons.ID]agent.Agent)
