@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"infra/game/decision"
 	"infra/game/message/proposal"
-	"reflect"
+
+	// "reflect"
 
 	"infra/game/commons"
 	"infra/game/message"
@@ -115,7 +116,7 @@ func (ba *BaseAgent) AgentState() state.AgentState {
 }
 
 func (ba *BaseAgent) HandleTrustMessage(m message.Trust) {
-	fmt.Println("RECEIVED: ", reflect.TypeOf(m))
+	// fmt.Println("RECEIVED: ", reflect.TypeOf(m))
 }
 
 func (a *Agent) CompileTrustMessage(agentMap map[commons.ID]Agent) message.Trust {

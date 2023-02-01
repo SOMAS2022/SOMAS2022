@@ -218,7 +218,7 @@ func startGameLoop() {
 		lootActions := discussion.ResolveLootDiscussion(*globalState, agentMap, lootPool, agentMap[globalState.CurrentLeader], globalState.LeaderManifesto, lootTally)
 		globalState = loot.HandleLootAllocation(*globalState, lootActions, lootPool, agentMap)
 
-		fmt.Println(lootTally.ProposalTally())
+		// fmt.Println(lootTally.ProposalTally())
 
 		trade.HandleTrade(*globalState, agentMap, 5, 3)
 

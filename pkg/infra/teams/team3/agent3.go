@@ -28,6 +28,7 @@ type AgentThree struct {
 	sanctioned            int
 	statsQueue            StatsQueue
 	change_init           float64
+	alpha                 float64
 }
 
 // Update internal parameters at the end of each stage
@@ -40,36 +41,30 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 		a.uR = a.InitUtility(baseAgent)
 		a.uP = a.InitUtility(baseAgent)
 		a.uC = a.InitUtility(baseAgent)
-
+		// initialise stats and add to the queue.
 		stat := Stats{1000, 0, 0, 0}
 		stat2 := Stats{1000, 0, 0, 0}
 		stat3 := Stats{1000, 0, 0, 0}
 		a.statsQueue.addStat(stat)
 		a.statsQueue.addStat(stat2)
 		a.statsQueue.addStat(stat3)
-
-		a.change_init = 0
 	}
-
+	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())
 	a.SH = int(AS.Defense + AS.BonusDefense())
 
 	// a.fightDecisionsHistory = *history
-
 	// a.sendGossipMessage(baseAgent)
-
 	// if preLog != postLog {
 	// 	fmt.Println("MSG RECEIVED")
 	// }
 
+	// update parameters
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)
 
-	//stat := Stats{1.0, 2, 3, 6}
-	//stat := Stats{1.0, 2, 3, 6}
-	//a.statsQueue.addStat(stat)
-	//// fmt.Println("AVG: ", a.statsQueue)
+	// if personality enabled, update it
 	enable := config.EnvToBool("UPDATE_PERSONALITY", true)
 	if enable {
 		a.UpdatePersonality(baseAgent)
@@ -98,23 +93,27 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 }
 
 func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
+	// calculate the agent average stats before round
 	avg_ini := a.statsQueue.averageStats()
 
+	// get agents stats after round
 	AS := baseAgent.AgentState()
-
 	AT := AS.Attack + AS.BonusAttack()
 	SH := AS.Defense + AS.BonusDefense()
 	HP := AS.Hp
 	ST := AS.Stamina
-
+	// add to queue and calculate the new average
 	stat := Stats{HP, ST, AT, SH}
 	a.statsQueue.addStat(stat)
 	avg_now := a.statsQueue.averageStats()
-
+	// calculate difference
 	change_now := avg_now.Health - avg_ini.Health
+	// calculate % change
 	P_C := ((change_now - a.change_init) / math.Abs(change_now))
-	increment := (P_C * 5)
+	// scale
+	increment := (P_C * a.alpha)
 
+	// keep with max perosnality swing
 	if math.IsNaN(increment) {
 		increment = 0
 	}
@@ -124,18 +123,17 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	if increment <= -5 {
 		increment = -5
 	}
-
+	// update personality
 	a.personality = a.personality + int(math.Ceil(increment))
-
+	// keep within maxMin personality
 	if a.personality >= 100 {
 		a.personality = 100
 	}
-
 	if a.personality <= 0 {
 		a.personality = 0
 	}
-
-	a.change_init = (avg_now.Health - avg_ini.Health)
+	// reset initial change to new value.
+	a.change_init = change_now
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
@@ -151,6 +149,8 @@ func NewAgentThreeNeutral() agent.Strategy {
 		personality:       int(dis),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
+		change_init:       0,
+		alpha:             5,
 	}
 }
 
@@ -167,6 +167,8 @@ func NewAgentThreePassive() agent.Strategy {
 		personality:       int(dis),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
+		change_init:       0,
+		alpha:             5,
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -182,5 +184,7 @@ func NewAgentThreeAggressive() agent.Strategy {
 		personality:       int(dis),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
+		change_init:       0,
+		alpha:             5,
 	}
 }
