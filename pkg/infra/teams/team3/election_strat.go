@@ -2,6 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
+
 	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
@@ -140,7 +141,7 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	itr := a.fightDecisionsHistory.Iterator()
 	for !itr.Done() {
 		res, _ := itr.Next()
-		i += 1
+		i = i + 1
 
 		if i == a.fightDecisionsHistory.Len()-1 {
 			agents_attack := res.AttackingAgents()
@@ -187,7 +188,7 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 	currentLevel := int(view.CurrentLevel())
 
 	// init  history
-	if currentLevel == 0 {
+	if currentLevel == a.fightDecisionsHistory.Len()-1 {
 		w1 = 0.0
 		w2 = 0.0
 
@@ -237,7 +238,10 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]int {
 		id, hiddenState, _ := itr.Next()
 		idN, _ := strconv.Atoi(id)
 
-		temp := []int{idN, BoolToInt(hiddenState.Defector.IsDefector())}
+		if hiddenState.Defector.IsDefector() {
+			a.Soc_cap++
+		}
+		temp := []int{idN, a.Soc_cap}
 		disobedienceMap = append(disobedienceMap, temp)
 	}
 	return disobedienceMap

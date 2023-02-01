@@ -1,6 +1,7 @@
 package team3
 
 import (
+	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -29,6 +30,7 @@ type AgentThree struct {
 	statsQueue            StatsQueue
 	change_init           float64
 	alpha                 float64
+	Soc_cap               int
 }
 
 // Update internal parameters at the end of each stage
@@ -69,6 +71,8 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	if enable {
 		a.UpdatePersonality(baseAgent)
 	}
+	//fmt.Println(a.CalcBordaScore(baseAgent))
+	fmt.Println(a.SocialCapital(baseAgent))
 }
 
 func (a *AgentThree) Sanctioning() int {
