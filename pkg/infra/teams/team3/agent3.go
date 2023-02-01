@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
@@ -71,8 +70,10 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	if enable {
 		a.UpdatePersonality(baseAgent)
 	}
-	//fmt.Println(a.CalcBordaScore(baseAgent))
-	fmt.Println(a.SocialCapital(baseAgent))
+	// fmt.Println(a.CalcBordaScore(baseAgent))
+	a.CalcBordaScore(baseAgent)
+	// fmt.Println(a.SocialCapital(baseAgent))
+	a.SocialCapital(baseAgent)
 }
 
 func (a *AgentThree) Sanctioning() int {

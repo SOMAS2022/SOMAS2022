@@ -2,21 +2,23 @@ package team3
 
 import (
 	"infra/game/agent"
+	"infra/game/commons"
+	"sort"
 
 	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
-	"sort"
 	"strconv"
 )
 
 var (
-	w1, w2      float64
-	pastHP      []int
-	pastStamina []int
+	w1, w2 float64
 )
+
+var pastHP = make(map[commons.ID]int)
+var pastStamina = make(map[commons.ID]int)
 
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
@@ -181,12 +183,11 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 }
 
 // alg 5
-func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
+func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) map[commons.ID]float64 {
 	view := baseAgent.View()
 	agentState := view.AgentState()
 
 	currentLevel := int(view.CurrentLevel())
-
 	// init  history
 	if currentLevel == a.fightDecisionsHistory.Len()-1 {
 		w1 = 0.0
@@ -195,53 +196,64 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
 		itr := agentState.Iterator()
 		for !itr.Done() {
 			id, _, _ := itr.Next()
-			idN, _ := strconv.Atoi(id)
-			pastHP[idN] = GetStartingHP()
-			pastStamina[idN] = GetStartingStamina()
+			// idN, _ := strconv.Atoi(id)
+			// fmt.Println(idN)
+			pastHP[id] = GetStartingHP()
+			pastStamina[id] = GetStartingStamina()
 		}
 	}
 	productivity := 5.0
 	needs := 5.0
-	fairness := [][]int{}
+	fairness := make(map[commons.ID]float64)
+	sortedfairness := make(map[commons.ID]float64)
 
 	itr := agentState.Iterator()
 
 	for !itr.Done() {
 		id, hiddenState, _ := itr.Next()
-		idN, _ := strconv.Atoi(id)
 
-		w1 = a.calcW1(hiddenState, w1, pastHP[idN], pastStamina[idN])
+		w1 = a.calcW1(hiddenState, w1, pastHP[id], pastStamina[id])
 		w2 = a.calcW2(baseAgent, w2)
 
 		score := w1*needs + w2*productivity
-		temp := []int{idN, int(score)}
-		fairness = append(fairness, temp)
 
-		pastHP[idN] = int(hiddenState.Hp)
-		pastStamina[idN] = int(hiddenState.Stamina)
+		fairness[id] = score
+
+		pastHP[id] = int(hiddenState.Hp)
+		pastStamina[id] = int(hiddenState.Stamina)
 	}
 
-	// sort 2d array by decreasing score
-	sort.SliceStable(fairness, func(i, j int) bool {
-		return fairness[i][1] > fairness[j][1]
+	// get keys for sorting
+	keys := make([]string, 0, len(fairness))
+	for key := range fairness {
+		keys = append(keys, key)
+	}
+
+	// sort map by decreasing score using keys
+	sort.SliceStable(keys, func(i, j int) bool {
+		return fairness[keys[i]] > fairness[keys[j]]
 	})
 
-	return fairness
+	// reshuffle array
+	for _, key := range keys {
+		sortedfairness[key] = fairness[key]
+	}
+
+	return sortedfairness
 }
 
-func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]int {
+func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
-	disobedienceMap := [][]int{}
+	disobedienceMap := [][]string{}
 	for !itr.Done() {
 		id, hiddenState, _ := itr.Next()
-		idN, _ := strconv.Atoi(id)
 
 		if hiddenState.Defector.IsDefector() {
 			a.Soc_cap++
 		}
-		temp := []int{idN, a.Soc_cap}
+		temp := []string{id, strconv.Itoa(a.Soc_cap)}
 		disobedienceMap = append(disobedienceMap, temp)
 	}
 	return disobedienceMap
