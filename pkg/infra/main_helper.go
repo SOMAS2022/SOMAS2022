@@ -242,7 +242,7 @@ func initCsvLogging() (*csv.Writer, *os.File) {
 
 	dt := time.Now()
 	logName := dt.Format("15-04")
-	csvFile, err := os.Create(logName + "-gameLog.csv")
+	csvFile, err := os.Create("logCSV/" + logName + "-gameLog.csv")
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
 	}
