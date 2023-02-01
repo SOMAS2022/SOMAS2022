@@ -1,8 +1,10 @@
 package team3
 
 import (
+	//"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
+	"math"
 	"sort"
 
 	// "infra/game/commons"
@@ -183,9 +185,12 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 }
 
 // alg 5
-func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) map[commons.ID]float64 {
+func (a *AgentThree) CalcReputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
 	view := baseAgent.View()
 	agentState := view.AgentState()
+
+	sample := rand.Intn(int(math.Ceil(float64(agentState.Len())*a.sample_percent))-1) + 1
+	counter := 1
 
 	currentLevel := int(view.CurrentLevel())
 	// init  history
@@ -195,11 +200,17 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) map[commons.ID]fl
 
 		itr := agentState.Iterator()
 		for !itr.Done() {
-			id, _, _ := itr.Next()
-			// idN, _ := strconv.Atoi(id)
-			// fmt.Println(idN)
-			pastHP[id] = GetStartingHP()
-			pastStamina[id] = GetStartingStamina()
+			if counter%sample == 0 {
+				id, _, _ := itr.Next()
+				//idN, _ := strconv.Atoi(id)
+				//fmt.Println(idN)
+				pastHP[id] = GetStartingHP()
+				pastStamina[id] = GetStartingStamina()
+			} else {
+				itr.Next()
+				counter++
+			}
+
 		}
 	}
 	productivity := 5.0
@@ -208,19 +219,27 @@ func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) map[commons.ID]fl
 	sortedfairness := make(map[commons.ID]float64)
 
 	itr := agentState.Iterator()
+	counter1 := 1
 
-	for !itr.Done() {
-		id, hiddenState, _ := itr.Next()
+	for i := 1; i <= int(math.Ceil(float64(agentState.Len())*a.sample_percent)); {
+		if counter1%sample == 0 {
+			id, hiddenState, _ := itr.Next()
 
-		w1 = a.calcW1(hiddenState, w1, pastHP[id], pastStamina[id])
-		w2 = a.calcW2(baseAgent, w2)
+			w1 = a.calcW1(hiddenState, w1, pastHP[id], pastStamina[id])
+			w2 = a.calcW2(baseAgent, w2)
 
-		score := w1*needs + w2*productivity
+			score := w1*needs + w2*productivity
 
-		fairness[id] = score
+			fairness[id] = score
 
-		pastHP[id] = int(hiddenState.Hp)
-		pastStamina[id] = int(hiddenState.Stamina)
+			pastHP[id] = int(hiddenState.Hp)
+			pastStamina[id] = int(hiddenState.Stamina)
+			i++
+		} else {
+			itr.Next()
+			counter1++
+		}
+
 	}
 
 	// get keys for sorting

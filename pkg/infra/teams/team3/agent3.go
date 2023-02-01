@@ -30,6 +30,7 @@ type AgentThree struct {
 	change_init           float64
 	alpha                 float64
 	Soc_cap               int
+	sample_percent        float64
 }
 
 // Update internal parameters at the end of each stage
@@ -71,9 +72,10 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 		a.UpdatePersonality(baseAgent)
 	}
 	// fmt.Println(a.CalcBordaScore(baseAgent))
-	a.CalcBordaScore(baseAgent)
-	// fmt.Println(a.SocialCapital(baseAgent))
-	a.SocialCapital(baseAgent)
+	a.CalcReputation(baseAgent)
+	//fmt.Println(a.CalcReputation(baseAgent))
+	//fmt.Println(a.SocialCapital(baseAgent))
+	//a.SocialCapital(baseAgent)
 }
 
 func (a *AgentThree) Sanctioning() int {
@@ -156,6 +158,7 @@ func NewAgentThreeNeutral() agent.Strategy {
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }
 
@@ -174,6 +177,7 @@ func NewAgentThreePassive() agent.Strategy {
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -191,5 +195,6 @@ func NewAgentThreeAggressive() agent.Strategy {
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }
