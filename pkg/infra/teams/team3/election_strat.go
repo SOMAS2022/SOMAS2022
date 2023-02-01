@@ -2,6 +2,7 @@ package team3
 
 import (
 	"infra/game/agent"
+
 	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
@@ -180,7 +181,7 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 }
 
 // alg 5
-func (a *AgentThree) CalcBordaScore(baseAgent agent.BaseAgent) [][]int {
+func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) [][]int {
 	view := baseAgent.View()
 	agentState := view.AgentState()
 
@@ -265,7 +266,7 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]int {
 // 		}
 // 	}
 
-// 	borda := a.CalcBordaScore(baseAgent)
+// 	borda := a.Reputation(baseAgent)
 // 	bordaPerCent := BordaPercentage(baseAgent, borda)
 // 	for i := range disobedienceMap {
 // 		if disobedienceMap[i] >= 5 {

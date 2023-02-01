@@ -117,3 +117,38 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 		}
 	}
 }
+
+func (a *AgentThree) Sanctioning(agent agent.Agent) int {
+	A := 0.8
+	B := 0.2
+
+	AS := agent.AgentState()
+	D := float64(BoolToInt(AS.Defector.IsDefector()))
+
+	// rep := a.Reputation(*agent.BaseAgent)
+	// fmt.Println(rep)
+
+	// temporary for experiments
+	S := float64(rand.Intn(30) - 15)
+
+	sanction := int(D * (A*float64(a.personality) + B*S))
+	// fmt.Println(sanction)
+
+	return sanction
+	// return 50
+}
+
+func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	// fmt.Println("Agent 3")
+	prunned := make(map[commons.ID]agent.Agent)
+	for id, agent := range agentMap {
+		// Compare to 50 in order to sanction
+		toSanctionOrNot := rand.Intn(100)
+		if toSanctionOrNot > a.Sanctioning(agent) {
+			prunned[id] = agent
+		}
+	}
+	// fmt.Println(len(agentMap))
+	// fmt.Println(len(prunned))
+	return prunned
+}
