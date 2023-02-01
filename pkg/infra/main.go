@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"infra/game/agent"
@@ -16,7 +17,9 @@ import (
 	"infra/game/stages"
 	"infra/logging"
 	"infra/teams/team3"
+	"log"
 	"math"
+	"os"
 	"time"
 
 	"github.com/benbjohnson/immutable"
@@ -53,6 +56,22 @@ func startGameLoop() {
 	var termLeft uint
 	channelsMap = addCommsChannels()
 	*viewPtr = globalState.ToView()
+
+	// create csv for logging
+
+	dt := time.Now()
+	logName := dt.Format("15-04")
+	csvFile, err := os.Create(logName + "-gameLog.csv")
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+
+	w := csv.NewWriter(csvFile)
+	// title row
+	firstRow := []string{"level", "total agents alive", "average health", "average stamina", "average attack", "average defense", "average personality", "average sanctioned", "count selfless", "count selfish", "count collective"}
+	if err := w.Write(firstRow); err != nil {
+		log.Fatalln("error writing record to file", err)
+	}
 
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		levelLog := logging.LevelStages{}
@@ -191,10 +210,16 @@ func startGameLoop() {
 
 			channelsMap = addCommsChannels()
 
+			// log last round if we lose
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
+
+				logLevel(levelLog, agentMap, w)
+
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				logging.LogToFile(logging.Info, nil, "", levelLog)
 				logging.OutputLog(logging.Loss)
+
+				csvFile.Close()
 				return
 			}
 			fightResultSlice = append(fightResultSlice, *decision.NewImmutableFightResult(fightActions, roundNum))
@@ -234,7 +259,10 @@ func startGameLoop() {
 		levelLog.AgentLogs = stages.UpdateInternalStates(agentMap, globalState, immutableFightRounds, &votesResult)
 
 		logging.LogToFile(logging.Info, nil, "", levelLog)
+
+		logLevel(levelLog, agentMap, w)
 	}
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	logging.OutputLog(logging.Win)
+	csvFile.Close()
 }
