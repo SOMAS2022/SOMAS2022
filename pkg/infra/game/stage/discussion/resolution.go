@@ -122,10 +122,10 @@ func getAllocation(gs state.State, agentMap map[commons.ID]agent.Agent, pool *st
 	}
 	getsWeapon, getsShield, getsHealthPotion, getsStaminaPotion := demandList(gs, agentMap, predicate)
 	m := make(map[commons.ID]map[commons.ItemID]struct{})
-	buildAllocation(pool.Weapons(), getsWeapon, m)
-	buildAllocation(pool.Shields(), getsShield, m)
-	buildAllocation(pool.HpPotions(), getsHealthPotion, m)
-	buildAllocation(pool.StaminaPotions(), getsStaminaPotion, m)
+	buildEligibility(pool.Weapons(), getsWeapon, m)
+	buildEligibility(pool.Shields(), getsShield, m)
+	buildEligibility(pool.HpPotions(), getsHealthPotion, m)
+	buildEligibility(pool.StaminaPotions(), getsStaminaPotion, m)
 
 	wantedItems := make(map[commons.ItemID]map[commons.ID]struct{})
 
@@ -248,24 +248,24 @@ func addWantedLootToItemAllocMap(wantedLoot immutable.SortedMap[commons.ItemID, 
 	}
 }
 
-func buildAllocation(pool *commons.ImmutableList[state.Item], proposedLooters []commons.ID, allocation map[commons.ID]map[commons.ItemID]struct{}) {
+func buildEligibility(pool *commons.ImmutableList[state.Item], proposedLooters []commons.ID, allocation map[commons.ID]map[commons.ItemID]struct{}) {
+	if len(proposedLooters) == 0 {
+		return
+	}
 	iterator := pool.Iterator()
 	// iterate over all items in pool
 	for !iterator.Done() {
-		if len(proposedLooters) == 0 {
-			break
-		}
 		// get next item in pool
 		next, _ := iterator.Next()
-		for idx, _ := range proposedLooters {
+		for _, looter := range proposedLooters {
 			// if agent is in allocation already, add item to their key
-			if m, ok := allocation[proposedLooters[idx]]; ok {
+			if m, ok := allocation[looter]; ok {
 				m[next.Id()] = struct{}{}
 			} else {
 				// else, add agent to allocation and assign item to their key
 				m := make(map[commons.ItemID]struct{})
 				m[next.Id()] = struct{}{}
-				allocation[proposedLooters[idx]] = m
+				allocation[looter] = m
 			}
 		}
 	}
