@@ -1,11 +1,13 @@
 package team3
 
 import (
+	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"math"
 	"math/rand"
-	"os"
+
+	// "os"
 	"strconv"
 )
 
@@ -99,11 +101,13 @@ func AverageArray(in []float64) float64 {
 }
 
 func GetStartingHP() int {
-	n, _ := strconv.ParseUint(os.Getenv("STARTING_HP"), 10, 0)
+	// n, _ := strconv.ParseUint(os.Getenv("STARTING_HP"), 10, 0)
+	n := config.EnvToUint("STARTING_HP", 1000)
 	return int(n)
 }
 func GetStartingStamina() int {
-	n, _ := strconv.ParseUint(os.Getenv("BASE_STAMINA"), 10, 0)
+	// n, _ := strconv.ParseUint(os.Getenv("BASE_STAMINA"), 10, 0)
+	n := config.EnvToUint("BASE_STAMINA", 2000)
 	return int(n)
 }
 

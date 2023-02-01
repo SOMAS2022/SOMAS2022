@@ -138,3 +138,7 @@ func (a *Agent) CompileTrustMessage(agentMap map[commons.ID]Agent) message.Trust
 	// send off
 	return *trustMsg
 }
+
+func (ba *BaseAgent) RequestLootProposal() {
+
+}
