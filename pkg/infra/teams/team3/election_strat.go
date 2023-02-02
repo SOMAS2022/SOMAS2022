@@ -2,22 +2,21 @@ package team3
 
 import (
 	//"fmt"
+
 	"infra/game/agent"
 	"infra/game/commons"
 	"math"
-	"sort"
+	"strconv"
 
 	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
-	"strconv"
 )
 
-var (
-	w1, w2 float64
-)
+var w1 = make(map[commons.ID]float64)
+var w2 = make(map[commons.ID]float64)
 
 var pastHP = make(map[commons.ID]int)
 var pastStamina = make(map[commons.ID]int)
@@ -82,31 +81,6 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 		return ballot
 	}
 }
-
-//Agent 3 Voting Strategy
-
-// Effectivness code
-// var effective bool
-
-// var initial_monster_attack int = 1
-
-// var //get monster attack
-
-// var prevLevel int = 0
-// func  (a *AgentThree) Effectivness_measure(baseAgent agent.BaseAgent){
-//     effective := "True"
-// 	monster_attack := globalState.MonsterAttack
-//     num_agents_alive := len(aliveAgentIDs)
-//     percentage_change_w_monster := 1-((monster_attack - initial_monster_attack)/initial_monster_attack)
-//     if num_agents_alive>(prevLevel*percentage_change_w_monster){
-//         effective := "True"
-//     } else{
-//         effective := "False"
-//     }
-//     prevLevel:=num_agents_alive
-//     initial_monster_attack:=monster_attack
-//     return effective
-// }
 
 func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
 	currentHP := state.Hp
@@ -184,81 +158,52 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	return w2
 }
 
-// alg 5
-func (a *AgentThree) CalcReputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
+func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
 	view := baseAgent.View()
-	agentState := view.AgentState()
+	vAS := view.AgentState()
+	ids := commons.ImmutableMapKeys(vAS)
 
-	sample := rand.Intn(int(math.Ceil(float64(agentState.Len())*a.sample_percent))-1) + 1
-	counter := 1
-
-	currentLevel := int(view.CurrentLevel())
-	// init  history
-	if currentLevel == a.fightDecisionsHistory.Len()-1 {
-		w1 = 0.0
-		w2 = 0.0
-
-		itr := agentState.Iterator()
-		for !itr.Done() {
-			if counter%sample == 0 {
-				id, _, _ := itr.Next()
-				//idN, _ := strconv.Atoi(id)
-				//fmt.Println(idN)
-				pastHP[id] = GetStartingHP()
-				pastStamina[id] = GetStartingStamina()
-			} else {
-				itr.Next()
-				counter++
-			}
-
-		}
-	}
 	productivity := 5.0
 	needs := 5.0
 	fairness := make(map[commons.ID]float64)
-	sortedfairness := make(map[commons.ID]float64)
 
-	itr := agentState.Iterator()
-	counter1 := 1
+	// Number of agents to sample for KA (fixed)
+	intendedSample := float64(a.numAgents) * a.sample_percent
+	maxLength := float64(vAS.Len())
+	sampleLength := int(math.Min(intendedSample, maxLength))
+	cnt := 0
 
-	for i := 1; i <= int(math.Ceil(float64(agentState.Len())*a.sample_percent)); {
-		if counter1%sample == 0 {
-			id, hiddenState, _ := itr.Next()
+	// Use randomness of maps in go to take n random samples
+	for _, id := range ids {
+		if cnt == sampleLength {
+			// Unsorted array
+			return fairness
+		} else {
+			// Init values on 1st lvl
+			if _, ok := fairness[id]; ok {
+				w1[id] = 0.0
+				w2[id] = 0.0
+				pastHP[id] = GetStartingHP()
+				pastStamina[id] = GetStartingStamina()
+			}
 
-			w1 = a.calcW1(hiddenState, w1, pastHP[id], pastStamina[id])
-			w2 = a.calcW2(baseAgent, w2)
+			hiddenState, _ := vAS.Get(id)
 
-			score := w1*needs + w2*productivity
+			// Update values according to previous state
+			w1[id] = a.calcW1(hiddenState, w1[id], pastHP[id], pastStamina[id])
+			w2[id] = a.calcW2(baseAgent, w2[id])
 
-			fairness[id] = score
+			fairness[id] = w1[id]*needs + w2[id]*productivity
 
+			// Store this rounds values for the next one
 			pastHP[id] = int(hiddenState.Hp)
 			pastStamina[id] = int(hiddenState.Stamina)
-			i++
-		} else {
-			itr.Next()
-			counter1++
 		}
-
+		cnt++
 	}
 
-	// get keys for sorting
-	keys := make([]string, 0, len(fairness))
-	for key := range fairness {
-		keys = append(keys, key)
-	}
-
-	// sort map by decreasing score using keys
-	sort.SliceStable(keys, func(i, j int) bool {
-		return fairness[keys[i]] > fairness[keys[j]]
-	})
-
-	// reshuffle array
-	for _, key := range keys {
-		sortedfairness[key] = fairness[key]
-	}
-
-	return sortedfairness
+	// Unsorted array
+	return fairness
 }
 
 func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
@@ -277,6 +222,108 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 	}
 	return disobedienceMap
 }
+
+// alg 5
+// func (a *AgentThree) CalcReputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
+// 	view := baseAgent.View()
+// 	agentState := view.AgentState()
+
+// 	sample := rand.Intn(int(math.Ceil(float64(agentState.Len())*a.sample_percent))-1) + 1
+// 	counter := 1
+
+// 	currentLevel := int(view.CurrentLevel())
+// 	// init  history
+// 	if currentLevel == a.fightDecisionsHistory.Len()-1 {
+// 		w1 = 0.0
+// 		w2 = 0.0
+
+// 		itr := agentState.Iterator()
+// 		for !itr.Done() {
+// 			if counter%sample == 0 {
+// 				id, _, _ := itr.Next()
+// 				//idN, _ := strconv.Atoi(id)
+// 				//fmt.Println(idN)
+// 				pastHP[id] = GetStartingHP()
+// 				pastStamina[id] = GetStartingStamina()
+// 			} else {
+// 				itr.Next()
+// 				counter++
+// 			}
+
+// 		}
+// 	}
+// 	productivity := 5.0
+// 	needs := 5.0
+// 	fairness := make(map[commons.ID]float64)
+// 	sortedfairness := make(map[commons.ID]float64)
+
+// 	itr := agentState.Iterator()
+// 	counter1 := 1
+
+// 	for i := 1; i <= int(math.Ceil(float64(agentState.Len())*a.sample_percent)); {
+// 		if counter1%sample == 0 {
+// 			id, hiddenState, _ := itr.Next()
+
+// 			w1 = a.calcW1(hiddenState, w1, pastHP[id], pastStamina[id])
+// 			w2 = a.calcW2(baseAgent, w2)
+
+// 			score := w1*needs + w2*productivity
+
+// 			fairness[id] = score
+
+// 			pastHP[id] = int(hiddenState.Hp)
+// 			pastStamina[id] = int(hiddenState.Stamina)
+// 			i++
+// 		} else {
+// 			itr.Next()
+// 			counter1++
+// 		}
+
+// 	}
+
+// 	// get keys for sorting
+// 	keys := make([]string, 0, len(fairness))
+// 	for key := range fairness {
+// 		keys = append(keys, key)
+// 	}
+
+// 	// sort map by decreasing score using keys
+// 	sort.SliceStable(keys, func(i, j int) bool {
+// 		return fairness[keys[i]] > fairness[keys[j]]
+// 	})
+
+// 	// reshuffle array
+// 	for _, key := range keys {
+// 		sortedfairness[key] = fairness[key]
+// 	}
+
+// 	return sortedfairness
+// }
+
+//Agent 3 Voting Strategy
+
+// Effectivness code
+// var effective bool
+
+// var initial_monster_attack int = 1
+
+// var //get monster attack
+
+// var prevLevel int = 0
+// func  (a *AgentThree) Effectivness_measure(baseAgent agent.BaseAgent){
+//     effective := "True"
+// 	monster_attack := globalState.MonsterAttack
+//     num_agents_alive := len(aliveAgentIDs)
+//     percentage_change_w_monster := 1-((monster_attack - initial_monster_attack)/initial_monster_attack)
+//     if num_agents_alive>(prevLevel*percentage_change_w_monster){
+//         effective := "True"
+//     } else{
+//         effective := "False"
+//     }
+//     prevLevel:=num_agents_alive
+//     initial_monster_attack:=monster_attack
+//     return effective
+// }
 
 // func (a *AgentThree) Disobedience(baseAgent agent.BaseAgent) {
 // 	view := baseAgent.View()

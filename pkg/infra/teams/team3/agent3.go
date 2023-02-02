@@ -31,6 +31,7 @@ type AgentThree struct {
 	alpha                 float64
 	Soc_cap               int
 	sample_percent        float64
+	numAgents             int
 }
 
 // Update internal parameters at the end of each stage
@@ -50,6 +51,8 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 		a.statsQueue.addStat(stat)
 		a.statsQueue.addStat(stat2)
 		a.statsQueue.addStat(stat3)
+		viewAS := view.AgentState()
+		a.numAgents = viewAS.Len()
 	}
 	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())
@@ -71,9 +74,10 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	if enable {
 		a.UpdatePersonality(baseAgent)
 	}
-	// fmt.Println(a.CalcBordaScore(baseAgent))
-	a.CalcReputation(baseAgent)
-	//fmt.Println(a.CalcReputation(baseAgent))
+
+	// a.CalcReputation(baseAgent)
+	a.Reputation(baseAgent)
+
 	//fmt.Println(a.SocialCapital(baseAgent))
 	//a.SocialCapital(baseAgent)
 }
