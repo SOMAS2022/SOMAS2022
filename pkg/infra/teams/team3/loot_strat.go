@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -62,10 +61,9 @@ func (a *AgentThree) LootAction(
 	return proposedLoot
 }
 
-// this is really poor from infra - i'd just ignore tbh
+// Never called
 func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
 	// submit a proposal to the leader
-	fmt.Println("Made it here")
 	switch m.Message().(type) {
 	case message.LootInform:
 		// Send Proposal?
@@ -229,6 +227,7 @@ func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent,
 	sort.Slice(sortedDiffs, func(i, j int) bool {
 		return sortedDiffs[i] > sortedDiffs[j]
 	})
+
 	defaultItem := maps.Keys(items)[0]
 	var activeSet map[string]uint
 

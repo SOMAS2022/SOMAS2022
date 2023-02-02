@@ -71,7 +71,6 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 			randomCandidate := candidates[uint(randomIdx)]
 			ballot = append(ballot, randomCandidate)
 		}
-
 		return ballot
 	} else {
 		// return an empty ballot (don't vote)
@@ -98,13 +97,7 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 		w1 -= 0.2
 	}
 
-	if w1 > 10 {
-		w1 = 10
-	}
-
-	if w1 < 0 {
-		w1 = 0
-	}
+	w1 = clamp(w1, 0, 10)
 
 	return w1
 }
@@ -117,7 +110,7 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	itr := a.fightDecisionsHistory.Iterator()
 	for !itr.Done() {
 		res, _ := itr.Next()
-		i = i + 1
+		i++
 
 		if i == a.fightDecisionsHistory.Len()-1 {
 			agents_attack := res.AttackingAgents()
@@ -146,16 +139,10 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		w2 -= 0.2
 	}
 
-	if w2 < 0 {
-		w2 = 0
-	}
+	w2 = clamp(w2, 0, 10)
 
-	if w2 > 10 {
-		w2 = 10
-	}
 	return w2
 }
-
 
 func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 	view := baseAgent.View()
