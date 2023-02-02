@@ -13,12 +13,6 @@ import (
 	"math/rand"
 )
 
-var w1 = make(map[commons.ID]float64)
-var w2 = make(map[commons.ID]float64)
-
-var pastHP = make(map[commons.ID]int)
-var pastStamina = make(map[commons.ID]int)
-
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
 	// decide whether to vote in the no-confidence vote based on personality
@@ -167,23 +161,23 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 		} else {
 			// Init values on 1st lvl
 			if _, ok := a.reputationMap[id]; ok {
-				w1[id] = 0.0
-				w2[id] = 0.0
-				pastHP[id] = GetStartingHP()
-				pastStamina[id] = GetStartingStamina()
+				a.w1Map[id] = 0.0
+				a.w2Map[id] = 0.0
+				a.pastHPMap[id] = GetStartingHP()
+				a.pastStaminaMap[id] = GetStartingStamina()
 			}
 
 			hiddenState, _ := vAS.Get(id)
 
 			// Update values according to previous state
-			w1[id] = a.calcW1(hiddenState, w1[id], pastHP[id], pastStamina[id])
-			w2[id] = a.calcW2(baseAgent, w2[id])
+			a.w1Map[id] = a.calcW1(hiddenState, a.w1Map[id], a.pastHPMap[id], a.pastStaminaMap[id])
+			a.w2Map[id] = a.calcW2(baseAgent, a.w2Map[id])
 
-			a.reputationMap[id] = w1[id]*needs + w2[id]*productivity
+			a.reputationMap[id] = a.w1Map[id]*needs + a.w2Map[id]*productivity
 
 			// Store this rounds values for the next one
-			pastHP[id] = int(hiddenState.Hp)
-			pastStamina[id] = int(hiddenState.Stamina)
+			a.pastHPMap[id] = int(hiddenState.Hp)
+			a.pastStaminaMap[id] = int(hiddenState.Stamina)
 		}
 		cnt++
 	}

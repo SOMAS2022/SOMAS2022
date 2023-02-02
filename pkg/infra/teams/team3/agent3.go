@@ -24,6 +24,10 @@ type AgentThree struct {
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
 	reputationMap         map[commons.ID]float64
+	w1Map                 map[commons.ID]float64
+	w2Map                 map[commons.ID]float64
+	pastHPMap             map[commons.ID]int
+	pastStaminaMap        map[commons.ID]int
 	personality           int
 	sanctioned            int
 	statsQueue            StatsQueue
@@ -70,8 +74,9 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.UpdateTSN(baseAgent)
 
 	// if personality enabled, update it
-	enable := config.EnvToBool("UPDATE_PERSONALITY", true)
-	if enable {
+	enablePersonalityUpdate := config.EnvToBool("UPDATE_PERSONALITY", true)
+	if enablePersonalityUpdate {
+		// update internal personality
 		a.UpdatePersonality(baseAgent)
 	}
 
@@ -142,6 +147,10 @@ func NewAgentThreeNeutral() agent.Strategy {
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
 		reputationMap:     make(map[commons.ID]float64, 0),
+		w1Map:             make(map[commons.ID]float64, 0),
+		w2Map:             make(map[commons.ID]float64, 0),
+		pastHPMap:         make(map[commons.ID]int, 0),
+		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
@@ -162,6 +171,10 @@ func NewAgentThreePassive() agent.Strategy {
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
 		reputationMap:     make(map[commons.ID]float64, 0),
+		w1Map:             make(map[commons.ID]float64, 0),
+		w2Map:             make(map[commons.ID]float64, 0),
+		pastHPMap:         make(map[commons.ID]int, 0),
+		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
@@ -181,6 +194,10 @@ func NewAgentThreeAggressive() agent.Strategy {
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
 		reputationMap:     make(map[commons.ID]float64, 0),
+		w1Map:             make(map[commons.ID]float64, 0),
+		w2Map:             make(map[commons.ID]float64, 0),
+		pastHPMap:         make(map[commons.ID]int, 0),
+		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
