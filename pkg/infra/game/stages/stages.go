@@ -120,9 +120,8 @@ func AgentPruneMapping(agentMap map[commons.ID]agent.Agent, globalState *state.S
 		prunedMap[leaderId] = leader
 
 		return prunedMap
-	} else {
-		// leader has died, hence no sanctioning
-		return agentMap
 	}
+	// leader has died, hence no sanctioning
+	return agentMap
 
 }
