@@ -103,18 +103,31 @@ func (a *AgentThree) LootAllocation(baseAgent agent.BaseAgent, proposal message.
 	return commons.MapToImmutable(mMapped)
 }
 
+// func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+// 	for !iterator.Done() {
+// 		next, _ := iterator.Next()
+// 		toBeAllocated := ids[rand.Intn(len(ids))]
+// 		if l, ok := lootAllocation[toBeAllocated]; ok {
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		} else {
+// 			l := make([]commons.ItemID, 0)
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		}
+// 	}
+// }
+
 func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
 		next, _ := iterator.Next()
 		toBeAllocated := ids[rand.Intn(len(ids))]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
+		l, ok := lootAllocation[toBeAllocated]
+		if !ok {
+			l = make([]commons.ItemID, 0)
 		}
+		l = append(l, next.Id())
+		lootAllocation[toBeAllocated] = l
 	}
 }
 
@@ -125,9 +138,6 @@ func (a *AgentThree) Sanctioning(agent agent.Agent) int {
 	AS := agent.AgentState()
 	D := float64(BoolToInt(AS.Defector.IsDefector()))
 
-	// rep := a.Reputation(*agent.BaseAgent)
-	// fmt.Println(rep)
-
 	// temporary for experiments
 	S := float64(rand.Intn(30) - 15)
 
@@ -135,11 +145,9 @@ func (a *AgentThree) Sanctioning(agent agent.Agent) int {
 	// fmt.Println(sanction)
 
 	return sanction
-	// return 50
 }
 
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
-	// fmt.Println("Agent 3")
 	pruned := make(map[commons.ID]agent.Agent)
 	for id, agent := range agentMap {
 		// Compare to 50 in order to sanction
@@ -148,7 +156,5 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 			pruned[id] = agent
 		}
 	}
-	// fmt.Println(len(agentMap))
-	// fmt.Println(len(prunned))
 	return pruned
 }
