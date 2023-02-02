@@ -140,15 +140,15 @@ func (a *AgentThree) Sanctioning(agent agent.Agent) int {
 
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
 	// fmt.Println("Agent 3")
-	prunned := make(map[commons.ID]agent.Agent)
+	pruned := make(map[commons.ID]agent.Agent)
 	for id, agent := range agentMap {
 		// Compare to 50 in order to sanction
 		toSanctionOrNot := rand.Intn(100)
 		if toSanctionOrNot > a.Sanctioning(agent) {
-			prunned[id] = agent
+			pruned[id] = agent
 		}
 	}
 	// fmt.Println(len(agentMap))
 	// fmt.Println(len(prunned))
-	return prunned
+	return pruned
 }

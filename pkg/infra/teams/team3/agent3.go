@@ -82,22 +82,8 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	//a.SocialCapital(baseAgent)
 }
 
-func (a *AgentThree) Sanctioning() int {
-	return 50
-}
 func (a *AgentThree) GetStats() (int, int) {
 	return a.personality, a.sanctioned
-}
-func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
-	pruned := make(map[commons.ID]agent.Agent)
-	for id, agent := range agentMap {
-		// Compare to 50 in order to sanction
-		toSanctionOrNot := rand.Intn(100)
-		if toSanctionOrNot > a.Sanctioning() {
-			pruned[id] = agent
-		}
-	}
-	return pruned
 }
 
 func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
