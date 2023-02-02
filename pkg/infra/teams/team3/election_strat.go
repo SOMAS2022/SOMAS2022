@@ -158,14 +158,14 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	return w2
 }
 
-func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
+func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 	view := baseAgent.View()
 	vAS := view.AgentState()
 	ids := commons.ImmutableMapKeys(vAS)
 
 	productivity := 5.0
 	needs := 5.0
-	fairness := make(map[commons.ID]float64)
+	// fairness := make(map[commons.ID]float64)
 
 	// Number of agents to sample for KA (fixed)
 	intendedSample := float64(a.numAgents) * a.sample_percent
@@ -177,10 +177,10 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float6
 	for _, id := range ids {
 		if cnt == sampleLength {
 			// Unsorted array
-			return fairness
+			return
 		} else {
 			// Init values on 1st lvl
-			if _, ok := fairness[id]; ok {
+			if _, ok := a.reputationMap[id]; ok {
 				w1[id] = 0.0
 				w2[id] = 0.0
 				pastHP[id] = GetStartingHP()
@@ -193,7 +193,7 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float6
 			w1[id] = a.calcW1(hiddenState, w1[id], pastHP[id], pastStamina[id])
 			w2[id] = a.calcW2(baseAgent, w2[id])
 
-			fairness[id] = w1[id]*needs + w2[id]*productivity
+			a.reputationMap[id] = w1[id]*needs + w2[id]*productivity
 
 			// Store this rounds values for the next one
 			pastHP[id] = int(hiddenState.Hp)
@@ -201,9 +201,6 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float6
 		}
 		cnt++
 	}
-
-	// Unsorted array
-	return fairness
 }
 
 func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
