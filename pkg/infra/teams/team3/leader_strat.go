@@ -131,11 +131,12 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 	}
 }
 
-func (a *AgentThree) Sanctioning(agent agent.Agent, id string) int {
+func (a *AgentThree) Sanctioning(agent agent.Agent) int {
 	A := 0.8
 	B := 0.2
 
 	AS := agent.AgentState()
+	id := agent.BaseAgent.ID()
 	// were they a defector?
 	D := float64(BoolToInt(AS.Defector.IsDefector()))
 
@@ -154,7 +155,7 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 	for id, agent := range agentMap {
 		// Compare to 50 in order to sanction
 		toSanctionOrNot := rand.Intn(100)
-		if toSanctionOrNot > a.Sanctioning(agent, id) {
+		if toSanctionOrNot > a.Sanctioning(agent) {
 			pruned[id] = agent
 		}
 	}
