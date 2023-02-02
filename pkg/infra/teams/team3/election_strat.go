@@ -56,12 +56,16 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 	makeVote := rand.Intn(100)
 	// if makeVote is lower than personality, then vote.
 	if makeVote < a.personality {
-		// Randomly fill the ballot
+		// Create Ballot
 		var ballot decision.Ballot
-		numAliveAgents := param.CandidateList().Len()
+		// number of manifesto preferences we are allowed
 		numCandidate := int(param.NumberOfPreferences())
 		for i := 0; i < numCandidate; i++ {
-			randomIdx := rand.Intn(numAliveAgents)
+			// look at TSN... if any agents in it, extract their manifestos in reputation order and make decision
+			// if no TSN... take manifesto of high reputation agent and evalutate manifesto
+			// evaluation is:
+			// high reputation + low social capital (that doesn't make any sense.....)
+			randomIdx := rand.Intn(len(candidates))
 			randomCandidate := candidates[uint(randomIdx)]
 			ballot = append(ballot, randomCandidate)
 		}
@@ -76,19 +80,21 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
 	currentHP := state.Hp
 	currentStamina := state.Stamina
+	// extract and normalise personality (range[0,100]), use to dictate update step size
+	personalityMod := float64(a.personality / 100)
 
 	HP := initHP - int(currentHP)
 	stamina := initStamina - int(currentStamina)
 	// alg 6
 	if stamina > 0 {
-		w1 += 0.2
+		w1 += 0.5 * personalityMod
 	} else if stamina < 0 {
-		w1 -= 0.2
+		w1 -= 0.5 * personalityMod
 	}
 	if HP > 0 {
-		w1 += 0.2
+		w1 += 0.5 * personalityMod
 	} else if HP < 0 {
-		w1 -= 0.2
+		w1 -= 0.5 * personalityMod
 	}
 
 	w1 = clamp(w1, 0, 10)
@@ -99,6 +105,8 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	var agentFought bool = false
 	var agentShielded bool = false
+	// extract and normalise personality (range[0,100]), use to dictate update step size
+	personalityMod := float64(a.personality / 100)
 	// iterate until we get most recent history
 	i := 0
 	itr := a.fightDecisionsHistory.Iterator()
@@ -124,13 +132,12 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 					agentShielded = true
 				}
 			}
-
 		}
 	}
 	if agentFought || agentShielded {
-		w2 += 0.2
+		w2 += 0.5 * personalityMod
 	} else {
-		w2 -= 0.2
+		w2 -= 0.5 * personalityMod
 	}
 
 	w2 = clamp(w2, 0, 10)
@@ -161,8 +168,9 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 		} else {
 			// Init values on 1st lvl
 			if _, ok := a.reputationMap[id]; ok {
-				a.w1Map[id] = 0.0
-				a.w2Map[id] = 0.0
+				// init weights to middle value
+				a.w1Map[id] = 2.5
+				a.w2Map[id] = 2.5
 				a.pastHPMap[id] = GetStartingHP()
 				a.pastStaminaMap[id] = GetStartingStamina()
 			}

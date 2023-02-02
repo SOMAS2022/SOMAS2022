@@ -69,6 +69,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	// }
 
 	// update parameters
+	a.Reputation(baseAgent)
 	a.UpdateTotalUtility(baseAgent)
 	a.ResetContacts()
 	a.UpdateTSN(baseAgent)
@@ -81,7 +82,6 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	}
 
 	// a.CalcReputation(baseAgent)
-	a.Reputation(baseAgent)
 
 	//fmt.Println(a.SocialCapital(baseAgent))
 	//a.SocialCapital(baseAgent)
