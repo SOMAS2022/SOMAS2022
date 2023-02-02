@@ -1,8 +1,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
 	"sort"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -227,4 +232,72 @@ func generateLootPool(numAgents uint) *state.LootPool {
 		// Stamina Potions
 		makeItems(nStaminaPotions, gamemath.GetStaminaPotionValue(recalculatedMonsterHealth, numAgents)),
 	)
+}
+
+func uintStr(in uint) string {
+	return strconv.Itoa(int(in))
+}
+func initCsvLogging() (*csv.Writer, *os.File) {
+	// create csv for logging
+
+	dt := time.Now()
+	logName := dt.Format("15-04")
+	csvFile, err := os.Create("logCSV/" + logName + "-gameLog.csv")
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+
+	w := csv.NewWriter(csvFile)
+	// title row
+	firstRow := []string{"level", "total agents alive", "average health", "average stamina", "average attack", "average defense", "average personality", "average sanctioned", "count selfless", "count selfish", "count collective"}
+	if err := w.Write(firstRow); err != nil {
+		log.Fatalln("error writing record to file", err)
+	}
+	return w, csvFile
+}
+func logLevel(levelLog logging.LevelStages, agentmap map[string]agent.Agent, w *csv.Writer) {
+
+	// quantize personalities to count them
+	countSelfless := 0
+	countSelfish := 0
+	countCollective := 0
+	avPersonality := 0
+	avSanctioned := 0
+	for _, a := range agentMap {
+		personality, sanctioned := a.GetStats()
+		avPersonality += personality
+		avSanctioned += sanctioned
+		if personality < 25 {
+			countSelfish += 1
+		} else if personality > 75 {
+			countSelfless += 1
+		} else {
+			countCollective += 1
+		}
+
+	}
+	countAgentint := len(agentMap)
+	if countAgentint > 0 {
+		avPersonality /= countAgentint
+		avSanctioned /= countAgentint
+	}
+
+	lvStats := levelLog.LevelStats
+	row := []string{uintStr(lvStats.CurrentLevel),
+		uintStr(lvStats.NumberOfAgents),
+		uintStr(lvStats.AverageAgentHealth),
+		uintStr(lvStats.AverageAgentStamina),
+		uintStr(lvStats.AverageAgentAttack),
+		uintStr(lvStats.AverageAgentShield),
+		strconv.Itoa(avPersonality),
+		strconv.Itoa(avSanctioned),
+		strconv.Itoa(countSelfless),
+		strconv.Itoa(countSelfish),
+		strconv.Itoa(countCollective),
+	}
+	if err := w.Write(row); err != nil {
+		log.Fatalln("error writing record to file", err)
+	}
+
+	w.Flush()
 }

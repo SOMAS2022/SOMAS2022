@@ -23,11 +23,15 @@ type AgentThree struct {
 	chairTolerance        int
 	proposalTolerance     map[commons.ID]int
 	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
+	reputationMap         map[commons.ID]float64
 	personality           int
 	sanctioned            int
 	statsQueue            StatsQueue
 	change_init           float64
 	alpha                 float64
+	Soc_cap               int
+	sample_percent        float64
+	numAgents             int
 }
 
 // Update internal parameters at the end of each stage
@@ -47,6 +51,8 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 		a.statsQueue.addStat(stat)
 		a.statsQueue.addStat(stat2)
 		a.statsQueue.addStat(stat3)
+		viewAS := view.AgentState()
+		a.numAgents = viewAS.Len()
 	}
 	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())
@@ -68,6 +74,30 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	if enable {
 		a.UpdatePersonality(baseAgent)
 	}
+
+	// a.CalcReputation(baseAgent)
+	a.Reputation(baseAgent)
+
+	//fmt.Println(a.SocialCapital(baseAgent))
+	//a.SocialCapital(baseAgent)
+}
+
+func (a *AgentThree) Sanctioning() int {
+	return 50
+}
+func (a *AgentThree) GetStats() (int, int) {
+	return a.personality, a.sanctioned
+}
+func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	pruned := make(map[commons.ID]agent.Agent)
+	for id, agent := range agentMap {
+		// Compare to 50 in order to sanction
+		toSanctionOrNot := rand.Intn(100)
+		if toSanctionOrNot > a.Sanctioning() {
+			pruned[id] = agent
+		}
+	}
+	return pruned
 }
 
 func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
@@ -125,10 +155,12 @@ func NewAgentThreeNeutral() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		reputationMap:     make(map[commons.ID]float64, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }
 
@@ -143,10 +175,12 @@ func NewAgentThreePassive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		reputationMap:     make(map[commons.ID]float64, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -160,9 +194,11 @@ func NewAgentThreeAggressive() agent.Strategy {
 		chairTolerance:    0,
 		proposalTolerance: make(map[commons.ID]int, 0),
 		personality:       int(dis),
+		reputationMap:     make(map[commons.ID]float64, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		change_init:       0,
 		alpha:             5,
+		sample_percent:    0.25,
 	}
 }

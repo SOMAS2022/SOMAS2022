@@ -23,4 +23,5 @@ type Loot interface {
 	PruneAgentList(agentMap map[commons.ID]Agent) map[commons.ID]Agent
 	ChooseItem(BaseAgent BaseAgent, items map[string]struct{}, weaponSet map[string]uint, shieldSet map[string]uint, hpPotionSet map[string]uint, staminaPotionSet map[string]uint) string
 	RequestLootProposal(ba BaseAgent)
+	GetStats() (int, int)
 }

@@ -8,3 +8,4 @@ logs/*
 .idea
 .DS_Store
 coverage.txt
+*.csv

@@ -54,6 +54,8 @@ func startGameLoop() {
 	channelsMap = addCommsChannels()
 	*viewPtr = globalState.ToView()
 
+	w, csvFile := initCsvLogging()
+
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		levelLog := logging.LevelStages{}
 		// Election Stage
@@ -191,10 +193,16 @@ func startGameLoop() {
 
 			channelsMap = addCommsChannels()
 
+			// log last round if we lose
 			if float64(len(agentMap)) < math.Ceil(float64(gameConfig.ThresholdPercentage)*float64(gameConfig.InitialNumAgents)) {
+
+				logLevel(levelLog, agentMap, w)
+
 				logging.Log(logging.Info, nil, fmt.Sprintf("Lost on level %d  with %d remaining", globalState.CurrentLevel, len(agentMap)))
 				logging.LogToFile(logging.Info, nil, "", levelLog)
 				logging.OutputLog(logging.Loss)
+
+				csvFile.Close()
 				return
 			}
 			fightResultSlice = append(fightResultSlice, *decision.NewImmutableFightResult(fightActions, roundNum))
@@ -234,7 +242,10 @@ func startGameLoop() {
 		levelLog.AgentLogs = stages.UpdateInternalStates(agentMap, globalState, immutableFightRounds, &votesResult)
 
 		logging.LogToFile(logging.Info, nil, "", levelLog)
+
+		logLevel(levelLog, agentMap, w)
 	}
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	logging.OutputLog(logging.Win)
+	csvFile.Close()
 }
