@@ -113,10 +113,16 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
 
 func AgentPruneMapping(agentMap map[commons.ID]agent.Agent, globalState *state.State) map[commons.ID]agent.Agent {
 	leaderId := globalState.CurrentLeader
-	leader := agentMap[leaderId]
+	leader, leaderIsAlive := agentMap[leaderId]
 
-	prunedMap := leader.PruneAgentList(agentMap)
-	prunedMap[leaderId] = leader
+	if leaderIsAlive {
+		prunedMap := leader.PruneAgentList(agentMap)
+		prunedMap[leaderId] = leader
 
-	return prunedMap
+		return prunedMap
+	} else {
+		// leader has died, hence no sanctioning
+		return agentMap
+	}
+
 }
