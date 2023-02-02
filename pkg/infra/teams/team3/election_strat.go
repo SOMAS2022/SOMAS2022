@@ -169,8 +169,8 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float6
 
 	// Number of agents to sample for KA (fixed)
 	intendedSample := float64(a.numAgents) * a.sample_percent
-	maxLenght := float64(vAS.Len())
-	sampleLength := int(math.Min(intendedSample, maxLenght))
+	maxLength := float64(vAS.Len())
+	sampleLength := int(math.Min(intendedSample, maxLength))
 	cnt := 0
 
 	// Use randomness of maps in go to take n random samples
@@ -180,7 +180,7 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) map[commons.ID]float6
 			return fairness
 		} else {
 			// Init values on 1st lvl
-			if view.CurrentLevel() == 1 || fairness[id] == 0 {
+			if _, ok := fairness[id]; ok {
 				w1[id] = 0.0
 				w2[id] = 0.0
 				pastHP[id] = GetStartingHP()
