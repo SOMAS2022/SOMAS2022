@@ -112,8 +112,8 @@ func (a *AgentThree) RemoveFromTSN(id commons.ID) []commons.ID {
 
 // Update TSN
 func (a *AgentThree) UpdateTSN(baseAgent agent.BaseAgent) {
-	for id, util := range a.utilityScore {
-		if util >= 10 {
+	for id, rep := range a.reputationMap {
+		if rep >= 75 {
 			a.AddToTSN(id)
 		} else {
 			a.RemoveFromTSN(id)
