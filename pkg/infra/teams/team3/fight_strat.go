@@ -65,12 +65,6 @@ func (a *AgentThree) FightActionNoProposal(baseAgent agent.BaseAgent) decision.F
 
 // Send proposal to leader
 func (a *AgentThree) HandleFightInformation(m message.TaggedInformMessage[message.FightInform], baseAgent agent.BaseAgent, fightactionMap *immutable.Map[commons.ID, decision.FightAction]) {
-	// baseAgent.Log(logging.Trace, logging.LogField{"bravery": r.bravery, "hp": baseAgent.AgentState().Hp}, "Cowering")
-	// AS := baseAgent.AgentState()
-
-	// baseAgent.Log(logging.Trace, logging.LogField{"hp": AS.Hp, "decision": a.CurrentAction(baseAgent)}, "HP")
-	// baseAgent.Log(logging.Trace, logging.LogField{"history": a.fightDecisionsHistory}, "Fight")
-
 	id := baseAgent.ID()
 	choice, _ := fightactionMap.Get(id)
 	HPThreshold, StaminaThreshold, _, DefenseThreshold := a.thresholdDecision(baseAgent, choice)
@@ -174,12 +168,12 @@ func (a *AgentThree) thresholdDecision(baseAgent agent.BaseAgent, choice decisio
 
 	// // iterate until we get most recent history
 	// i := 0
-	// itr := a.fightDecisionsHistory.Iterator()
+	// itr := a.fightRoundsHistory.Iterator()
 	// for !itr.Done() {
 	// 	res, _ := itr.Next()
 	// 	i += 1
 
-	// 	if i == a.fightDecisionsHistory.Len()-1 {
+	// 	if i == a.fightRoundsHistory.Len()-1 {
 	// 		agents := res.AttackingAgents()
 	// 		itr2 := agents.Iterator()
 	// 		// search for our agent in fight list

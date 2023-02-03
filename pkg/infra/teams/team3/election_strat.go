@@ -108,31 +108,34 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	// extract and normalise personality (range[0,100]), use to dictate update step size
 	personalityMod := float64(a.personality / 100)
 	// iterate until we get most recent history
-	i := 0
-	itr := a.fightDecisionsHistory.Iterator()
+	i := 1
+	itr := a.fightRoundsHistory.Iterator()
 	for !itr.Done() {
 		res, _ := itr.Next()
-		i++
 
-		if i == a.fightDecisionsHistory.Len()-1 {
-			agents_attack := res.AttackingAgents()
-			agents_defended := res.ShieldingAgents()
-			itr2 := agents_attack.Iterator()
-			itr3 := agents_defended.Iterator()
-			// search for our agent in fight list
-			for !itr.Done() {
+		// check stats of last round from previous level (?)
+		if i == a.fightRoundsHistory.Len()-1 {
+			// search for our agent in fight list and assign action
+			agentsAttackedIDs := res.AttackingAgents()
+			itr2 := agentsAttackedIDs.Iterator()
+			for !itr2.Done() {
 				_, attackingAgentID := itr2.Next()
 				if attackingAgentID == baseAgent.ID() {
 					agentFought = true
+					break
 				}
 			}
-			for !itr.Done() {
+			agentsDefendedIDs := res.ShieldingAgents()
+			itr3 := agentsDefendedIDs.Iterator()
+			for !itr3.Done() {
 				_, defendAgentID := itr3.Next()
 				if defendAgentID == baseAgent.ID() {
 					agentShielded = true
+					break
 				}
 			}
 		}
+		i++
 	}
 	if agentFought || agentShielded {
 		w2 += 0.5 * personalityMod
@@ -218,7 +221,7 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 
 // 	currentLevel := int(view.CurrentLevel())
 // 	// init  history
-// 	if currentLevel == a.fightDecisionsHistory.Len()-1 {
+// 	if currentLevel == a.fightRoundsHistory.Len()-1 {
 // 		w1 = 0.0
 // 		w2 = 0.0
 

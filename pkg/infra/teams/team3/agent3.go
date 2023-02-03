@@ -12,34 +12,34 @@ import (
 )
 
 type AgentThree struct {
-	AT                    int
-	SH                    int
-	uR                    map[commons.ID]int
-	uP                    map[commons.ID]int
-	uC                    map[commons.ID]int
-	utilityScore          map[commons.ID]int
-	TSN                   []commons.ID
-	contactsLastRound     map[commons.ID]bool
-	chairTolerance        int
-	proposalTolerance     map[commons.ID]int
-	fightDecisionsHistory commons.ImmutableList[decision.ImmutableFightResult]
-	reputationMap         map[commons.ID]float64
-	w1Map                 map[commons.ID]float64
-	w2Map                 map[commons.ID]float64
-	pastHPMap             map[commons.ID]int
-	pastStaminaMap        map[commons.ID]int
-	personality           int
-	sanctioned            int
-	statsQueue            StatsQueue
-	change_init           float64
-	alpha                 float64
-	Soc_cap               int
-	sample_percent        float64
-	numAgents             int
+	AT                 int
+	SH                 int
+	uR                 map[commons.ID]int
+	uP                 map[commons.ID]int
+	uC                 map[commons.ID]int
+	utilityScore       map[commons.ID]int
+	TSN                []commons.ID
+	contactsLastRound  map[commons.ID]bool
+	chairTolerance     int
+	proposalTolerance  map[commons.ID]int
+	fightRoundsHistory commons.ImmutableList[decision.ImmutableFightResult]
+	reputationMap      map[commons.ID]float64
+	w1Map              map[commons.ID]float64
+	w2Map              map[commons.ID]float64
+	pastHPMap          map[commons.ID]int
+	pastStaminaMap     map[commons.ID]int
+	personality        int
+	sanctioned         int
+	statsQueue         StatsQueue
+	change_init        float64
+	alpha              float64
+	Soc_cap            int
+	sample_percent     float64
+	numAgents          int
 }
 
 // Update internal parameters at the end of each stage
-func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
+func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	AS := baseAgent.AgentState()
 	view := baseAgent.View()
 	// Initialise utils
@@ -62,7 +62,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, _ *commons.I
 	a.AT = int(AS.Attack + AS.BonusAttack())
 	a.SH = int(AS.Defense + AS.BonusDefense())
 
-	// a.fightDecisionsHistory = *history
+	a.fightRoundsHistory = *history
 	// a.sendGossipMessage(baseAgent)
 	// if preLog != postLog {
 	// 	fmt.Println("MSG RECEIVED")
