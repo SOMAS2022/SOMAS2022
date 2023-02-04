@@ -11,6 +11,8 @@ import (
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
+
+	"github.com/benbjohnson/immutable"
 )
 
 // Handle No Confidence vote
@@ -116,24 +118,8 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		// check stats of last round from previous level (?)
 		if i == a.fightRoundsHistory.Len()-1 {
 			// search for our agent in fight list and assign action
-			agentsAttackedIDs := res.AttackingAgents()
-			itr2 := agentsAttackedIDs.Iterator()
-			for !itr2.Done() {
-				_, attackingAgentID := itr2.Next()
-				if attackingAgentID == baseAgent.ID() {
-					agentFought = true
-					break
-				}
-			}
-			agentsDefendedIDs := res.ShieldingAgents()
-			itr3 := agentsDefendedIDs.Iterator()
-			for !itr3.Done() {
-				_, defendAgentID := itr3.Next()
-				if defendAgentID == baseAgent.ID() {
-					agentShielded = true
-					break
-				}
-			}
+			agentFought = findAgentAction(res.AttackingAgents(), baseAgent.ID())
+			agentShielded = findAgentAction(res.ShieldingAgents(), baseAgent.ID())
 		}
 		i++
 	}
@@ -209,6 +195,17 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 		disobedienceMap = append(disobedienceMap, temp)
 	}
 	return disobedienceMap
+}
+
+func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool {
+	itr := agentIDsMap.Iterator()
+	for !itr.Done() {
+		_, actionAgentID := itr.Next()
+		if actionAgentID == ID {
+			return true
+		}
+	}
+	return false
 }
 
 // alg 5
