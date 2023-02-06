@@ -1,7 +1,6 @@
 package team3
 
 import (
-	"fmt"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -11,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/benbjohnson/immutable"
+	"golang.org/x/exp/maps"
 )
 
 func (a *AgentThree) LootActionNoProposal(baseAgent agent.BaseAgent) immutable.SortedMap[commons.ItemID, struct{}] {
@@ -61,10 +61,9 @@ func (a *AgentThree) LootAction(
 	return proposedLoot
 }
 
-// this is really poor from infra - i'd just ignore tbh
+// Never called
 func (a *AgentThree) HandleLootInformation(m message.TaggedInformMessage[message.LootInform], baseAgent agent.BaseAgent) {
 	// submit a proposal to the leader
-	fmt.Println("Made it here")
 	switch m.Message().(type) {
 	case message.LootInform:
 		// Send Proposal?
@@ -124,6 +123,80 @@ func (a *AgentThree) generateLootProposal() commons.ImmutableList[proposal.Rule[
 	return *commons.NewImmutableList(rules)
 }
 
+// func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent,
+// 	items map[string]struct{}, weaponSet map[string]uint, shieldSet map[string]uint, hpPotionSet map[string]uint, staminaPotionSet map[string]uint) string {
+// 	// function to calculate the agents choice of loot
+
+// 	// get group average stats
+// 	avHP, avST, avATT, avDEF := GetGroupAv(baseAgent)
+// 	// normalise the group stats
+// 	groupAvHP, groupAvST, groupAvATT, groupAvDEF := normalize4El(avHP, avST, avATT, avDEF)
+// 	// get agent
+// 	agentState := baseAgent.AgentState()
+// 	HP := float64(agentState.Hp)
+// 	ST := float64(agentState.Stamina)
+// 	ATT := float64(agentState.BonusAttack())
+// 	DEF := float64(agentState.BonusDefense())
+// 	// normalise the agent stats
+// 	meanHP, meanST, meanATT, meanDEF := normalize4El(HP, ST, ATT, DEF)
+
+// 	// cal differences
+// 	diffHP := groupAvHP - meanHP
+// 	diffST := groupAvST - meanST
+// 	diffATT := groupAvATT - meanATT
+// 	diffDEF := groupAvDEF - meanDEF
+
+// 	// create an array of the above, order them
+// 	diffs := []float64{diffHP, diffST, diffATT, diffDEF}
+// 	sortedDiffs := make([]float64, len(diffs))
+// 	copy(sortedDiffs, diffs)
+// 	sort.Slice(sortedDiffs, func(i, j int) bool {
+// 		return sortedDiffs[i] > sortedDiffs[j]
+// 	})
+// 	var item string
+// 	// return the item that is needed most (out of the items available)
+// 	for _, val := range sortedDiffs {
+// 		if val == 0 {
+// 			// if val is zero, everyone the same so take arbitrary loot
+// 			for id := range items {
+// 				item = id
+// 				break
+// 			}
+// 			return item
+// 		} else if val == diffHP {
+// 			//search of item in corresponding set
+// 			item = searchForItem(hpPotionSet, items)
+// 			// if excists, then return the item
+// 			if len(item) > 0 {
+// 				return item
+// 			}
+// 		} else if val == diffST {
+// 			item = searchForItem(staminaPotionSet, items)
+// 			if len(item) > 0 {
+// 				return item
+// 			}
+// 		} else if val == diffATT {
+// 			item = searchForItem(weaponSet, items)
+// 			if len(item) > 0 {
+// 				return item
+// 			}
+// 		} else if val == diffDEF {
+// 			item = searchForItem(shieldSet, items)
+// 			if len(item) > 0 {
+// 				return item
+// 			}
+// 		}
+// 	}
+// 	if item == "" {
+// 		// if got nothing, take arbitrary loot
+// 		for id := range items {
+// 			item = id
+// 			break
+// 		}
+// 	}
+// 	return item
+// }
+
 func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent,
 	items map[string]struct{}, weaponSet map[string]uint, shieldSet map[string]uint, hpPotionSet map[string]uint, staminaPotionSet map[string]uint) string {
 	// function to calculate the agents choice of loot
@@ -154,48 +227,32 @@ func (a *AgentThree) ChooseItem(baseAgent agent.BaseAgent,
 	sort.Slice(sortedDiffs, func(i, j int) bool {
 		return sortedDiffs[i] > sortedDiffs[j]
 	})
-	var item string
-	// return the item that is needed most (out of the items available)
+
+	defaultItem := maps.Keys(items)[0]
+	var activeSet map[string]uint
+
 	for _, val := range sortedDiffs {
-		if val == 0 {
-			// if val is zero, everyone the same so take arbitrary loot
-			for id := range items {
-				item = id
-				break
-			}
-			return item
-		} else if val == diffHP {
-			//search of item in corresponding set
-			item = searchForItem(hpPotionSet, items)
-			// if excists, then return the item
-			if len(item) > 0 {
-				return item
-			}
-		} else if val == diffST {
-			item = searchForItem(staminaPotionSet, items)
-			if len(item) > 0 {
-				return item
-			}
-		} else if val == diffATT {
-			item = searchForItem(weaponSet, items)
-			if len(item) > 0 {
-				return item
-			}
-		} else if val == diffDEF {
-			item = searchForItem(shieldSet, items)
-			if len(item) > 0 {
-				return item
-			}
+		switch val {
+		case 0:
+			return defaultItem
+		case diffHP:
+			activeSet = hpPotionSet
+		case diffST:
+			activeSet = staminaPotionSet
+		case diffATT:
+			activeSet = weaponSet
+		case diffDEF:
+			activeSet = shieldSet
+		default:
+		}
+		potentialItem := searchForItem(activeSet, items)
+
+		if potentialItem != "" {
+			return potentialItem
 		}
 	}
-	if item == "" {
-		// if got nothing, take arbitrary loot
-		for id := range items {
-			item = id
-			break
-		}
-	}
-	return item
+
+	return defaultItem
 }
 
 func searchForItem(set map[string]uint, items map[string]struct{}) string {

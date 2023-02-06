@@ -103,17 +103,61 @@ func (a *AgentThree) LootAllocation(baseAgent agent.BaseAgent, proposal message.
 	return commons.MapToImmutable(mMapped)
 }
 
+// func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
+// 	for !iterator.Done() {
+// 		next, _ := iterator.Next()
+// 		toBeAllocated := ids[rand.Intn(len(ids))]
+// 		if l, ok := lootAllocation[toBeAllocated]; ok {
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		} else {
+// 			l := make([]commons.ItemID, 0)
+// 			l = append(l, next.Id())
+// 			lootAllocation[toBeAllocated] = l
+// 		}
+// 	}
+// }
+
 func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, lootAllocation map[commons.ID][]commons.ItemID) {
 	for !iterator.Done() {
 		next, _ := iterator.Next()
 		toBeAllocated := ids[rand.Intn(len(ids))]
-		if l, ok := lootAllocation[toBeAllocated]; ok {
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
-		} else {
-			l := make([]commons.ItemID, 0)
-			l = append(l, next.Id())
-			lootAllocation[toBeAllocated] = l
+		l, ok := lootAllocation[toBeAllocated]
+		if !ok {
+			l = make([]commons.ItemID, 0)
+		}
+		l = append(l, next.Id())
+		lootAllocation[toBeAllocated] = l
+	}
+}
+
+func (a *AgentThree) Sanctioning(agent agent.Agent) int {
+	A := 0.8
+	B := 0.2
+
+	AS := agent.AgentState()
+	id := agent.BaseAgent.ID()
+	// were they a defector?
+	D := float64(BoolToInt(AS.Defector.IsDefector()))
+
+	// shift and scale the agent reputation
+	S := (a.reputationMap[id] - 50) / 3
+	// S := float64(rand.Intn(30) - 15)
+
+	sanction := int(D * (A*float64(a.personality) + B*S))
+	// fmt.Println(sanction)
+
+	return sanction
+}
+
+func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+	pruned := make(map[commons.ID]agent.Agent)
+	for id, agent := range agentMap {
+		// Compare to 50 in order to sanction
+		toSanctionOrNot := rand.Intn(100)
+		if toSanctionOrNot > a.Sanctioning(agent) {
+			pruned[id] = agent
 		}
 	}
+	return pruned
 }

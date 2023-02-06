@@ -1,25 +1,19 @@
 package team3
 
 import (
-	//"fmt"
-
 	"infra/game/agent"
+
 	"infra/game/commons"
 	"math"
 	"strconv"
 
-	// "infra/game/commons"
 	"infra/game/decision"
 	"infra/game/state"
 	"infra/logging"
 	"math/rand"
+
+	"github.com/benbjohnson/immutable"
 )
-
-var w1 = make(map[commons.ID]float64)
-var w2 = make(map[commons.ID]float64)
-
-var pastHP = make(map[commons.ID]int)
-var pastStamina = make(map[commons.ID]int)
 
 // Handle No Confidence vote
 func (a *AgentThree) HandleConfidencePoll(baseAgent agent.BaseAgent) decision.Intent {
@@ -64,16 +58,19 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 	makeVote := rand.Intn(100)
 	// if makeVote is lower than personality, then vote.
 	if makeVote < a.personality {
-		// Randomly fill the ballot
+		// Create Ballot
 		var ballot decision.Ballot
-		numAliveAgents := param.CandidateList().Len()
+		// number of manifesto preferences we are allowed
 		numCandidate := int(param.NumberOfPreferences())
 		for i := 0; i < numCandidate; i++ {
-			randomIdx := rand.Intn(numAliveAgents)
+			// look at TSN... if any agents in it, extract their manifestos in reputation order and make decision
+			// if no TSN... take manifesto of high reputation agent and evalutate manifesto
+			// evaluation is:
+			// high reputation + low social capital (that doesn't make any sense.....)
+			randomIdx := rand.Intn(len(candidates))
 			randomCandidate := candidates[uint(randomIdx)]
 			ballot = append(ballot, randomCandidate)
 		}
-
 		return ballot
 	} else {
 		// return an empty ballot (don't vote)
@@ -85,28 +82,24 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
 	currentHP := state.Hp
 	currentStamina := state.Stamina
+	// extract and normalise personality (range[0,100]), use to dictate update step size
+	personalityMod := float64(a.personality / 100)
 
 	HP := initHP - int(currentHP)
 	stamina := initStamina - int(currentStamina)
 	// alg 6
 	if stamina > 0 {
-		w1 += 0.2
+		w1 += 0.5 * personalityMod
 	} else if stamina < 0 {
-		w1 -= 0.2
+		w1 -= 0.5 * personalityMod
 	}
 	if HP > 0 {
-		w1 += 0.2
+		w1 += 0.5 * personalityMod
 	} else if HP < 0 {
-		w1 -= 0.2
+		w1 -= 0.5 * personalityMod
 	}
 
-	if w1 > 10 {
-		w1 = 10
-	}
-
-	if w1 < 0 {
-		w1 = 0
-	}
+	w1 = clamp(w1, 0, 10)
 
 	return w1
 }
@@ -114,47 +107,30 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 	var agentFought bool = false
 	var agentShielded bool = false
+	// extract and normalise personality (range[0,100]), use to dictate update step size
+	personalityMod := float64(a.personality / 100)
 	// iterate until we get most recent history
-	i := 0
-	itr := a.fightDecisionsHistory.Iterator()
+	i := 1
+	itr := a.fightRoundsHistory.Iterator()
 	for !itr.Done() {
 		res, _ := itr.Next()
-		i = i + 1
 
-		if i == a.fightDecisionsHistory.Len()-1 {
-			agents_attack := res.AttackingAgents()
-			agents_defended := res.ShieldingAgents()
-			itr2 := agents_attack.Iterator()
-			itr3 := agents_defended.Iterator()
-			// search for our agent in fight list
-			for !itr.Done() {
-				_, attackingAgentID := itr2.Next()
-				if attackingAgentID == baseAgent.ID() {
-					agentFought = true
-				}
-			}
-			for !itr.Done() {
-				_, defendAgentID := itr3.Next()
-				if defendAgentID == baseAgent.ID() {
-					agentShielded = true
-				}
-			}
-
+		// check stats of last round from previous level (?)
+		if i == a.fightRoundsHistory.Len()-1 {
+			// search for our agent in fight list and assign action
+			agentFought = findAgentAction(res.AttackingAgents(), baseAgent.ID())
+			agentShielded = findAgentAction(res.ShieldingAgents(), baseAgent.ID())
 		}
+		i++
 	}
 	if agentFought || agentShielded {
-		w2 += 0.2
+		w2 += 0.5 * personalityMod
 	} else {
-		w2 -= 0.2
+		w2 -= 0.5 * personalityMod
 	}
 
-	if w2 < 0 {
-		w2 = 0
-	}
+	w2 = clamp(w2, 0, 10)
 
-	if w2 > 10 {
-		w2 = 10
-	}
 	return w2
 }
 
@@ -181,23 +157,24 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 		} else {
 			// Init values on 1st lvl
 			if _, ok := a.reputationMap[id]; ok {
-				w1[id] = 0.0
-				w2[id] = 0.0
-				pastHP[id] = GetStartingHP()
-				pastStamina[id] = GetStartingStamina()
+				// init weights to middle value
+				a.w1Map[id] = 2.5
+				a.w2Map[id] = 2.5
+				a.pastHPMap[id] = GetStartingHP()
+				a.pastStaminaMap[id] = GetStartingStamina()
 			}
 
 			hiddenState, _ := vAS.Get(id)
 
 			// Update values according to previous state
-			w1[id] = a.calcW1(hiddenState, w1[id], pastHP[id], pastStamina[id])
-			w2[id] = a.calcW2(baseAgent, w2[id])
+			a.w1Map[id] = a.calcW1(hiddenState, a.w1Map[id], a.pastHPMap[id], a.pastStaminaMap[id])
+			a.w2Map[id] = a.calcW2(baseAgent, a.w2Map[id])
 
-			a.reputationMap[id] = w1[id]*needs + w2[id]*productivity
+			a.reputationMap[id] = a.w1Map[id]*needs + a.w2Map[id]*productivity
 
 			// Store this rounds values for the next one
-			pastHP[id] = int(hiddenState.Hp)
-			pastStamina[id] = int(hiddenState.Stamina)
+			a.pastHPMap[id] = int(hiddenState.Hp)
+			a.pastStaminaMap[id] = int(hiddenState.Stamina)
 		}
 		cnt++
 	}
@@ -220,6 +197,17 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 	return disobedienceMap
 }
 
+func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool {
+	itr := agentIDsMap.Iterator()
+	for !itr.Done() {
+		_, actionAgentID := itr.Next()
+		if actionAgentID == ID {
+			return true
+		}
+	}
+	return false
+}
+
 // alg 5
 // func (a *AgentThree) CalcReputation(baseAgent agent.BaseAgent) map[commons.ID]float64 {
 // 	view := baseAgent.View()
@@ -230,7 +218,7 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 
 // 	currentLevel := int(view.CurrentLevel())
 // 	// init  history
-// 	if currentLevel == a.fightDecisionsHistory.Len()-1 {
+// 	if currentLevel == a.fightRoundsHistory.Len()-1 {
 // 		w1 = 0.0
 // 		w2 = 0.0
 
@@ -344,7 +332,7 @@ func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
 // 		}
 // 	}
 
-// 	borda := a.CalcBordaScore(baseAgent)
+// 	borda := a.Reputation(baseAgent)
 // 	bordaPerCent := BordaPercentage(baseAgent, borda)
 // 	for i := range disobedienceMap {
 // 		if disobedienceMap[i] >= 5 {
