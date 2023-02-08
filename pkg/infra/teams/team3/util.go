@@ -28,7 +28,7 @@ func (a *AgentThree) UpdateUtilityResource(baseAgent agent.BaseAgent, msg messag
 	case message.TradeAccept:
 		a.uR[id] += 3
 	}
-	a.uR[id] = limitScore(a.uR[id])
+	a.uR[id] = clampInt(a.uR[id], 0, 15)
 }
 
 // Proposal utility
@@ -49,7 +49,7 @@ func (a *AgentThree) UpdateUtilityProposal(baseAgent agent.BaseAgent, propAction
 			a.uP[id] += 1
 		}
 	}
-	a.uP[id] = limitScore(a.uP[id])
+	a.uP[id] = clampInt(a.uP[id], 0, 15)
 }
 
 // Chair utility
@@ -72,7 +72,7 @@ func (a *AgentThree) UpdateUtilityChair(baseAgent agent.BaseAgent, prop immutabl
 	} else {
 		a.uC[chairID] += 1
 	}
-	a.uC[chairID] = limitScore(a.uC[chairID])
+	a.uC[chairID] = clampInt(a.uC[chairID], 0, 15)
 }
 
 func (a *AgentThree) UpdateTotalUtility(baseAgent agent.BaseAgent) {
@@ -113,7 +113,9 @@ func (a *AgentThree) RemoveFromTSN(id commons.ID) []commons.ID {
 // Update TSN
 func (a *AgentThree) UpdateTSN(baseAgent agent.BaseAgent) {
 	for id, rep := range a.reputationMap {
-		if rep >= 75 {
+		// Add to TSN based on both reputation and SC
+		score := rep + float64(a.socialCap[id])
+		if score >= 125 {
 			a.AddToTSN(id)
 		} else {
 			a.RemoveFromTSN(id)
@@ -121,7 +123,17 @@ func (a *AgentThree) UpdateTSN(baseAgent agent.BaseAgent) {
 	}
 }
 
-func clamp(val, low, high float64) float64 {
+func clampFloat(val, low, high float64) float64 {
+	if val > high {
+		return high
+	}
+	if val < low {
+		return low
+	}
+	return val
+}
+
+func clampInt(val, low, high int) int {
 	if val > high {
 		return high
 	}
