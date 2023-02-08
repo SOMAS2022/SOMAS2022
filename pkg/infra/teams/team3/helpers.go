@@ -137,18 +137,6 @@ func (a *AgentThree) ResetContacts() {
 	}
 }
 
-// Utility scores in range [0, 15]
-func limitScore(score int) int {
-	// Implement Boundaries
-	if score > 15 {
-		score = 15
-	}
-	if score < 0 {
-		score = 0
-	}
-	return score
-}
-
 // normalize function for agent stats
 func normalize4El(x, y, z, w float64) (float64, float64, float64, float64) {
 	maxVal := minMax4(true, [...]float64{x, y, z, w})
