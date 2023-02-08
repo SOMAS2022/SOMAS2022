@@ -78,14 +78,19 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 	}
 }
 
-func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int, initStamina int) float64 {
+func (a *AgentThree) calcW1(state state.HiddenAgentState, id commons.ID) float64 {
+	w1 := a.w1Map[id]
 	currentHP := state.Hp
 	currentStamina := state.Stamina
+	prevHP := a.pastHPMap[id]
+	prevStamina := a.pastStaminaMap[id]
+
 	// extract and normalise personality (range[0,100]), use to dictate update step size
 	personalityMod := float64(a.personality / 100)
 
-	HP := initHP - int(currentHP)
-	stamina := initStamina - int(currentStamina)
+	HP := prevHP - int(currentHP)
+	stamina := prevStamina - int(currentStamina)
+
 	// alg 6
 	if stamina > 0 {
 		w1 += 0.5 * personalityMod
@@ -103,30 +108,31 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 	return w1
 }
 
-func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
+func (a *AgentThree) calcW2(id commons.ID) float64 {
+	w2 := a.w2Map[id]
 	var agentFought bool = false
-	var agentShielded bool = false
+	var agentDefended bool = false
+	nFD := 0
+	numRounds := a.fightRoundsHistory.Len()
+
 	// extract and normalise personality (range[0,100]), use to dictate update step size
 	personalityMod := float64(a.personality / 100)
-	// iterate until we get most recent history
-	i := 1
+
+	// iterate over rounds of last level
 	itr := a.fightRoundsHistory.Iterator()
 	for !itr.Done() {
 		res, _ := itr.Next()
 
-		// check stats of last round from previous level (?)
-		if i == a.fightRoundsHistory.Len()-1 {
-			// search for our agent in fight list and assign action
-			agentFought = findAgentAction(res.AttackingAgents(), baseAgent.ID())
-			agentShielded = findAgentAction(res.ShieldingAgents(), baseAgent.ID())
+		// search for agent in fight list and assign action
+		agentFought = findAgentAction(res.AttackingAgents(), id)
+		agentDefended = findAgentAction(res.ShieldingAgents(), id)
+
+		if agentFought || agentDefended {
+			nFD++
 		}
-		i++
 	}
-	if agentFought || agentShielded {
-		w2 += 0.5 * personalityMod
-	} else {
-		w2 -= 0.5 * personalityMod
-	}
+	// shifted to [-0.5, 0.5]
+	w2 += (float64(nFD/numRounds) - 0.5) * personalityMod
 
 	w2 = clampFloat(w2, 0, 10)
 
@@ -159,15 +165,12 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 			// Init values on first access
 			if _, ok := a.reputationMap[id]; !ok {
 				// init weights to middle value
-				a.w1Map[id] = 5.0
-				a.w2Map[id] = 5.0
-				a.pastHPMap[id] = int(hiddenState.Hp)
-				a.pastStaminaMap[id] = int(hiddenState.Stamina)
+				a.InitRepWeights(baseAgent, id)
 			}
 
 			// Update values according to previous state
-			a.w1Map[id] = a.calcW1(hiddenState, a.w1Map[id], a.pastHPMap[id], a.pastStaminaMap[id])
-			a.w2Map[id] = a.calcW2(baseAgent, a.w2Map[id])
+			a.w1Map[id] = a.calcW1(hiddenState, id)
+			a.w2Map[id] = a.calcW2(id)
 
 			a.reputationMap[id] = a.w1Map[id]*needs + a.w2Map[id]*productivity
 
@@ -177,6 +180,17 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 		}
 		cnt++
 	}
+}
+
+func (a *AgentThree) InitRepWeights(baseAgent agent.BaseAgent, id commons.ID) {
+	view := baseAgent.View()
+	vAS := view.AgentState()
+	hiddenState, _ := vAS.Get(id)
+
+	a.w1Map[id] = 5.0
+	a.w2Map[id] = 5.0
+	a.pastHPMap[id] = int(hiddenState.Hp)
+	a.pastStaminaMap[id] = int(hiddenState.Stamina)
 }
 
 func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) map[commons.ID]int {
