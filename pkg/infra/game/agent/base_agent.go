@@ -133,7 +133,7 @@ func (a *Agent) CompileTrustMessage(agentMap map[commons.ID]Agent) message.Trust
 	trustMsg := new(message.Trust)
 
 	// put stuff inside
-	trustMsg.MakeNewTrust(keys, make(map[string]int))
+	trustMsg.MakeNewTrust(keys, make(map[string]float64))
 
 	// send off
 	return *trustMsg

@@ -45,12 +45,20 @@ type StartLoot struct {
 
 type Trust struct {
 	Recipients []commons.ID
-	Gossip     map[commons.ID]int
+	Gossip     map[commons.ID]float64
 }
 
-func (t *Trust) MakeNewTrust(recips []commons.ID, gos map[commons.ID]int) {
+func (t *Trust) MakeNewTrust(recips []commons.ID, gos map[commons.ID]float64) {
 	t.Recipients = recips
 	t.Gossip = gos
+}
+
+// func (t TaggedMessage) goss() Message {
+// 	return t.Message().gossexttract()
+// }
+
+func (t Trust) gossexttract() map[commons.ID]float64 {
+	return t.Gossip
 }
 
 func (t Trust) sealedMessage() {
