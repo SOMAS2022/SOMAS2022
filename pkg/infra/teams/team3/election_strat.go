@@ -193,20 +193,15 @@ func (a *AgentThree) InitRepWeights(baseAgent agent.BaseAgent, id commons.ID) {
 	a.pastStaminaMap[id] = int(hiddenState.Stamina)
 }
 
-func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) map[commons.ID]int {
+func (a *AgentThree) InitSocialCapital(baseAgent agent.BaseAgent) {
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
-	disobedienceMap := make(map[commons.ID]int, 0)
 	for !itr.Done() {
-		id, hiddenState, _ := itr.Next()
+		id, _, _ := itr.Next()
 
-		if hiddenState.Defector.IsDefector() {
-			a.socialCap[id]++
-		}
-		disobedienceMap[id] = a.socialCap[id]
+		a.socialCap[id] = 25
 	}
-	return disobedienceMap
 }
 
 func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool {

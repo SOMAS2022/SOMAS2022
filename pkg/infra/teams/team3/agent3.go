@@ -59,6 +59,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *com
 		a.statsQueue.addStat(stat3)
 		viewAS := view.AgentState()
 		a.numAgents = viewAS.Len()
+		a.InitSocialCapital(baseAgent)
 	}
 	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())
@@ -143,6 +144,7 @@ func NewAgentThreeNeutral() agent.Strategy {
 		w2Map:             make(map[commons.ID]float64, 0),
 		pastHPMap:         make(map[commons.ID]int, 0),
 		pastStaminaMap:    make(map[commons.ID]int, 0),
+		socialCap:         make(map[commons.ID]int, 25),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		changeInit:        0,
@@ -167,6 +169,7 @@ func NewAgentThreePassive() agent.Strategy {
 		w2Map:             make(map[commons.ID]float64, 0),
 		pastHPMap:         make(map[commons.ID]int, 0),
 		pastStaminaMap:    make(map[commons.ID]int, 0),
+		socialCap:         make(map[commons.ID]int, 25),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		changeInit:        0,
@@ -190,6 +193,7 @@ func NewAgentThreeAggressive() agent.Strategy {
 		w2Map:             make(map[commons.ID]float64, 0),
 		pastHPMap:         make(map[commons.ID]int, 0),
 		pastStaminaMap:    make(map[commons.ID]int, 0),
+		socialCap:         make(map[commons.ID]int, 25),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
 		changeInit:        0,
