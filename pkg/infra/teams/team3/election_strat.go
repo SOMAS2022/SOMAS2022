@@ -5,7 +5,6 @@ import (
 
 	"infra/game/commons"
 	"math"
-	"strconv"
 
 	"infra/game/decision"
 	"infra/game/state"
@@ -144,7 +143,7 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 	// fairness := make(map[commons.ID]float64)
 
 	// Number of agents to sample for KA (fixed)
-	intendedSample := float64(a.numAgents) * a.sample_percent
+	intendedSample := float64(a.numAgents) * a.samplePercent
 	maxLength := float64(vAS.Len())
 	sampleLength := int(math.Min(intendedSample, maxLength))
 	cnt := 0
@@ -180,19 +179,18 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 	}
 }
 
-func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) [][]string {
+func (a *AgentThree) SocialCapital(baseAgent agent.BaseAgent) map[commons.ID]int {
 	view := baseAgent.View()
 	agentState := view.AgentState()
 	itr := agentState.Iterator()
-	disobedienceMap := [][]string{}
+	disobedienceMap := make(map[commons.ID]int, 0)
 	for !itr.Done() {
 		id, hiddenState, _ := itr.Next()
 
 		if hiddenState.Defector.IsDefector() {
-			a.Soc_cap++
+			a.socialCap[id]++
 		}
-		temp := []string{id, strconv.Itoa(a.Soc_cap)}
-		disobedienceMap = append(disobedienceMap, temp)
+		disobedienceMap[id] = a.socialCap[id]
 	}
 	return disobedienceMap
 }
@@ -213,7 +211,7 @@ func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool
 // 	view := baseAgent.View()
 // 	agentState := view.AgentState()
 
-// 	sample := rand.Intn(int(math.Ceil(float64(agentState.Len())*a.sample_percent))-1) + 1
+// 	sample := rand.Intn(int(math.Ceil(float64(agentState.Len())*a.samplePercent))-1) + 1
 // 	counter := 1
 
 // 	currentLevel := int(view.CurrentLevel())
@@ -245,7 +243,7 @@ func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool
 // 	itr := agentState.Iterator()
 // 	counter1 := 1
 
-// 	for i := 1; i <= int(math.Ceil(float64(agentState.Len())*a.sample_percent)); {
+// 	for i := 1; i <= int(math.Ceil(float64(agentState.Len())*a.samplePercent)); {
 // 		if counter1%sample == 0 {
 // 			id, hiddenState, _ := itr.Next()
 

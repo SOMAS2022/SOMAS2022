@@ -14,28 +14,30 @@ import (
 type AgentThree struct {
 	AT                 int
 	SH                 int
-	uR                 map[commons.ID]int
-	uP                 map[commons.ID]int
-	uC                 map[commons.ID]int
-	utilityScore       map[commons.ID]int
-	TSN                []commons.ID
-	contactsLastRound  map[commons.ID]bool
-	chairTolerance     int
-	proposalTolerance  map[commons.ID]int
 	fightRoundsHistory commons.ImmutableList[decision.ImmutableFightResult]
-	reputationMap      map[commons.ID]float64
-	w1Map              map[commons.ID]float64
-	w2Map              map[commons.ID]float64
-	pastHPMap          map[commons.ID]int
-	pastStaminaMap     map[commons.ID]int
-	personality        int
-	sanctioned         int
-	statsQueue         StatsQueue
-	change_init        float64
-	alpha              float64
-	Soc_cap            int
-	sample_percent     float64
 	numAgents          int
+
+	personality    int
+	TSN            []commons.ID
+	reputationMap  map[commons.ID]float64
+	socialCap      map[commons.ID]int
+	w1Map          map[commons.ID]float64
+	w2Map          map[commons.ID]float64
+	pastHPMap      map[commons.ID]int
+	pastStaminaMap map[commons.ID]int
+	statsQueue     StatsQueue
+	changeInit     float64
+	alpha          float64
+	samplePercent  float64
+
+	uR                map[commons.ID]int
+	uP                map[commons.ID]int
+	uC                map[commons.ID]int
+	utilityScore      map[commons.ID]int
+	contactsLastRound map[commons.ID]bool
+	chairTolerance    int
+	proposalTolerance map[commons.ID]int
+	sanctioned        int
 }
 
 // Update internal parameters at the end of each stage
@@ -93,7 +95,7 @@ func (a *AgentThree) GetStats() (int, int) {
 
 func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	// calculate the agent average stats before round
-	avg_ini := a.statsQueue.averageStats()
+	avgInit := a.statsQueue.averageStats()
 
 	// get agents stats after round
 	AS := baseAgent.AgentState()
@@ -104,13 +106,13 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	// add to queue and calculate the new average
 	stat := Stats{HP, ST, AT, SH}
 	a.statsQueue.addStat(stat)
-	avg_now := a.statsQueue.averageStats()
+	avgNow := a.statsQueue.averageStats()
 	// calculate difference
-	change_now := avg_now.Health - avg_ini.Health
+	changeNow := avgNow.Health - avgInit.Health
 	// calculate % change
-	P_C := ((change_now - a.change_init) / math.Abs(change_now))
+	PC := ((changeNow - a.changeInit) / math.Abs(changeNow))
 	// scale
-	increment := (P_C * a.alpha)
+	increment := (PC * a.alpha)
 
 	// keep with max perosnality swing
 	if math.IsNaN(increment) {
@@ -122,7 +124,7 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	// keep within maxMin personality
 	a.personality = clampInt(a.personality, 0, 100)
 	// reset initial change to new value.
-	a.change_init = change_now
+	a.changeInit = changeNow
 }
 
 func NewAgentThreeNeutral() agent.Strategy {
@@ -143,9 +145,9 @@ func NewAgentThreeNeutral() agent.Strategy {
 		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
-		change_init:       0,
+		changeInit:        0,
 		alpha:             5,
-		sample_percent:    0.25,
+		samplePercent:     0.25,
 	}
 }
 
@@ -167,9 +169,9 @@ func NewAgentThreePassive() agent.Strategy {
 		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
-		change_init:       0,
+		changeInit:        0,
 		alpha:             5,
-		sample_percent:    0.25,
+		samplePercent:     0.25,
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -190,8 +192,8 @@ func NewAgentThreeAggressive() agent.Strategy {
 		pastStaminaMap:    make(map[commons.ID]int, 0),
 		sanctioned:        0,
 		statsQueue:        *makeStatsQueue(3),
-		change_init:       0,
+		changeInit:        0,
 		alpha:             5,
-		sample_percent:    0.25,
+		samplePercent:     0.25,
 	}
 }
