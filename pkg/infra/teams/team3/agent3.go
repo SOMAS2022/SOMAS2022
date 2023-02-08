@@ -116,21 +116,11 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	if math.IsNaN(increment) {
 		increment = 0
 	}
-	if increment >= 5 {
-		increment = 5
-	}
-	if increment <= -5 {
-		increment = -5
-	}
+	increment = clampFloat(increment, -5, 5)
 	// update personality
 	a.personality = a.personality + int(math.Ceil(increment))
 	// keep within maxMin personality
-	if a.personality >= 100 {
-		a.personality = 100
-	}
-	if a.personality <= 0 {
-		a.personality = 0
-	}
+	a.personality = clampInt(a.personality, 0, 100)
 	// reset initial change to new value.
 	a.change_init = change_now
 }

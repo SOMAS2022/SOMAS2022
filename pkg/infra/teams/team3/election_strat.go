@@ -99,7 +99,7 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, w1 float64, initHP int
 		w1 -= 0.5 * personalityMod
 	}
 
-	w1 = clamp(w1, 0, 10)
+	w1 = clampFloat(w1, 0, 10)
 
 	return w1
 }
@@ -129,7 +129,7 @@ func (a *AgentThree) calcW2(baseAgent agent.BaseAgent, w2 float64) float64 {
 		w2 -= 0.5 * personalityMod
 	}
 
-	w2 = clamp(w2, 0, 10)
+	w2 = clampFloat(w2, 0, 10)
 
 	return w2
 }
@@ -155,16 +155,16 @@ func (a *AgentThree) Reputation(baseAgent agent.BaseAgent) {
 			// Unsorted array
 			return
 		} else {
-			// Init values on 1st lvl
-			if _, ok := a.reputationMap[id]; ok {
-				// init weights to middle value
-				a.w1Map[id] = 2.5
-				a.w2Map[id] = 2.5
-				a.pastHPMap[id] = GetStartingHP()
-				a.pastStaminaMap[id] = GetStartingStamina()
-			}
-
 			hiddenState, _ := vAS.Get(id)
+
+			// Init values on first access
+			if _, ok := a.reputationMap[id]; !ok {
+				// init weights to middle value
+				a.w1Map[id] = 5.0
+				a.w2Map[id] = 5.0
+				a.pastHPMap[id] = int(hiddenState.Hp)
+				a.pastStaminaMap[id] = int(hiddenState.Stamina)
+			}
 
 			// Update values according to previous state
 			a.w1Map[id] = a.calcW1(hiddenState, a.w1Map[id], a.pastHPMap[id], a.pastStaminaMap[id])

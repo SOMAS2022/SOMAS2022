@@ -121,7 +121,17 @@ func (a *AgentThree) UpdateTSN(baseAgent agent.BaseAgent) {
 	}
 }
 
-func clamp(val, low, high float64) float64 {
+func clampFloat(val, low, high float64) float64 {
+	if val > high {
+		return high
+	}
+	if val < low {
+		return low
+	}
+	return val
+}
+
+func clampInt(val, low, high int) int {
 	if val > high {
 		return high
 	}
