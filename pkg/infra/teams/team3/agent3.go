@@ -111,9 +111,9 @@ func (a *AgentThree) UpdatePersonality(baseAgent agent.BaseAgent) {
 	// calculate difference
 	changeNow := avgNow.Health - avgInit.Health
 	// calculate % change
-	PC := ((changeNow - a.changeInit) / math.Abs(changeNow))
+	pc := ((changeNow - a.changeInit) / math.Abs(changeNow))
 	// scale
-	increment := (PC * a.alpha)
+	increment := (pc * a.alpha)
 
 	// keep with max perosnality swing
 	if math.IsNaN(increment) {

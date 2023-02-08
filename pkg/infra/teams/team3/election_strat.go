@@ -110,8 +110,8 @@ func (a *AgentThree) calcW1(state state.HiddenAgentState, id commons.ID) float64
 
 func (a *AgentThree) calcW2(id commons.ID) float64 {
 	w2 := a.w2Map[id]
-	var agentFought bool = false
-	var agentDefended bool = false
+	agentFought := false
+	agentDefended := false
 	nFD := 0
 	numRounds := a.fightRoundsHistory.Len()
 
