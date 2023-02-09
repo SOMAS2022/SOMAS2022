@@ -38,7 +38,9 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 	// Receive the message.Trust type using m.Message()
 	//fmt.Println("AGENT 3 RECEIVED: ", reflect.TypeOf(m))
-	fmt.Println("AGENT 3 RECEIVED: ", m.gossexttract())
+	mes := m.Message()
+	t := mes.(message.Trust)
+	fmt.Println("AGENT 3 RECEIVED: ", t.Gossip)
 
 	// This function is type void - you can do whatever you want with it. I would suggest keeping a local dictionary
 }
