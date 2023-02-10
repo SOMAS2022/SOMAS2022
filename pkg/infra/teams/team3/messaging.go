@@ -17,6 +17,11 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 
 	// ** it extracts the keys (i.e., the IDs) **
 	i := 0
+	for _, k := range a.TSN {
+		keys[i] = k
+		i++
+	}
+
 	for k := range agentMap {
 		keys[i] = k
 		i++
@@ -27,7 +32,7 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 
 	// ** and puts stuff inside
 	//trustMsg.MakeNewTrust(keys[:1], make(map[string]int))
-	num := int(a.sample_percent * float64(len(agentMap)))
+	num := int(a.samplePercent * float64(len(agentMap)))
 	trustMsg.MakeNewTrust(keys[0:num], a.reputationMap) //change the :1
 
 	// // send off
@@ -40,7 +45,20 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 	//fmt.Println("AGENT 3 RECEIVED: ", reflect.TypeOf(m))
 	mes := m.Message()
 	t := mes.(message.Trust)
-	fmt.Println("AGENT 3 RECEIVED: ", t.Gossip)
+	for key, value := range t.Gossip {
+		//fmt.Println("lol: ", key)
+		_, exists := a.reputationMap[key]
+		if exists {
+			diff := a.reputationMap[key] - t.Gossip[key]
+			norm := diff * (a.reputationMap[m.Sender()] / 100)
+			a.reputationMap[key] = a.reputationMap[key] + norm
+		} else {
+			a.reputationMap[key] = value
+		}
 
+	}
+	a.socialCap[m.Sender()] += 1
+	//fmt.Println("sender is", t.Recipients, m.Sender(), a.socialCap[m.Sender()])
 	// This function is type void - you can do whatever you want with it. I would suggest keeping a local dictionary
+
 }

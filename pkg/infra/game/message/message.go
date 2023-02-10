@@ -53,14 +53,6 @@ func (t *Trust) MakeNewTrust(recips []commons.ID, gos map[commons.ID]float64) {
 	t.Gossip = gos
 }
 
-// func (t TaggedMessage) goss() Message {
-// 	return t.Message().gossexttract()
-// }
-
-func (t Trust) gossexttract() map[commons.ID]float64 {
-	return t.Gossip
-}
-
 func (t Trust) sealedMessage() {
 	panic("idk")
 }
