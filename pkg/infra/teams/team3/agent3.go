@@ -38,6 +38,11 @@ type AgentThree struct {
 	chairTolerance    int
 	proposalTolerance map[commons.ID]int
 	sanctioned        int
+
+	// maps each agent to list of previous sanctions
+	sanctionHistory map[commons.ID]([]int)
+	// tracks if agent is undergoing sanction
+	activeSanctionMap map[commons.ID]SanctionActivity
 }
 
 // Update internal parameters at the end of each stage
@@ -150,6 +155,8 @@ func NewAgentThreeNeutral() agent.Strategy {
 		changeInit:        0,
 		alpha:             5,
 		samplePercent:     0.25,
+		sanctionHistory:   make(map[commons.ID]([]int)),
+		activeSanctionMap: make(map[commons.ID]SanctionActivity),
 	}
 }
 
@@ -175,6 +182,8 @@ func NewAgentThreePassive() agent.Strategy {
 		changeInit:        0,
 		alpha:             5,
 		samplePercent:     0.25,
+		sanctionHistory:   make(map[commons.ID]([]int)),
+		activeSanctionMap: make(map[commons.ID]SanctionActivity),
 	}
 }
 func NewAgentThreeAggressive() agent.Strategy {
@@ -199,5 +208,7 @@ func NewAgentThreeAggressive() agent.Strategy {
 		changeInit:        0,
 		alpha:             5,
 		samplePercent:     0.25,
+		sanctionHistory:   make(map[commons.ID]([]int)),
+		activeSanctionMap: make(map[commons.ID]SanctionActivity),
 	}
 }
