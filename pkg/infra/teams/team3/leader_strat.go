@@ -22,6 +22,10 @@ func (s *SanctionActivity) makeSanction(length int) *SanctionActivity {
 	return &SanctionActivity{sanctionActive: true, duration: length}
 }
 
+func (s *SanctionActivity) initialiseSanction(length int) *SanctionActivity {
+	return &SanctionActivity{sanctionActive: false, duration: 0}
+}
+
 func (s *SanctionActivity) agentIsSanctioned() bool {
 	return s.sanctionActive
 }
