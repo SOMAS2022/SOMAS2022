@@ -22,7 +22,7 @@ func (s *SanctionActivity) makeSanction(length int) *SanctionActivity {
 	return &SanctionActivity{sanctionActive: true, duration: length}
 }
 
-func (s *SanctionActivity) initialiseSanction(length int) *SanctionActivity {
+func (s *SanctionActivity) initialiseSanction() *SanctionActivity {
 	return &SanctionActivity{sanctionActive: false, duration: 0}
 }
 
