@@ -51,7 +51,7 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 		if exists {
 			diff := rep - t.Gossip[key]
 			norm := diff * (a.reputationMap[m.Sender()] / 100)
-			a.reputationMap[key] = a.reputationMap[key] + norm
+			a.reputationMap[key] = rep + norm
 		} else {
 			a.reputationMap[key] = value
 		}
