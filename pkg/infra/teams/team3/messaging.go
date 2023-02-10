@@ -13,7 +13,7 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 
 	//faireness = the function ids --> reputation number: which is the gossip
 	//send to everyone
-	keys := make([]commons.ID, len(agentMap))
+	keys := make([]commons.ID, len(agentMap)+len(a.TSN))
 
 	// ** it extracts the keys (i.e., the IDs) **
 	i := 0
@@ -47,9 +47,9 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 	t := mes.(message.Trust)
 	for key, value := range t.Gossip {
 		//fmt.Println("lol: ", key)
-		_, exists := a.reputationMap[key]
+		rep, exists := a.reputationMap[key]
 		if exists {
-			diff := a.reputationMap[key] - t.Gossip[key]
+			diff := rep - t.Gossip[key]
 			norm := diff * (a.reputationMap[m.Sender()] / 100)
 			a.reputationMap[key] = a.reputationMap[key] + norm
 		} else {
