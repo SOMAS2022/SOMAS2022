@@ -49,22 +49,35 @@ type AgentThree struct {
 func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *commons.ImmutableList[decision.ImmutableFightResult], votes *immutable.Map[decision.Intent, uint], log chan<- logging.AgentLog) {
 	AS := baseAgent.AgentState()
 	view := baseAgent.View()
-	// Initialise utils
+
+	// First lvl initialisations
 	if view.CurrentLevel() == 1 {
+		// Init utility
 		a.utilityScore = a.InitUtility(baseAgent)
 		a.uR = a.InitUtility(baseAgent)
 		a.uP = a.InitUtility(baseAgent)
 		a.uC = a.InitUtility(baseAgent)
-		// initialise stats and add to the queue.
+
+		// Initialise stats for Short term memory
 		stat := Stats{1000, 0, 0, 0}
 		stat2 := Stats{1000, 0, 0, 0}
 		stat3 := Stats{1000, 0, 0, 0}
 		a.statsQueue.addStat(stat)
 		a.statsQueue.addStat(stat2)
 		a.statsQueue.addStat(stat3)
+
 		viewAS := view.AgentState()
 		a.numAgents = viewAS.Len()
+
+		// Init SC (25)
 		a.InitSocialCapital(baseAgent)
+
+		// Init sanctions
+		for _, id := range commons.ImmutableMapKeys(viewAS) {
+			sanction := SanctionActivity{}
+			sanction.initialiseSanction()
+			a.activeSanctionMap[id] = sanction
+		}
 	}
 	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())

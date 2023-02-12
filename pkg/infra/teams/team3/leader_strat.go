@@ -3,6 +3,7 @@ package team3
 import (
 	"math/rand"
 
+	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -215,11 +216,22 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 		toSanctionOrNot := rand.Intn(100)
 		if toSanctionOrNot > a.willSanctionConstant(agent) {
 			pruned[id] = agent
+			// Did not sanction this stage
+			sanction := SanctionActivity{}
+			sanction.initialiseSanction()
+			a.activeSanctionMap[id] = sanction
 		} else {
 			// agent has been pruned. Choose sanction duration
-			sanctionDuration := a.sanctioningDynamic(agent)
+			enableDynSanction := config.EnvToBool("DYNAMIC_SANCTIONS", true)
+			var sanctionDuration int
+			if enableDynSanction {
+				sanctionDuration = a.sanctioningDynamic(agent)
+			} else {
+				sanctionDuration = int(config.EnvToUint("SANCTION_LEN", 1))
+			}
 			// update agent's sanction history
 			a.updateSanctionHistory(agent, sanctionDuration)
+
 			a.createSanction(agent, sanctionDuration)
 		}
 	}
