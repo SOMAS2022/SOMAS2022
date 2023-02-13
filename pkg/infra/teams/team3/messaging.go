@@ -5,6 +5,7 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/message"
+	"sync"
 )
 
 // This is where you must compile your trust message. My example implementation takes ALL agents from the agent map **
@@ -33,7 +34,15 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 	// ** and puts stuff inside
 	//trustMsg.MakeNewTrust(keys[:1], make(map[string]int))
 	num := int(a.samplePercent * float64(len(agentMap)))
-	trustMsg.MakeNewTrust(keys[0:num], a.reputationMap) //change the :1
+
+	// avoid concurrent write to/read from trust.Gossip
+	repMapShallowCopy := make(map[commons.ID]float64)
+
+	for k, v := range a.reputationMap {
+		repMapShallowCopy[k] = v
+	}
+
+	trustMsg.MakeNewTrust(keys[0:num], repMapShallowCopy) //change the :1
 
 	// // send off
 	return *trustMsg
@@ -45,6 +54,12 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 
 	mes := m.Message()
 	t := mes.(message.Trust)
+
+	mutex := sync.Mutex{}
+	mutex.Lock()
+
+	// Gossip IS reputation map ---> one thread will read it, one thread will write it. 
+	// Shallow copy introduced in Compile
 
 	for key, value := range t.Gossip {
 		rep, exists := a.reputationMap[key]
@@ -58,6 +73,7 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 
 	}
 	a.socialCap[m.Sender()] += 1
+	mutex.Unlock()
 	//fmt.Println("sender is", t.Recipients, m.Sender(), a.socialCap[m.Sender()])
 	// This function is type void - you can do whatever you want with it. I would suggest keeping a local dictionary
 
