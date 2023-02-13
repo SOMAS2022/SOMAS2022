@@ -81,7 +81,7 @@ func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *stat
 	}
 }
 
-func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
+func HandleTrustStage(agentMap map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage) {
 	closures := make(map[commons.ID]chan<- struct{})
 
 	// SEND ALL MESSAGES OUT
@@ -108,6 +108,10 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
 	for _, closure := range closures {
 		closure <- struct{}{}
 		close(closure)
+	}
+
+	for _, c := range channelsMap {
+		close(c)
 	}
 }
 
