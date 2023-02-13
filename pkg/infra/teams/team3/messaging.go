@@ -53,13 +53,13 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 	trustMsg := new(message.Trust)
 
 	// avoid concurrent write to/read from trust.Gossip
-	repMapShallowCopy := make(map[commons.ID]float64)
+	repMapDeepCopy := make(map[commons.ID]float64)
 
 	for k, v := range a.reputationMap {
-		repMapShallowCopy[k] = v
+		repMapDeepCopy[k] = v
 	}
 
-	trustMsg.MakeNewTrust(agentsToMessage, repMapShallowCopy)
+	trustMsg.MakeNewTrust(agentsToMessage, repMapDeepCopy)
 
 	// send off
 	return *trustMsg
