@@ -204,6 +204,14 @@ func (a *AgentThree) InitSocialCapital(baseAgent agent.BaseAgent) {
 	}
 }
 
+func (a *AgentThree) initSanctionMap(view immutable.Map[string, state.HiddenAgentState]) {
+	for _, id := range commons.ImmutableMapKeys(view) {
+		sanction := SanctionActivity{}
+		sanction.initialiseSanction()
+		a.activeSanctionMap[id] = sanction
+	}
+}
+
 func findAgentAction(agentIDsMap immutable.List[commons.ID], ID commons.ID) bool {
 	itr := agentIDsMap.Iterator()
 	for !itr.Done() {

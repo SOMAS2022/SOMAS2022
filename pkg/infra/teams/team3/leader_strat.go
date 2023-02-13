@@ -3,6 +3,7 @@ package team3
 import (
 	"math/rand"
 
+	"infra/config"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -12,6 +13,38 @@ import (
 
 	"github.com/benbjohnson/immutable"
 )
+
+type SanctionActivity struct {
+	sanctionActive bool
+	duration       int
+}
+
+func (s *SanctionActivity) makeSanction(length int) {
+	s.sanctionActive = true
+	s.duration = length
+}
+
+func (s *SanctionActivity) initialiseSanction() {
+	s.sanctionActive = false
+	s.duration = 0
+}
+
+func (s *SanctionActivity) agentIsSanctioned() bool {
+	return s.sanctionActive
+}
+
+func (s *SanctionActivity) updateSanction() {
+	if !s.sanctionActive {
+		return
+	}
+
+	if s.duration > 0 {
+		s.duration--
+	} else {
+		s.sanctionActive = false
+	}
+
+}
 
 // Manifesto
 func (a *AgentThree) CreateManifesto(_ agent.BaseAgent) *decision.Manifesto {
@@ -131,7 +164,7 @@ func allocateRandomly(iterator commons.Iterator[state.Item], ids []commons.ID, l
 	}
 }
 
-func (a *AgentThree) Sanctioning(agent agent.Agent) int {
+func (a *AgentThree) willSanctionConstant(agent agent.Agent) int {
 	A := 0.8
 	B := 0.2
 
@@ -150,13 +183,60 @@ func (a *AgentThree) Sanctioning(agent agent.Agent) int {
 	return sanction
 }
 
+func (a *AgentThree) sanctioningHistoric(agent agent.Agent) int {
+	agentId := agent.ID()
+	prevSanctions := a.sanctionHistory[agentId]
+	mostRecentSanction := prevSanctions[len(prevSanctions)-1]
+	return mostRecentSanction + 1
+}
+
+func (a *AgentThree) sanctioningDynamic(agent agent.Agent) int {
+	return rand.Intn(5) + 1
+}
+
+func (a *AgentThree) updateSanctionHistory(agent agent.Agent, sanctionDuration int) {
+	agentId := agent.ID()
+	prevSanctions := a.sanctionHistory[agentId]
+	updatedSanctions := append(prevSanctions, sanctionDuration)
+	a.sanctionHistory[agentId] = updatedSanctions
+}
+
+func (a *AgentThree) createSanction(agent agent.Agent, length int) {
+	agentId := agent.ID()
+	sanction := SanctionActivity{}
+	sanction.makeSanction(length)
+	a.activeSanctionMap[agentId] = sanction
+}
+
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
 	pruned := make(map[commons.ID]agent.Agent)
 	for id, agent := range agentMap {
+
+		currentSanction := a.activeSanctionMap[id]
+		if currentSanction.agentIsSanctioned() {
+			currentSanction.updateSanction()
+			a.activeSanctionMap[id] = currentSanction
+			continue
+		}
+
 		// Compare to 50 in order to sanction
 		toSanctionOrNot := rand.Intn(100)
-		if toSanctionOrNot > a.Sanctioning(agent) {
+		if toSanctionOrNot > a.willSanctionConstant(agent) {
 			pruned[id] = agent
+		} else {
+			// agent has been pruned. Choose sanction duration
+			enableDynSanction := config.EnvToBool("DYNAMIC_SANCTIONS", true)
+			var sanctionDuration int
+			if enableDynSanction {
+				sanctionDuration = a.sanctioningDynamic(agent)
+			} else {
+				sanctionDuration = int(config.EnvToUint("SANCTION_LEN", 1))
+			}
+			// register sanction to local map
+			a.createSanction(agent, sanctionDuration)
+			// update agent's sanction history
+			a.updateSanctionHistory(agent, sanctionDuration)
+
 		}
 	}
 	return pruned
