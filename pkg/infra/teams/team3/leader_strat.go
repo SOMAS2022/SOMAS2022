@@ -19,12 +19,14 @@ type SanctionActivity struct {
 	duration       int
 }
 
-func (s *SanctionActivity) makeSanction(length int) *SanctionActivity {
-	return &SanctionActivity{sanctionActive: true, duration: length}
+func (s *SanctionActivity) makeSanction(length int) {
+	s.sanctionActive = true
+	s.duration = length
 }
 
-func (s *SanctionActivity) initialiseSanction() *SanctionActivity {
-	return &SanctionActivity{sanctionActive: false, duration: 0}
+func (s *SanctionActivity) initialiseSanction() {
+	s.sanctionActive = false
+	s.duration = 0
 }
 
 func (s *SanctionActivity) agentIsSanctioned() bool {
@@ -32,6 +34,10 @@ func (s *SanctionActivity) agentIsSanctioned() bool {
 }
 
 func (s *SanctionActivity) updateSanction() {
+	if !s.sanctionActive {
+		return
+	}
+
 	if s.duration > 0 {
 		s.duration--
 	} else {
@@ -209,6 +215,7 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 		currentSanction := a.activeSanctionMap[id]
 		if currentSanction.agentIsSanctioned() {
 			currentSanction.updateSanction()
+			a.activeSanctionMap[id] = currentSanction
 			continue
 		}
 
@@ -216,10 +223,6 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 		toSanctionOrNot := rand.Intn(100)
 		if toSanctionOrNot > a.willSanctionConstant(agent) {
 			pruned[id] = agent
-			// Did not sanction this stage
-			sanction := SanctionActivity{}
-			sanction.initialiseSanction()
-			a.activeSanctionMap[id] = sanction
 		} else {
 			// agent has been pruned. Choose sanction duration
 			enableDynSanction := config.EnvToBool("DYNAMIC_SANCTIONS", true)
@@ -229,10 +232,11 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 			} else {
 				sanctionDuration = int(config.EnvToUint("SANCTION_LEN", 1))
 			}
+			// register sanction to local map
+			a.createSanction(agent, sanctionDuration)
 			// update agent's sanction history
 			a.updateSanctionHistory(agent, sanctionDuration)
 
-			a.createSanction(agent, sanctionDuration)
 		}
 	}
 	return pruned

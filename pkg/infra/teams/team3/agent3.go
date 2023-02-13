@@ -73,11 +73,7 @@ func (a *AgentThree) UpdateInternalState(baseAgent agent.BaseAgent, history *com
 		a.InitSocialCapital(baseAgent)
 
 		// Init sanctions
-		for _, id := range commons.ImmutableMapKeys(viewAS) {
-			sanction := SanctionActivity{}
-			sanction.initialiseSanction()
-			a.activeSanctionMap[id] = sanction
-		}
+		a.initSanctionMap(viewAS)
 	}
 	// fetch total attack and defence
 	a.AT = int(AS.Attack + AS.BonusAttack())
