@@ -55,7 +55,6 @@ func startGameLoop() {
 	*viewPtr = globalState.ToView()
 
 	w, csvFile := initCsvLogging()
-
 	for globalState.CurrentLevel = 1; globalState.CurrentLevel < (gameConfig.NumLevels + 1); globalState.CurrentLevel++ {
 		levelLog := logging.LevelStages{}
 		// Election Stage
@@ -203,6 +202,7 @@ func startGameLoop() {
 				logging.OutputLog(logging.Loss)
 
 				csvFile.Close()
+				fmt.Println(csvFile.Name())
 				return
 			}
 			fightResultSlice = append(fightResultSlice, *decision.NewImmutableFightResult(fightActions, roundNum))
@@ -250,4 +250,5 @@ func startGameLoop() {
 	logging.Log(logging.Info, nil, fmt.Sprintf("Congratulations, The Peasants have escaped the pit with %d remaining.", len(agentMap)))
 	logging.OutputLog(logging.Win)
 	csvFile.Close()
+	fmt.Println(csvFile.Name())
 }
