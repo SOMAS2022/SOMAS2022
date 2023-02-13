@@ -56,7 +56,7 @@ func (a *AgentThree) HandleElectionBallot(baseAgent agent.BaseAgent, param *deci
 	// should we vote?
 	makeVote := rand.Intn(100)
 	// if makeVote is lower than personality, then vote.
-	if makeVote < a.personality {
+	if len(candidates) > 0 && makeVote < a.personality {
 		// Create Ballot
 		var ballot decision.Ballot
 		// number of manifesto preferences we are allowed

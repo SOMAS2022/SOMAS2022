@@ -81,7 +81,7 @@ func UpdateInternalStates(agentMap map[commons.ID]agent.Agent, globalState *stat
 	}
 }
 
-func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
+func HandleTrustStage(agentMap map[commons.ID]agent.Agent, channelsMap map[commons.ID]chan message.TaggedMessage) {
 	closures := make(map[commons.ID]chan<- struct{})
 
 	// SEND ALL MESSAGES OUT
@@ -91,6 +91,9 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
 
 		for _, ag := range senderList {
 			// fmt.Println("SENDING:")
+			if a.ID() == ag {
+				continue
+			}
 			a.SendBlockingMessage(ag, msg)
 		}
 	}
@@ -100,14 +103,18 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent) {
 		closure := make(chan struct{})
 		closures[id] = closure
 
-		go (&a).HandleTrust(closure, agentMap)
+		go (&a).HandleTrust(closure)
 	}
 
 	// timeout for agents to respond
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	for _, closure := range closures {
 		closure <- struct{}{}
 		close(closure)
+	}
+
+	for _, c := range channelsMap {
+		close(c)
 	}
 }
 

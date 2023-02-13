@@ -136,7 +136,6 @@ func (a *Agent) HandleLoot(agentState state.AgentState, votes chan commons.Propo
 
 func (a *Agent) HandleTrust(
 	closures chan struct{},
-	agentMap map[commons.ID]Agent,
 ) {
 	for {
 		select {
