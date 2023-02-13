@@ -7,6 +7,15 @@ import (
 	"sync"
 )
 
+func agentInList(agentID commons.ID, messageList []commons.ID) bool {
+	for _, id := range messageList {
+		if agentID == id {
+			return true
+		}
+	}
+	return false
+}
+
 // This is where you must compile your trust message. My example implementation takes ALL agents from the agent map **
 func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) message.Trust {
 	// fmt.Println("AGENT 3 COMPOSED: message.Trust")
@@ -30,6 +39,12 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 		if i == num {
 			break
 		}
+
+		// try next ID if agent is already being messaged
+		if agentInList(k, agentsToMessage) {
+			continue
+		}
+
 		agentsToMessage[i] = k
 		i++
 	}
