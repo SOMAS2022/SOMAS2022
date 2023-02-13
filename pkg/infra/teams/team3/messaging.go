@@ -5,7 +5,6 @@ import (
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/message"
-	"sync"
 )
 
 // This is where you must compile your trust message. My example implementation takes ALL agents from the agent map **
@@ -43,12 +42,10 @@ func (a *AgentThree) CompileTrustMessage(agentMap map[commons.ID]agent.Agent) me
 // You will receive a message of type "TaggedMessage"
 func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 	// Receive the message.Trust type using m.Message()
-	//fmt.Println("AGENT 3 RECEIVED: ", reflect.TypeOf(m))
+
 	mes := m.Message()
 	t := mes.(message.Trust)
 
-	mutex := sync.RWMutex{}
-	mutex.Lock()
 	for key, value := range t.Gossip {
 		rep, exists := a.reputationMap[key]
 		if exists {
@@ -61,7 +58,6 @@ func (a *AgentThree) HandleTrustMessage(m message.TaggedMessage) {
 
 	}
 	a.socialCap[m.Sender()] += 1
-	mutex.Unlock()
 	//fmt.Println("sender is", t.Recipients, m.Sender(), a.socialCap[m.Sender()])
 	// This function is type void - you can do whatever you want with it. I would suggest keeping a local dictionary
 

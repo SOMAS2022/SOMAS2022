@@ -91,6 +91,9 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent, channelsMap map[commo
 
 		for _, ag := range senderList {
 			// fmt.Println("SENDING:")
+			if a.ID() == ag {
+				continue
+			}
 			a.SendBlockingMessage(ag, msg)
 		}
 	}
@@ -100,7 +103,7 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent, channelsMap map[commo
 		closure := make(chan struct{})
 		closures[id] = closure
 
-		go (&a).HandleTrust(closure, agentMap)
+		go (&a).HandleTrust(closure)
 	}
 
 	// timeout for agents to respond
