@@ -89,7 +89,7 @@ func AgentLootDecisions(
 		start <- startLootMessage
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(25 * time.Millisecond)
 	for id, c := range channelsMap {
 		closures[id] <- struct{}{}
 		go func(recv <-chan message.TaggedMessage) {

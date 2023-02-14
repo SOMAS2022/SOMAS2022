@@ -107,7 +107,7 @@ func HandleTrustStage(agentMap map[commons.ID]agent.Agent, channelsMap map[commo
 	}
 
 	// timeout for agents to respond
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(25 * time.Millisecond)
 	for _, closure := range closures {
 		closure <- struct{}{}
 		close(closure)
