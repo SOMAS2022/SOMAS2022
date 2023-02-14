@@ -44,6 +44,7 @@ func main() {
 	fixedSanction := flag.Int("fSanc", 1, "Provide fixed sanction length")
 	dynamicSanction := flag.Bool("dSanc", false, "Toggle dynamic sanctioning")
 	graduatedSanction := flag.Bool("gSanc", false, "Toggle graduated sanctioning")
+	verbose := flag.Bool("verbose", true, "Toggle logger")
 
 	flag.Parse()
 
@@ -56,7 +57,7 @@ func main() {
 	cmdline.CmdLineInits.DynamicSanctions = *dynamicSanction
 	cmdline.CmdLineInits.GraduatedSanctions = *graduatedSanction
 
-	logging.InitLogger(*useJSONFormatter, *debug, *id, globalState)
+	logging.InitLogger(*verbose, *useJSONFormatter, *debug, *id, globalState)
 	initGame()
 	startGameLoop()
 }
