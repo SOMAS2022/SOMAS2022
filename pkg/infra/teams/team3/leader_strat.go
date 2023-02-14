@@ -3,7 +3,7 @@ package team3
 import (
 	"math/rand"
 
-	"infra/config"
+	cmdline "infra/cmdLine"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -209,6 +209,9 @@ func (a *AgentThree) createSanction(agent agent.Agent, length int) {
 }
 
 func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[commons.ID]agent.Agent {
+
+	cmdParams := cmdline.CmdLineInits
+
 	pruned := make(map[commons.ID]agent.Agent)
 	for id, agent := range agentMap {
 
@@ -225,12 +228,11 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 			pruned[id] = agent
 		} else {
 			// agent has been pruned. Choose sanction duration
-			enableDynSanction := config.EnvToBool("DYNAMIC_SANCTIONS", true)
 			var sanctionDuration int
-			if enableDynSanction {
+			if cmdParams.DynamicSanctions {
 				sanctionDuration = a.sanctioningDynamic(agent)
 			} else {
-				sanctionDuration = int(config.EnvToUint("SANCTION_LEN", 1))
+				sanctionDuration = cmdParams.FixedSanctionDuration
 			}
 			// register sanction to local map
 			a.createSanction(agent, sanctionDuration)
