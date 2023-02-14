@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	cmdline "infra/cmdLine"
 	"infra/game/agent"
 	"infra/game/commons"
 	"infra/game/decision"
@@ -40,9 +41,23 @@ func main() {
 	useJSONFormatter := flag.Bool("j", false, "Whether to output logs in JSON")
 	debug := flag.Bool("d", false, "Whether to run in debug mode. If false, only logs with level info or above will be shown")
 	id := flag.String("i", time.String(), "Provide an ID for a given run")
+	fixedSanction := flag.Int("fSanc", 1, "Provide fixed sanction length")
+	dynamicSanction := flag.Bool("dSanc", false, "Toggle dynamic sanctioning")
+	graduatedSanction := flag.Bool("gSanc", false, "Toggle graduated sanctioning")
+	verbose := flag.Bool("verbose", true, "Toggle logger")
+
 	flag.Parse()
 
-	logging.InitLogger(*useJSONFormatter, *debug, *id, globalState)
+	if *dynamicSanction && *graduatedSanction {
+		fmt.Println("Cannot have both dynamic and graduated sanctions.")
+		return
+	}
+
+	cmdline.CmdLineInits.FixedSanctionDuration = *fixedSanction
+	cmdline.CmdLineInits.DynamicSanctions = *dynamicSanction
+	cmdline.CmdLineInits.GraduatedSanctions = *graduatedSanction
+
+	logging.InitLogger(*verbose, *useJSONFormatter, *debug, *id, globalState)
 	initGame()
 	startGameLoop()
 }

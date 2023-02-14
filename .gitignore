@@ -1,7 +1,7 @@
 **.out
 node_modules
 web/backend/dist/*
-logs/*
+logs/*.json
 
 .vscode/*
 !.vscode/extensions.json
@@ -10,3 +10,4 @@ logs/*
 coverage.txt
 *.csv
 *.png
+*.json

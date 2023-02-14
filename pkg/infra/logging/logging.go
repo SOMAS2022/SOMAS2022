@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"infra/game/state"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -23,14 +24,18 @@ const (
 	Error
 )
 
-func InitLogger(useJSONFormatter bool, debug bool, id string, state *state.State) {
+func InitLogger(verbose, useJSONFormatter, debug bool, id string, state *state.State) {
 	if useJSONFormatter {
 		log.SetFormatter(&logrus.JSONFormatter{})
 	} else {
 		log.SetFormatter(&logrus.TextFormatter{})
 	}
 
-	log.SetOutput(os.Stdout)
+	if verbose {
+		log.SetOutput(os.Stdout)
+	} else {
+		log.SetOutput(io.Discard)
+	}
 	runID = id
 	gameState = state
 
