@@ -183,7 +183,7 @@ func (a *AgentThree) willSanctionConstant(agent agent.Agent) int {
 	return sanction
 }
 
-func (a *AgentThree) sanctioningHistoric(agent agent.Agent) int {
+func (a *AgentThree) sanctioningGraduated(agent agent.Agent) int {
 	agentId := agent.ID()
 	prevSanctions := a.sanctionHistory[agentId]
 	mostRecentSanction := prevSanctions[len(prevSanctions)-1]
@@ -231,6 +231,8 @@ func (a *AgentThree) PruneAgentList(agentMap map[commons.ID]agent.Agent) map[com
 			var sanctionDuration int
 			if cmdParams.DynamicSanctions {
 				sanctionDuration = a.sanctioningDynamic(agent)
+			} else if cmdParams.GraduatedSanctions {
+				sanctionDuration = a.sanctioningGraduated(agent)
 			} else {
 				sanctionDuration = cmdParams.FixedSanctionDuration
 			}
