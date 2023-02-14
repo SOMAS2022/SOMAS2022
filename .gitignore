@@ -10,3 +10,4 @@ logs/*
 coverage.txt
 *.csv
 *.png
+*.json

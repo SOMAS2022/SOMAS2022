@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"infra/game/commons"
 	"os"
+	"path"
 )
 
 // type LevelStage uint
@@ -194,6 +195,23 @@ func CombineMessageToFields(fields LogField, msg string) LogField {
 
 func OutputLog(outcome Outcome) {
 	fileLog.Outcome = outcome
-	logJSON, _ := json.Marshal(fileLog)
-	os.WriteFile("logs/"+runID+".json", logJSON, 0644)
+	jsonBuf, err := json.MarshalIndent(fileLog, "", "\t")
+	if err != nil {
+		log.Fatalf("Failed to Marshal gameStates: %v", err)
+		return
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("%v", err)
+		return
+	}
+
+	outputDir := path.Join(wd, "output/output.json")
+
+	err = os.WriteFile(outputDir, jsonBuf, 0777)
+	if err != nil {
+		log.Fatalf("Failed to write file: %v", err)
+		return
+	}
 }
